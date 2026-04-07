@@ -1,9 +1,6 @@
 {
-  "extends": "./node_modules/@yuu1111/tsconfig/base.json",
+  "extends": "@yuu1111/tsconfig",
   "compilerOptions": {
-    "ignoreDeprecations": "6.0",
-    "lib": ["ES2022"],
-    "target": "ES2022",
     "exactOptionalPropertyTypes": false,
     "verbatimModuleSyntax": false,
     "noUncheckedIndexedAccess": false,
