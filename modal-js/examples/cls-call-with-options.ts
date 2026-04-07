@@ -6,20 +6,20 @@ import { ModalClient } from "modal";
 const modal = new ModalClient();
 
 const cls = await modal.cls.fromName(
-  "libmodal-test-support",
-  "EchoClsParametrized",
+	"libmodal-test-support",
+	"EchoClsParametrized",
 );
 const instance = await cls.instance();
 const method = instance.method("echo_env_var");
 
 const instanceWithOptions = await cls
-  .withOptions({
-    secrets: [
-      await modal.secrets.fromObject({ SECRET_MESSAGE: "hello, Secret" }),
-    ],
-  })
-  .withConcurrency({ maxInputs: 1 })
-  .instance();
+	.withOptions({
+		secrets: [
+			await modal.secrets.fromObject({ SECRET_MESSAGE: "hello, Secret" }),
+		],
+	})
+	.withConcurrency({ maxInputs: 1 })
+	.instance();
 const methodWithOptions = instanceWithOptions.method("echo_env_var");
 
 // Call the Cls function, without the Secret being set.

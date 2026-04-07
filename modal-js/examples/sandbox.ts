@@ -3,7 +3,7 @@ import { ModalClient } from "modal";
 const modal = new ModalClient();
 
 const app = await modal.apps.fromName("libmodal-example", {
-  createIfMissing: true,
+	createIfMissing: true,
 });
 const image = modal.images.fromRegistry("alpine:3.21");
 

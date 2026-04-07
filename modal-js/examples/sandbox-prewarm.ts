@@ -6,7 +6,7 @@ import { ModalClient } from "modal";
 const modal = new ModalClient();
 
 const app = await modal.apps.fromName("libmodal-example", {
-  createIfMissing: true,
+	createIfMissing: true,
 });
 
 // With `.build(app)`, we create an Image object on Modal that eagerly pulls

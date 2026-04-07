@@ -1,0 +1,57 @@
+{
+	"$schema": "https://biomejs.dev/schemas/2.4.10/schema.json",
+	"extends": ["@yuu1111/biome-config/biome"],
+	"files": {
+		"includes": [
+			"src/**",
+			"test/**",
+			"examples/**",
+			"*.config.ts",
+			"scripts/**"
+		]
+	},
+	"linter": {
+		"rules": {
+			"style": {
+				"useShorthandAssign": "error",
+				"noNonNullAssertion": "off"
+			},
+			"suspicious": {
+				"noConsole": "error",
+				"noExplicitAny": "off",
+				"noImplicitAnyLet": "off",
+				"noShadowRestrictedNames": "off"
+			},
+			"correctness": {
+				"noConstructorReturn": "off",
+				"noUnsafeFinally": "off"
+			},
+			"performance": {
+				"noBarrelFile": "off"
+			}
+		}
+	},
+	"overrides": [
+		{
+			"includes": ["examples/**"],
+			"linter": {
+				"rules": {
+					"suspicious": {
+						"noConsole": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["test/**"],
+			"linter": {
+				"rules": {
+					"suspicious": {
+						"noTemplateCurlyInString": "off",
+						"noNonNullAssertedOptionalChain": "off"
+					}
+				}
+			}
+		}
+	]
+}

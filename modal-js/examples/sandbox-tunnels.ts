@@ -3,16 +3,16 @@ import { ModalClient } from "modal";
 const modal = new ModalClient();
 
 const app = await modal.apps.fromName("libmodal-example", {
-  createIfMissing: true,
+	createIfMissing: true,
 });
 
 // Create a Sandbox with Python's built-in HTTP server
 const image = modal.images.fromRegistry("python:3.12-alpine");
 const sb = await modal.sandboxes.create(app, image, {
-  command: ["python3", "-m", "http.server", "8000"],
-  encryptedPorts: [8000],
-  timeoutMs: 60000, // 1 minute
-  idleTimeoutMs: 30000, // 30 seconds
+	command: ["python3", "-m", "http.server", "8000"],
+	encryptedPorts: [8000],
+	timeoutMs: 60000, // 1 minute
+	idleTimeoutMs: 30000, // 30 seconds
 });
 
 console.log("Sandbox created:", sb.sandboxId);
@@ -28,7 +28,7 @@ console.log("Tunnel information:");
 console.log("  URL:", tunnel.url);
 console.log("  Port:", tunnel.port);
 
-console.log("\nMaking GET request to the tunneled server at " + tunnel.url);
+console.log(`\nMaking GET request to the tunneled server at ${tunnel.url}`);
 
 const response = await fetch(tunnel.url);
 

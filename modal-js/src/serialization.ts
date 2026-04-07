@@ -5,11 +5,11 @@
  * that ensures compatibility with the Python CBOR implementation.
  */
 
-import { Encoder, Decoder, Options } from "cbor-x";
+import { Encoder, Decoder, type Options } from "cbor-x";
 
 // Extend the Options interface to include undocumented options
 interface ExtendedOptions extends Options {
-  useTag259ForMaps?: boolean;
+	useTag259ForMaps?: boolean;
 }
 
 /**
@@ -21,17 +21,17 @@ interface ExtendedOptions extends Options {
  * - tagUint8Array: false - Don't tag Uint8Arrays (avoid tag 64)
  */
 const encoderOptions: ExtendedOptions = {
-  mapsAsObjects: true,
-  useRecords: false,
-  tagUint8Array: false,
-  useTag259ForMaps: false,
+	mapsAsObjects: true,
+	useRecords: false,
+	tagUint8Array: false,
+	useTag259ForMaps: false,
 };
 
 const decoderOptions: ExtendedOptions = {
-  mapsAsObjects: true,
-  useRecords: false,
-  tagUint8Array: false,
-  useTag259ForMaps: false,
+	mapsAsObjects: true,
+	useRecords: false,
+	tagUint8Array: false,
+	useTag259ForMaps: false,
 };
 
 const encoder = new Encoder(encoderOptions);
@@ -48,7 +48,7 @@ const decoder = new Decoder(decoderOptions);
  * @returns CBOR-encoded bytes as a Buffer
  */
 export function cborEncode(value: any): Buffer {
-  return encoder.encode(value);
+	return encoder.encode(value);
 }
 
 /**
@@ -58,5 +58,5 @@ export function cborEncode(value: any): Buffer {
  * @returns The decoded JavaScript value
  */
 export function cborDecode(data: Buffer | Uint8Array): any {
-  return decoder.decode(data);
+	return decoder.decode(data);
 }

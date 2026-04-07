@@ -26,16 +26,15 @@
   "scripts": {
     "build": "tsup",
     "check": "tsc",
-    "docs": "typedoc src/index.ts --treatWarningsAsErrors",
-    "docs:serve": "npm run docs && http-server ./docs",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "lint": "eslint",
-    "prepare": "scripts/gen-proto.sh",
+    "format": "biome format --write .",
+    "format:check": "biome format .",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "prepare": "bun scripts/gen-proto.ts",
     "test": "vitest run",
     "test:watch": "vitest",
-    "version": "npm run check",
-    "prepublishOnly": "npm run build"
+    "version": "bun run check",
+    "prepublishOnly": "bun run build"
   },
   "dependencies": {
     "cbor-x": "^1.6.4",
@@ -46,23 +45,20 @@
     "uuid": "^13.0.0"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
+    "@biomejs/biome": "^2.4.10",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.5.2",
-    "eslint": "^10.2.0",
-    "eslint-plugin-import-x": "^4.16.2",
-    "globals": "^17.4.0",
+    "@yuu1111/biome-config": "^1.0.4",
+    "@yuu1111/tsconfig": "^1.0.3",
     "grpc-tools": "^1.13.1",
     "http-server": "^14.1.1",
     "jsonwebtoken": "^9.0.3",
     "p-queue": "^9.1.1",
-    "prettier": "^3.8.1",
     "ts-proto": "^2.11.6",
     "tsup": "^8.5.1",
     "tsx": "^4.21.0",
     "typedoc": "^0.28.18",
     "typescript": "~6.0.2",
-    "typescript-eslint": "^8.58.0",
     "vitest": "^4.1.2"
   }
 }

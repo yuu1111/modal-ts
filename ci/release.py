@@ -99,13 +99,13 @@ def update_version(args):
 
         run_cli(["git", "diff"])
 
-        commit_message = f"[DEV-RELEASE] Prepare dev release for modal-js/v{new_version}, modal-go/v{new_version}"
+        commit_message = f"[DEV-RELEASE] Prepare dev release for modal-js/v{new_version}"
         if args.dry_run:
             print("\nDRY RUN: Would create commit with message:")
             print(commit_message)
-            run_cli(["git", "restore", "--", "modal-js/package.json", "modal-js/package-lock.json"])
+            run_cli(["git", "restore", "--", "modal-js/package.json"])
         else:
-            run_cli(["git", "add", "modal-js/package.json", "modal-js/package-lock.json"])
+            run_cli(["git", "add", "modal-js/package.json"])
             run_cli(["git", "commit", "-m", commit_message])
     else:
         changelog_path = Path("CHANGELOG.md")
@@ -115,7 +115,7 @@ def update_version(args):
         run_cli(["npm", "version", args.update, "--no-git-tag-version"], text=True, cwd="modal-js")
         new_version = get_current_js_version()
 
-        version_header = f"modal-js/v{new_version}, modal-go/v{new_version}"
+        version_header = f"modal-js/v{new_version}"
 
         new_header = dedent(f"""\
         ## Unreleased
@@ -128,7 +128,7 @@ def update_version(args):
         changelog_path.write_text(new_changelog_content)
 
         run_cli(["git", "diff"])
-        run_cli(["git", "add", "modal-js/package.json", "modal-js/package-lock.json", str(changelog_path)])
+        run_cli(["git", "add", "modal-js/package.json", str(changelog_path)])
 
         commit_message = f"[RELEASE] Prepare release for {version_header}"
         if args.dry_run:
@@ -136,16 +136,16 @@ def update_version(args):
             print(commit_message)
             run_cli(["git", "reset", "HEAD"])
             run_cli(
-                ["git", "restore", "--", "modal-js/package.json", "modal-js/package-lock.json", str(changelog_path)]
+                ["git", "restore", "--", "modal-js/package.json", str(changelog_path)]
             )
         else:
             run_cli(["git", "commit", "-m", commit_message])
 
 
 def publish(args):
-    """Publish both modal-js and modal-go"""
+    """Publish modal-js"""
     version = get_current_js_version()
-    git_tags = [f"{version}", f"modal-js/v{version}", f"modal-go/v{version}"]
+    git_tags = [f"{version}", f"modal-js/v{version}"]
 
     if args.dry_run:
         print("\nDRY RUN: Would execute the following operations:")
@@ -167,7 +167,6 @@ def publish(args):
     else:
         run_cli(["npm", "publish"], cwd="modal-js")
 
-    run_cli(["curl", f"https://proxy.golang.org/github.com/modal-labs/libmodal/modal-go/@v/v{version}.info"])
 
 
 def main():

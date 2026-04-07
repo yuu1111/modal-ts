@@ -3,13 +3,13 @@ import { ModalClient } from "modal";
 const modal = new ModalClient();
 
 const app = await modal.apps.fromName("libmodal-example", {
-  createIfMissing: true,
+	createIfMissing: true,
 });
 const image = modal.images.fromRegistry("alpine:3.21");
 
 // Create a Sandbox that waits for input, then exits with code 42
 const sb = await modal.sandboxes.create(app, image, {
-  command: ["sh", "-c", "read line; exit 42"],
+	command: ["sh", "-c", "read line; exit 42"],
 });
 
 console.log("Started Sandbox:", sb.sandboxId);

@@ -5,8 +5,8 @@ import { ModalClient } from "modal";
 const modal = new ModalClient();
 
 const echo = await modal.functions.fromName(
-  "libmodal-test-support",
-  "echo_string",
+	"libmodal-test-support",
+	"echo_string",
 );
 
 // Spawn the Function with kwargs.

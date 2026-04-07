@@ -3,7 +3,7 @@ import { ModalClient } from "modal";
 const modal = new ModalClient();
 
 const app = await modal.apps.fromName("libmodal-example", {
-  createIfMissing: true,
+	createIfMissing: true,
 });
 const baseImage = modal.images.fromRegistry("alpine:3.21");
 
@@ -12,16 +12,16 @@ console.log("Started Sandbox:", sb.sandboxId);
 
 await sb.exec(["mkdir", "-p", "/app/data"]);
 await sb.exec([
-  "sh",
-  "-c",
-  "echo 'This file was created in the first Sandbox' > /app/data/info.txt",
+	"sh",
+	"-c",
+	"echo 'This file was created in the first Sandbox' > /app/data/info.txt",
 ]);
 console.log("Created file in first Sandbox");
 
 const snapshotImage = await sb.snapshotFilesystem();
 console.log(
-  "Filesystem snapshot created with Image ID:",
-  snapshotImage.imageId,
+	"Filesystem snapshot created with Image ID:",
+	snapshotImage.imageId,
 );
 
 await sb.terminate();

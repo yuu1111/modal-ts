@@ -13,26 +13,26 @@ import { ModalClient } from "modal";
 const modal = new ModalClient();
 
 const app = await modal.apps.fromName("libmodal-example", {
-  createIfMissing: true,
+	createIfMissing: true,
 });
 const baseImage = modal.images
-  .fromRegistry("alpine:3.21")
-  .dockerfileCommands(["RUN apk add --no-cache git"]);
+	.fromRegistry("alpine:3.21")
+	.dockerfileCommands(["RUN apk add --no-cache git"]);
 
 const sb = await modal.sandboxes.create(app, baseImage);
 
 const gitClone = await sb.exec([
-  "git",
-  "clone",
-  "https://github.com/modal-labs/libmodal.git",
-  "/repo",
+	"git",
+	"clone",
+	"https://github.com/modal-labs/libmodal.git",
+	"/repo",
 ]);
 await gitClone.wait();
 
 const repoSnapshot = await sb.snapshotDirectory("/repo");
 console.log(
-  "Took a snapshot of the /repo directory, Image ID:",
-  repoSnapshot.imageId,
+	"Took a snapshot of the /repo directory, Image ID:",
+	repoSnapshot.imageId,
 );
 
 await sb.terminate();
@@ -45,8 +45,8 @@ await sb2.mountImage("/repo", repoSnapshot);
 
 const repoLs = await sb2.exec(["ls", "/repo"]);
 console.log(
-  "Contents of /repo directory in new Sandbox sb2:\n",
-  await repoLs.stdout.readText(),
+	"Contents of /repo directory in new Sandbox sb2:\n",
+	await repoLs.stdout.readText(),
 );
 
 await sb2.terminate();
