@@ -35,15 +35,10 @@ jobs:
       with:
         python-version: '3.13'
 
-    - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
-      with:
-        node-version: 20
-        cache: 'npm'
-        cache-dependency-path: modal-js/package-lock.json
+    - uses: oven-sh/setup-bun@v2
 
-    - name: Install npm packages
-      run: npm install
-      working-directory: ./modal-js
+    - name: Install packages
+      run: bun install
 
     - name: Generate a token
       id: generate-token
@@ -69,4 +64,3 @@ jobs:
         gh pr create --title "$PR_TITLE" --body "$PR_TITLE" --base main --head ci-release
       env:
         GH_TOKEN: ${{ steps.generate-token.outputs.token }}
-

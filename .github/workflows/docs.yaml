@@ -15,8 +15,8 @@ permissions: # required for GitHub Pages
   id-token: write
 
 jobs:
-  js:
-    name: TypeDoc for modal-js
+  docs:
+    name: TypeDoc
     runs-on: ubuntu-latest
 
     steps:
@@ -24,25 +24,21 @@ jobs:
         with:
           submodules: true
 
-      - uses: actions/setup-node@cdca7365b2dadb8aad0a33bc7601856ffabcc48e # v4
-        with:
-          node-version: "22"
+      - uses: oven-sh/setup-bun@v2
 
-      - run: npm ci
-        working-directory: ./modal-js
+      - run: bun install
 
-      - run: npm run docs
-        working-directory: ./modal-js
+      - run: bun run docs
 
       - name: Upload docs artifact
         if: ${{ github.ref == 'refs/heads/main' }}
         uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0
         with:
-          path: ./modal-js/docs
+          path: ./docs
 
   deploy:
     name: Deploy to GitHub Pages
-    needs: js
+    needs: docs
     if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     environment:

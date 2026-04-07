@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-Modal (serverless platform) SDK for JavaScript/TypeScript (`modal-js/`). Proto definitions live in `modal-client/` submodule (`modal_proto/`). Generated code must never be edited by hand.
+Modal (serverless platform) SDK for JavaScript/TypeScript. Proto definitions live in `lib/modal-client/` submodule (`modal_proto/`). Generated code must never be edited by hand.
 
-## Commands (modal-js/)
+## Commands
 
 ```bash
 bun install                              # Install deps + generate proto code
@@ -22,7 +22,7 @@ bun test --grep "pattern"               # Filter by test name
 ## Proto Regeneration
 
 ```bash
-cd modal-js && bun run prepare
+bun run prepare
 ```
 
 ## Testing
@@ -35,16 +35,16 @@ MODAL_TOKEN_SECRET=as-...
 MODAL_ENVIRONMENT=libmodal
 ```
 
-Test setup lives in `test-support/`. JS tests: max 10 concurrent, 20s timeout.
+Test setup lives in `test-support/`. Tests: max 10 concurrent, 20s timeout.
 
 ## Architecture
 
-- **Client** (`client.ts`) — Central entry point managing auth, gRPC connection, and service access
+- **Client** (`src/client.ts`) — Central entry point managing auth, gRPC connection, and service access
 - **Services** (`FunctionService`, `SandboxService`, etc.) — Per-resource classes accessed via `client.functions`, `client.sandboxes`, etc., with factory methods (`.fromName()`, `.fromId()`, `.create()`)
-- **Auth** (`auth_token_manager.ts`) — JWT-based token management with automatic rotation
-- **Config** (`config.ts`) — TOML config from `~/.modal.toml`, overridable by `MODAL_*` env vars and explicit params
-- **Errors** (`errors.ts`) — Typed hierarchy: `RemoteError`, `NotFoundError`, `InvalidError`, `FunctionTimeoutError`, etc.
-- **Serialization** (`serialization.ts`) — CBOR for gRPC payloads
+- **Auth** (`src/auth_token_manager.ts`) — JWT-based token management with automatic rotation
+- **Config** (`src/config.ts`) — TOML config from `~/.modal.toml`, overridable by `MODAL_*` env vars and explicit params
+- **Errors** (`src/errors.ts`) — Typed hierarchy: `RemoteError`, `NotFoundError`, `InvalidError`, `FunctionTimeoutError`, etc.
+- **Serialization** (`src/serialization.ts`) — CBOR for gRPC payloads
 
 ## Key Conventions
 

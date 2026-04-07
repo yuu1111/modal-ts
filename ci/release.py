@@ -74,7 +74,7 @@ def check_git_clean():
 
 
 def get_current_js_version():
-    package_path = Path("modal-js") / "package.json"
+    package_path = Path("package.json")
     with package_path.open("r") as f:
         json_package = json.load(f)
         return json_package["version"]
@@ -91,31 +91,31 @@ def update_version(args):
         current_version = get_current_js_version()
 
         if "-dev." in current_version:
-            run_cli(["npm", "version", "prerelease", "--no-git-tag-version"], cwd="modal-js")
+            run_cli(["npm", "version", "prerelease", "--no-git-tag-version"], cwd=".")
         else:
-            run_cli(["npm", "version", f"pre{args.update}", "--preid=dev", "--no-git-tag-version"], cwd="modal-js")
+            run_cli(["npm", "version", f"pre{args.update}", "--preid=dev", "--no-git-tag-version"], cwd=".")
 
         new_version = get_current_js_version()
 
         run_cli(["git", "diff"])
 
-        commit_message = f"[DEV-RELEASE] Prepare dev release for modal-js/v{new_version}"
+        commit_message = f"[DEV-RELEASE] Prepare dev release for v{new_version}"
         if args.dry_run:
             print("\nDRY RUN: Would create commit with message:")
             print(commit_message)
-            run_cli(["git", "restore", "--", "modal-js/package.json"])
+            run_cli(["git", "restore", "--", "package.json"])
         else:
-            run_cli(["git", "add", "modal-js/package.json"])
+            run_cli(["git", "add", "package.json"])
             run_cli(["git", "commit", "-m", commit_message])
     else:
         changelog_path = Path("CHANGELOG.md")
         changelog_content = changelog_path.read_text()
         check_unreleased_has_items(changelog_content)
 
-        run_cli(["npm", "version", args.update, "--no-git-tag-version"], text=True, cwd="modal-js")
+        run_cli(["npm", "version", args.update, "--no-git-tag-version"], text=True, cwd=".")
         new_version = get_current_js_version()
 
-        version_header = f"modal-js/v{new_version}"
+        version_header = f"v{new_version}"
 
         new_header = dedent(f"""\
         ## Unreleased
@@ -128,7 +128,7 @@ def update_version(args):
         changelog_path.write_text(new_changelog_content)
 
         run_cli(["git", "diff"])
-        run_cli(["git", "add", "modal-js/package.json", str(changelog_path)])
+        run_cli(["git", "add", "package.json", str(changelog_path)])
 
         commit_message = f"[RELEASE] Prepare release for {version_header}"
         if args.dry_run:
@@ -136,7 +136,7 @@ def update_version(args):
             print(commit_message)
             run_cli(["git", "reset", "HEAD"])
             run_cli(
-                ["git", "restore", "--", "modal-js/package.json", str(changelog_path)]
+                ["git", "restore", "--", "package.json", str(changelog_path)]
             )
         else:
             run_cli(["git", "commit", "-m", commit_message])
@@ -145,7 +145,7 @@ def update_version(args):
 def publish(args):
     """Publish modal-js"""
     version = get_current_js_version()
-    git_tags = [f"{version}", f"modal-js/v{version}"]
+    git_tags = [f"{version}", f"v{version}"]
 
     if args.dry_run:
         print("\nDRY RUN: Would execute the following operations:")
@@ -163,9 +163,9 @@ def publish(args):
     run_cli(["git", "push", "--tags"])
 
     if args.dev:
-        run_cli(["npm", "publish", "--tag", "next"], cwd="modal-js")
+        run_cli(["npm", "publish", "--tag", "next"], cwd=".")
     else:
-        run_cli(["npm", "publish"], cwd="modal-js")
+        run_cli(["npm", "publish"], cwd=".")
 
 
 
