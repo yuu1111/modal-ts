@@ -1,0 +1,7 @@
+The .proto files in this directory are derived from:
+
+  https://github.com/modal-labs/modal-client
+  Commit: 01fdcd680aa7dcc11252316f5312731a8a5f6d86
+
+Copyright 2024 Modal Labs, Inc.
+Licensed under the Apache License, Version 2.0.

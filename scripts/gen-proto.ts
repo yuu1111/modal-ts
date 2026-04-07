@@ -30,7 +30,7 @@ const tsProtoPlugin = join(
 	`protoc-gen-ts_proto${ext}`,
 );
 
-const protoFiles = globSync("lib/modal-client/modal_proto/*.proto", {
+const protoFiles = globSync("modal_proto/*.proto", {
 	cwd: root,
 });
 
@@ -41,7 +41,7 @@ execSync(
 		`--plugin=protoc-gen-ts_proto="${tsProtoPlugin}"`,
 		"--ts_proto_out=./proto",
 		"--ts_proto_opt=outputServices=nice-grpc,outputServices=generic-definitions,useExactTypes=false",
-		"--proto_path=lib/modal-client",
+		"--proto_path=.",
 		...protoFiles.map((f) => f.replace(/\\/g, "/")),
 	].join(" "),
 	{ cwd: root, stdio: "inherit" },

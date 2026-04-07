@@ -95,6 +95,46 @@ def identity_with_repr(s: typing.Any) -> typing.Any:
     return s, repr(s)
 `;
 
+/**
+ * @description AWS Secrets Manager からシークレットを取得してModal Secretに登録
+ */
+async function createAwsSecrets(client: ModalClient) {
+	const {
+		SecretsManagerClient,
+		GetSecretValueCommand,
+	} = await import("@aws-sdk/client-secrets-manager");
+	const sm = new SecretsManagerClient({});
+
+	async function getAwsSecret(secretId: string): Promise<Record<string, string>> {
+		const resp = await sm.send(
+			new GetSecretValueCommand({ SecretId: secretId }),
+		);
+		return JSON.parse(resp.SecretString!);
+	}
+
+	const ecrSecret = await getAwsSecret("test/libmodal/AwsEcrTest");
+	await createSecret(client, "libmodal-aws-ecr-test", {
+		AWS_ACCESS_KEY_ID: ecrSecret.AWS_ACCESS_KEY_ID,
+		AWS_SECRET_ACCESS_KEY: ecrSecret.AWS_SECRET_ACCESS_KEY,
+		AWS_REGION: "us-east-1",
+	});
+	console.log("  Created 'libmodal-aws-ecr-test'");
+
+	const gcpSecret = await getAwsSecret("test/libmodal/GcpArtifactRegistryTest");
+	await createSecret(client, "libmodal-gcp-artifact-registry-test", {
+		SERVICE_ACCOUNT_JSON: gcpSecret.SERVICE_ACCOUNT_JSON,
+		REGISTRY_USERNAME: "_json_key",
+		REGISTRY_PASSWORD: gcpSecret.SERVICE_ACCOUNT_JSON,
+	});
+	console.log("  Created 'libmodal-gcp-artifact-registry-test'");
+
+	const anthropicSecret = await getAwsSecret("dev/libmodal/AnthropicApiKey");
+	await createSecret(client, "libmodal-anthropic-secret", {
+		ANTHROPIC_API_KEY: anthropicSecret.ANTHROPIC_API_KEY,
+	});
+	console.log("  Created 'libmodal-anthropic-secret'");
+}
+
 async function main() {
 	const client = new ModalClient();
 
@@ -104,6 +144,15 @@ async function main() {
 		b: "2",
 		c: "hello world",
 	});
+
+	if (process.env.AWS_REGION) {
+		console.log("Creating AWS-based secrets...");
+		await createAwsSecrets(client);
+	} else {
+		console.log(
+			"Skipping AWS-based secrets (AWS_REGION not set). Set AWS credentials to create ECR/GCP/Anthropic secrets.",
+		);
+	}
 
 	console.log("Deploying 'libmodal-test-support'...");
 	const mountId = await createMount(client.cpClient, "", [

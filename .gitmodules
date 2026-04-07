@@ -1,3 +1,0 @@
-[submodule "modal-client"]
-	path = lib/modal-client
-	url = https://github.com/modal-labs/modal-client.git

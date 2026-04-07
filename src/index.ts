@@ -49,6 +49,7 @@ export {
 	QueueFullError,
 	RemoteError,
 	SandboxTimeoutError,
+	TimeoutError,
 } from "./errors";
 export {
 	Function_,
@@ -85,6 +86,7 @@ export {
 } from "./queue";
 export { Retries } from "./retries";
 export type {
+	ProbeParams,
 	SandboxCreateConnectCredentials,
 	SandboxCreateConnectTokenParams,
 	SandboxCreateParams,
@@ -96,7 +98,7 @@ export type {
 	StreamMode,
 	Tunnel,
 } from "./sandbox";
-export { ContainerProcess, Sandbox, SandboxService } from "./sandbox";
+export { ContainerProcess, Probe, Sandbox, SandboxService } from "./sandbox";
 export { SandboxFile, type SandboxFileMode } from "./sandbox_filesystem";
 export {
 	Secret,

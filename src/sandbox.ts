@@ -41,6 +41,7 @@ import {
 	InvalidError,
 	NotFoundError,
 	SandboxTimeoutError,
+	TimeoutError,
 } from "./errors";
 import { Image } from "./image";
 import type { Proxy } from "./proxy";
@@ -82,6 +83,113 @@ export type StdioBehavior = "pipe" | "ignore";
 export type StreamMode = "text" | "binary";
 
 /** Optional parameters for {@link SandboxService#create client.sandboxes.create()}. */
+/**
+ * @description Probe作成時のパラメータ
+ * @property intervalMs - ヘルスチェック間隔(ミリ秒) @default 100
+ */
+export type ProbeParams = {
+	intervalMs: number;
+};
+
+/**
+ * @description Sandbox のreadiness判定に使うプローブ
+ */
+export class Probe {
+	readonly #tcpPort?: number;
+	readonly #execArgv?: string[];
+	readonly #intervalMs: number;
+
+	private constructor(params: {
+		tcpPort?: number;
+		execArgv?: string[];
+		intervalMs: number;
+	}) {
+		const { tcpPort, execArgv, intervalMs } = params;
+		if ((tcpPort === undefined) === (execArgv === undefined)) {
+			throw new InvalidError(
+				"Probe must be created with Probe.withTcp(...) or Probe.withExec(...)",
+			);
+		}
+		this.#tcpPort = tcpPort;
+		this.#execArgv = execArgv;
+		this.#intervalMs = intervalMs;
+	}
+
+	/**
+	 * @description TCPポートへの接続でreadiness判定するProbeを作成
+	 * @param port - チェック対象のポート番号 (1-65535)
+	 * @param params - プローブパラメータ
+	 */
+	static withTcp(
+		port: number,
+		params: ProbeParams = { intervalMs: 100 },
+	): Probe {
+		if (!Number.isInteger(port)) {
+			throw new InvalidError("Probe.withTcp() expects an integer `port`");
+		}
+		if (port <= 0 || port > 65535) {
+			throw new InvalidError(
+				`Probe.withTcp() expects \`port\` in [1, 65535], got ${port}`,
+			);
+		}
+		Probe.#validateIntervalMs("Probe.withTcp", params.intervalMs);
+		return new Probe({ tcpPort: port, intervalMs: params.intervalMs });
+	}
+
+	/**
+	 * @description コマンド実行でreadiness判定するProbeを作成
+	 * @param argv - 実行するコマンドと引数
+	 * @param params - プローブパラメータ
+	 */
+	static withExec(
+		argv: string[],
+		params: ProbeParams = { intervalMs: 100 },
+	): Probe {
+		if (!Array.isArray(argv) || argv.length === 0) {
+			throw new InvalidError("Probe.withExec() requires at least one argument");
+		}
+		if (!argv.every((arg) => typeof arg === "string")) {
+			throw new InvalidError(
+				"Probe.withExec() expects all arguments to be strings",
+			);
+		}
+		Probe.#validateIntervalMs("Probe.withExec", params.intervalMs);
+		return new Probe({ execArgv: [...argv], intervalMs: params.intervalMs });
+	}
+
+	/** @internal */
+	toProto() {
+		if (this.#tcpPort !== undefined) {
+			return {
+				tcpPort: this.#tcpPort,
+				intervalMs: this.#intervalMs,
+			};
+		}
+		if (this.#execArgv !== undefined) {
+			return {
+				execCommand: { argv: this.#execArgv },
+				intervalMs: this.#intervalMs,
+			};
+		}
+		throw new InvalidError(
+			"Probe must be created with Probe.withTcp(...) or Probe.withExec(...)",
+		);
+	}
+
+	static #validateIntervalMs(methodName: string, intervalMs: number) {
+		if (!Number.isInteger(intervalMs)) {
+			throw new InvalidError(
+				`${methodName}() expects an integer \`intervalMs\``,
+			);
+		}
+		if (intervalMs <= 0) {
+			throw new InvalidError(
+				`${methodName}() expects \`intervalMs\` > 0, got ${intervalMs}`,
+			);
+		}
+	}
+}
+
 export type SandboxCreateParams = {
 	/** Reservation of physical CPU cores for the Sandbox, can be fractional. */
 	cpu?: number;
@@ -1034,6 +1142,39 @@ export class Sandbox {
 			userMetadata: params?.userMetadata,
 		});
 		return { url: resp.url, token: resp.token };
+	}
+
+	/**
+	 * @description readinessプローブが成功するまでブロック
+	 * @param timeoutMs - 最大待機時間(ミリ秒) @default 300000
+	 */
+	async waitUntilReady(timeoutMs = 300_000): Promise<void> {
+		this.#ensureAttached();
+		if (timeoutMs <= 0) {
+			throw new InvalidError(`timeoutMs must be positive, got ${timeoutMs}`);
+		}
+
+		const deadline = Date.now() + timeoutMs;
+		while (true) {
+			const remainingMs = deadline - Date.now();
+			if (remainingMs <= 0) {
+				throw new TimeoutError("Sandbox operation timed out");
+			}
+			const requestTimeoutMs = Math.min(remainingMs, 50_000);
+			try {
+				const resp = await this.#client.cpClient.sandboxWaitUntilReady({
+					sandboxId: this.sandboxId,
+					timeout: requestTimeoutMs / 1000,
+				});
+				if (resp.readyAt && resp.readyAt > 0) {
+					return;
+				}
+			} catch (err) {
+				if (err instanceof ClientError && err.code === Status.DEADLINE_EXCEEDED)
+					continue;
+				throw err;
+			}
+		}
 	}
 
 	async terminate(): Promise<void>;

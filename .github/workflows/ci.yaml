@@ -16,8 +16,11 @@ jobs:
 
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
+
+      - uses: aws-actions/configure-aws-credentials@be2e7ad815e27b890489a89ce2717b0f9e26b56e # v4
         with:
-          submodules: true
+          role-to-assume: arn:aws:iam::459781239556:role/libmodal-ci-cd-role-62a288d
+          aws-region: us-east-1
 
       - uses: oven-sh/setup-bun@v2
 

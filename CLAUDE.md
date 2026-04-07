@@ -4,13 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Overview
 
-Modal (serverless platform) SDK for JavaScript/TypeScript. Proto definitions live in `lib/modal-client/` submodule (`modal_proto/`). Generated code must never be edited by hand.
+Modal (serverless platform) SDK for JavaScript/TypeScript. Proto definitions live in `modal_proto/` (copied from modal-labs/modal-client, Apache-2.0). Generated code in `proto/` must never be edited by hand.
 
 ## Commands
 
 ```bash
 bun install                              # Install deps + generate proto code
-bun run check                            # TypeScript type checking
+bun run typecheck                        # TypeScript type checking
 bun run lint                             # Biome lint
 bun run format                           # Biome format
 bun run build                            # Build distribution
