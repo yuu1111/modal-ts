@@ -1,7 +1,7 @@
 name: CI
 
 permissions:
-  id-token: write # id-token is required to for OIDC
+  id-token: write
 
 on:
   push:
@@ -10,59 +10,9 @@ on:
   pull_request:
 
 jobs:
-  test-support:
-    name: Lint and set up test-support
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
-        with:
-          submodules: true
-
-      - uses: aws-actions/configure-aws-credentials@be2e7ad815e27b890489a89ce2717b0f9e26b56e # v4
-        with:
-          role-to-assume: arn:aws:iam::459781239556:role/libmodal-ci-cd-role-62a288d
-          aws-region: us-east-1
-
-      - name: Install uv
-        uses: astral-sh/setup-uv@22695119d769bdb6f7032ad67b9bca0ef8c4a174 # v5
-        with:
-          python-version: "3.13"
-
-      - run: |
-          uv python install
-
-      - name: Build submodule client
-        working-directory: lib/modal-client
-        env:
-          VIRTUAL_ENV: .venv
-        run: |
-          uv venv
-          uv pip install -r requirements.dev.txt
-          uv pip install .
-          uv pip install "synchronicity[compile]~=0.10.3"
-          uv run inv protoc
-          uv run inv type-stubs
-
-      - name: Install submodule client
-        run: uv pip install ./lib/modal-client
-
-      - run: |
-          uv pip install ruff
-          ruff check test-support/
-          ruff format --check test-support/
-
-      - run: test-support/setup.sh
-        env:
-          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
-          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
-          MODAL_ENVIRONMENT: libmodal
-          MODAL_SYNC_ENTRYPOINT: 1
-
-  js:
+  build-and-test:
     name: Build, lint, and test
     runs-on: ubuntu-latest
-    needs: test-support
 
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
@@ -75,11 +25,18 @@ jobs:
 
       - run: bun run format:check
 
-      - run: bun run check
+      - run: bun run typecheck
 
       - run: bun run lint
 
       - run: bun run build
+
+      - name: Deploy test support
+        run: bun test-support/setup.ts
+        env:
+          MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
+          MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
+          MODAL_ENVIRONMENT: libmodal
 
       - run: bun test
         env:

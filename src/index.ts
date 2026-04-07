@@ -28,6 +28,17 @@ export {
 } from "./cls";
 export type { Profile } from "./config";
 export {
+	createMount,
+	createSecret,
+	type DeployAppParams,
+	type DeployClassParams,
+	type DeployFunctionParams,
+	type DeployResult,
+	deployApp,
+	getOrCreateImage,
+	type MountFileEntry,
+} from "./deploy";
+export {
 	AlreadyExistsError,
 	ClientClosedError,
 	FunctionTimeoutError,

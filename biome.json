@@ -20,7 +20,8 @@
 				"noConsole": "error",
 				"noExplicitAny": "off",
 				"noImplicitAnyLet": "off",
-				"noShadowRestrictedNames": "off"
+				"noShadowRestrictedNames": "off",
+				"noConfusingVoidType": "off"
 			},
 			"correctness": {
 				"noConstructorReturn": "off",
