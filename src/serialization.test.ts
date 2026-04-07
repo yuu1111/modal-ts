@@ -28,7 +28,7 @@ test("ParameterSerialization", () => {
 	expect(serializedParams).toEqual(byteData);
 
 	// Reverse the order of map keys and make sure it's deterministic.
-	const reversedSchema = [schema[1], schema[0]];
+	const reversedSchema = [schema[1]!, schema[0]!];
 	const reversedSerializedParams = encodeParameterSet(reversedSchema, values);
 	expect(reversedSerializedParams).toEqual(byteData);
 

@@ -47,9 +47,9 @@ export class ControlPlaneInvocation implements Invocation {
 	) {
 		this.cpClient = cpClient;
 		this.functionCallId = functionCallId;
-		this.input = input;
-		this.functionCallJwt = functionCallJwt;
-		this.inputJwt = inputJwt;
+		if (input !== undefined) this.input = input;
+		if (functionCallJwt !== undefined) this.functionCallJwt = functionCallJwt;
+		if (inputJwt !== undefined) this.inputJwt = inputJwt;
 	}
 
 	static async create(
@@ -75,7 +75,7 @@ export class ControlPlaneInvocation implements Invocation {
 			functionMapResponse.functionCallId,
 			input,
 			functionMapResponse.functionCallJwt,
-			functionMapResponse.pipelinedInputs[0].inputJwt,
+			functionMapResponse.pipelinedInputs[0]!.inputJwt,
 		);
 	}
 
@@ -118,10 +118,12 @@ export class ControlPlaneInvocation implements Invocation {
 		};
 
 		const functionRetryResponse = await this.cpClient.functionRetryInputs({
-			functionCallJwt: this.functionCallJwt,
+			...(this.functionCallJwt !== undefined && {
+				functionCallJwt: this.functionCallJwt,
+			}),
 			inputs: [retryItem],
 		});
-		this.inputJwt = functionRetryResponse.inputJwts[0];
+		this.inputJwt = functionRetryResponse.inputJwts[0]!;
 	}
 }
 

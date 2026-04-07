@@ -84,9 +84,10 @@ export class QueueService {
 		try {
 			const resp = await this.#client.cpClient.queueGetOrCreate({
 				deploymentName: name,
-				objectCreationType: params.createIfMissing
-					? ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_IF_MISSING
-					: undefined,
+				...(params.createIfMissing && {
+					objectCreationType:
+						ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_IF_MISSING,
+				}),
 				environmentName: this.#client.environmentName(params.environment),
 			});
 			this.#client.logger.debug(
@@ -112,7 +113,9 @@ export class QueueService {
 	async delete(name: string, params: QueueDeleteParams = {}): Promise<void> {
 		try {
 			const queue = await this.fromName(name, {
-				environment: params.environment,
+				...(params.environment !== undefined && {
+					environment: params.environment,
+				}),
 				createIfMissing: false,
 			});
 			await this.#client.cpClient.queueDelete({ queueId: queue.queueId });
@@ -207,8 +210,9 @@ export class Queue {
 	) {
 		this.#client = client;
 		this.queueId = queueId;
-		this.name = name;
-		this.#ephemeralHbManager = ephemeralHbManager;
+		if (name !== undefined) this.name = name;
+		if (ephemeralHbManager !== undefined)
+			this.#ephemeralHbManager = ephemeralHbManager;
 	}
 
 	static #validatePartitionKey(partition: string | undefined): Uint8Array {
@@ -272,7 +276,7 @@ export class Queue {
 		await this.#client.cpClient.queueClear({
 			queueId: this.queueId,
 			partitionKey: Queue.#validatePartitionKey(params.partition),
-			allPartitions: params.all,
+			...(params.all !== undefined && { allPartitions: params.all }),
 		});
 	}
 
@@ -428,7 +432,7 @@ export class Queue {
 		const resp = await this.#client.cpClient.queueLen({
 			queueId: this.queueId,
 			partitionKey: Queue.#validatePartitionKey(params.partition),
-			total: params.total,
+			...(params.total !== undefined && { total: params.total }),
 		});
 		return resp.len;
 	}

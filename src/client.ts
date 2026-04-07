@@ -245,7 +245,7 @@ export class ModalClient {
 					return yield* call.next(call.request, {
 						...restOptions,
 						metadata,
-						signal,
+						...(signal !== undefined && { signal }),
 					});
 				} catch (err) {
 					// Immediately propagate non-retryable situations.
@@ -475,7 +475,9 @@ export function initializeClient(options: ClientOptions) {
 	defaultClientOptions = {
 		tokenId: options.tokenId,
 		tokenSecret: options.tokenSecret,
-		environment: options.environment,
+		...(options.environment !== undefined && {
+			environment: options.environment,
+		}),
 	};
 	defaultClient = new ModalClient(defaultClientOptions);
 }

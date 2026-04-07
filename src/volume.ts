@@ -94,7 +94,9 @@ export class VolumeService {
 	async delete(name: string, params?: VolumeDeleteParams): Promise<void> {
 		try {
 			const volume = await this.fromName(name, {
-				environment: params?.environment,
+				...(params?.environment !== undefined && {
+					environment: params.environment,
+				}),
 				createIfMissing: false,
 			});
 			await this.#client.cpClient.volumeDelete({
@@ -134,9 +136,10 @@ export class Volume {
 		ephemeralHbManager?: EphemeralHeartbeatManager,
 	) {
 		this.volumeId = volumeId;
-		this.name = name;
+		if (name !== undefined) this.name = name;
 		this._readOnly = readOnly;
-		this.#ephemeralHbManager = ephemeralHbManager;
+		if (ephemeralHbManager !== undefined)
+			this.#ephemeralHbManager = ephemeralHbManager;
 	}
 
 	/**

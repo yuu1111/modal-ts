@@ -109,7 +109,9 @@ export class SecretService {
 	async delete(name: string, params?: SecretDeleteParams): Promise<void> {
 		try {
 			const secret = await this.fromName(name, {
-				environment: params?.environment,
+				...(params?.environment !== undefined && {
+					environment: params.environment,
+				}),
 			});
 			await this.#client.cpClient.secretDelete({
 				secretId: secret.secretId,
@@ -141,7 +143,7 @@ export class Secret {
 	/** @ignore */
 	constructor(secretId: string, name?: string) {
 		this.secretId = secretId;
-		this.name = name;
+		if (name !== undefined) this.name = name;
 	}
 
 	/**

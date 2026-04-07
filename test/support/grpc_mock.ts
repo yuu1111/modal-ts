@@ -72,7 +72,7 @@ export function createMockModalClients(): {
 }
 
 function rpcToClientMethodName(name: string): string {
-	return name.length ? name[0].toLowerCase() + name.slice(1) : name;
+	return name.length ? name[0]!.toLowerCase() + name.slice(1) : name;
 }
 
 function shortName(method: string): string {

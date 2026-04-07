@@ -188,13 +188,11 @@ export class Image {
 		this.#client = client;
 		this.#imageId = imageId;
 		this.#tag = tag;
-		this.#imageRegistryConfig = imageRegistryConfig;
+		if (imageRegistryConfig !== undefined)
+			this.#imageRegistryConfig = imageRegistryConfig;
 		this.#layers = layers || [
 			{
 				commands: [],
-				env: undefined,
-				secrets: undefined,
-				gpuConfig: undefined,
 				forceBuild: false,
 			},
 		];
@@ -264,10 +262,14 @@ export class Image {
 
 		const newLayer: Layer = {
 			commands: [...commands],
-			env: params?.env,
-			secrets: params?.secrets,
-			gpuConfig: params?.gpu ? parseGpuConfig(params.gpu) : undefined,
-			forceBuild: params?.forceBuild,
+			...(params?.env !== undefined && { env: params.env }),
+			...(params?.secrets !== undefined && { secrets: params.secrets }),
+			...(params?.gpu !== undefined && {
+				gpuConfig: parseGpuConfig(params.gpu),
+			}),
+			...(params?.forceBuild !== undefined && {
+				forceBuild: params.forceBuild,
+			}),
 		};
 
 		return new Image(this.#client, "", this.#tag, this.#imageRegistryConfig, [
@@ -292,7 +294,7 @@ export class Image {
 		let baseImageId: string | undefined;
 
 		for (let i = 0; i < this.#layers.length; i++) {
-			const layer = this.#layers[i];
+			const layer = this.#layers[i]!;
 
 			const mergedSecrets = await mergeEnvIntoSecrets(
 				this.#client,

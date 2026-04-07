@@ -79,23 +79,35 @@ export function getProfile(profileName?: string): Profile {
 			}
 		}
 	}
-	const profileData =
+	const profileData: Record<string, unknown> =
 		profileName && Object.hasOwn(config, profileName)
-			? config[profileName]
+			? (config[profileName] as Record<string, unknown>)
 			: {};
+
+	const tokenId =
+		process.env.MODAL_TOKEN_ID || (profileData.token_id as string | undefined);
+	const tokenSecret =
+		process.env.MODAL_TOKEN_SECRET ||
+		(profileData.token_secret as string | undefined);
+	const environment =
+		process.env.MODAL_ENVIRONMENT ||
+		(profileData.environment as string | undefined);
+	const imageBuilderVersion =
+		process.env.MODAL_IMAGE_BUILDER_VERSION ||
+		(profileData.imageBuilderVersion as string | undefined);
+	const logLevel =
+		process.env.MODAL_LOGLEVEL || (profileData.loglevel as string | undefined);
 
 	const profile: Partial<Profile> = {
 		serverUrl:
 			process.env.MODAL_SERVER_URL ||
-			profileData.server_url ||
+			(profileData.server_url as string | undefined) ||
 			"https://api.modal.com:443",
-		tokenId: process.env.MODAL_TOKEN_ID || profileData.token_id,
-		tokenSecret: process.env.MODAL_TOKEN_SECRET || profileData.token_secret,
-		environment: process.env.MODAL_ENVIRONMENT || profileData.environment,
-		imageBuilderVersion:
-			process.env.MODAL_IMAGE_BUILDER_VERSION ||
-			profileData.imageBuilderVersion,
-		logLevel: process.env.MODAL_LOGLEVEL || profileData.loglevel,
+		...(tokenId !== undefined && { tokenId }),
+		...(tokenSecret !== undefined && { tokenSecret }),
+		...(environment !== undefined && { environment }),
+		...(imageBuilderVersion !== undefined && { imageBuilderVersion }),
+		...(logLevel !== undefined && { logLevel }),
 	};
 	return profile as Profile; // safe to null-cast because of check above
 }

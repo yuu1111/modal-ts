@@ -23,6 +23,9 @@ const tunnels = await sb.tunnels();
 console.log("Waiting for server to start...");
 await new Promise((resolve) => setTimeout(resolve, 3000));
 const tunnel = tunnels[8000];
+if (!tunnel) {
+	throw new Error("No tunnel found on port 8000");
+}
 
 console.log("Tunnel information:");
 console.log("  URL:", tunnel.url);

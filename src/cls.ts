@@ -142,7 +142,7 @@ export class Cls {
 		this.#client = client;
 		this.#serviceFunctionId = serviceFunctionId;
 		this.#serviceFunctionMetadata = serviceFunctionMetadata;
-		this.#serviceOptions = options;
+		if (options !== undefined) this.#serviceOptions = options;
 	}
 
 	get #schema(): ClassParameterSpec[] {
@@ -196,7 +196,9 @@ export class Cls {
 	withConcurrency(params: ClsWithConcurrencyParams): Cls {
 		const merged = mergeServiceOptions(this.#serviceOptions, {
 			maxConcurrentInputs: params.maxInputs,
-			targetConcurrentInputs: params.targetInputs,
+			...(params.targetInputs !== undefined && {
+				targetConcurrentInputs: params.targetInputs,
+			}),
 		});
 		return new Cls(
 			this.#client,
@@ -229,7 +231,6 @@ export class Cls {
 		);
 		const mergedOptions = mergeServiceOptions(this.#serviceOptions, {
 			secrets: mergedSecrets,
-			env: undefined, // setting env to undefined just to clarify it's not needed anymore
 		});
 
 		const serializedParams = encodeParameterSet(this.#schema, parameters);
@@ -333,10 +334,10 @@ async function buildFunctionOptionsProto(
 		memoryMbMax !== undefined ||
 		gpuConfig
 			? {
-					milliCpu,
-					milliCpuMax,
-					memoryMb,
-					memoryMbMax,
+					...(milliCpu !== undefined && { milliCpu }),
+					...(milliCpuMax !== undefined && { milliCpuMax }),
+					...(memoryMb !== undefined && { memoryMb }),
+					...(memoryMbMax !== undefined && { memoryMbMax }),
 					gpuConfig,
 				}
 			: undefined;

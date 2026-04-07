@@ -122,10 +122,11 @@ export class Function_ {
 		functionHandleMetadata?: FunctionHandleMetadata,
 	) {
 		this.functionId = functionId;
-		this.methodName = methodName;
+		if (methodName !== undefined) this.methodName = methodName;
 
 		this.#client = client;
-		this.#handleMetadata = functionHandleMetadata;
+		if (functionHandleMetadata !== undefined)
+			this.#handleMetadata = functionHandleMetadata;
 	}
 
 	/**

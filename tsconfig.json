@@ -1,9 +1,6 @@
 {
   "extends": "@yuu1111/tsconfig",
   "compilerOptions": {
-    "exactOptionalPropertyTypes": false,
-    "verbatimModuleSyntax": false,
-    "noUncheckedIndexedAccess": false,
     "paths": {
       "modal": ["./src/index.ts"]
     }

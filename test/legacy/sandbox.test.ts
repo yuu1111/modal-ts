@@ -211,7 +211,7 @@ test("SandboxWithTunnels", async () => {
 	expect(Object.keys(tunnels)).toHaveLength(2);
 
 	// Test encrypted tunnel (port 8443)
-	const encryptedTunnel = tunnels[8443];
+	const encryptedTunnel = tunnels[8443]!;
 	expect(encryptedTunnel.host).toMatch(/\.modal\.host$/);
 	expect(encryptedTunnel.port).toBe(443);
 	expect(encryptedTunnel.url).toMatch(/^https:\/\//);
@@ -221,7 +221,7 @@ test("SandboxWithTunnels", async () => {
 	]);
 
 	// Test unencrypted tunnel (port 8080)
-	const unencryptedTunnel = tunnels[8080];
+	const unencryptedTunnel = tunnels[8080]!;
 	expect(unencryptedTunnel.unencryptedHost).toMatch(/\.modal\.host$/);
 	expect(typeof unencryptedTunnel.unencryptedPort).toBe("number");
 	expect(unencryptedTunnel.tcpSocket).toEqual([

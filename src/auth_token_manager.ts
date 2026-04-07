@@ -118,7 +118,7 @@ export class AuthTokenManager {
 				return 0;
 			}
 
-			let payload = parts[1];
+			let payload = parts[1]!;
 			while (payload.length % 4 !== 0) {
 				payload += "=";
 			}

@@ -101,8 +101,8 @@ class Reader {
 	eof() {
 		return this.pos >= this.buf.length;
 	}
-	byte() {
-		return this.buf[this.pos++];
+	byte(): number {
+		return this.buf[this.pos++]!;
 	}
 	take(n: number) {
 		const s = this.buf.subarray(this.pos, this.pos + n);

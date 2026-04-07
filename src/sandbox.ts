@@ -110,8 +110,8 @@ export class Probe {
 				"Probe must be created with Probe.withTcp(...) or Probe.withExec(...)",
 			);
 		}
-		this.#tcpPort = tcpPort;
-		this.#execArgv = execArgv;
+		if (tcpPort !== undefined) this.#tcpPort = tcpPort;
+		if (execArgv !== undefined) this.#execArgv = execArgv;
 		this.#intervalMs = intervalMs;
 	}
 
@@ -468,17 +468,16 @@ export async function buildSandboxCreateRequestProto(
 			imageId,
 			timeoutSecs:
 				params.timeoutMs !== undefined ? params.timeoutMs / 1000 : 300,
-			idleTimeoutSecs:
-				params.idleTimeoutMs !== undefined
-					? params.idleTimeoutMs / 1000
-					: undefined,
-			workdir: params.workdir ?? undefined,
+			...(params.idleTimeoutMs !== undefined && {
+				idleTimeoutSecs: params.idleTimeoutMs / 1000,
+			}),
+			...(params.workdir !== undefined && { workdir: params.workdir }),
 			networkAccess,
 			resources: Resources.create({
-				milliCpu,
-				milliCpuMax,
-				memoryMb,
-				memoryMbMax,
+				...(milliCpu !== undefined && { milliCpu }),
+				...(milliCpuMax !== undefined && { milliCpuMax }),
+				...(memoryMb !== undefined && { memoryMb }),
+				...(memoryMbMax !== undefined && { memoryMbMax }),
 				gpuConfig,
 			}),
 			volumeMounts,
@@ -489,10 +488,14 @@ export async function buildSandboxCreateRequestProto(
 			cloudProviderStr: params.cloud ?? "",
 			schedulerPlacement,
 			verbose: params.verbose ?? false,
-			proxyId: params.proxy?.proxyId,
-			name: params.name,
+			...(params.proxy?.proxyId !== undefined && {
+				proxyId: params.proxy.proxyId,
+			}),
+			...(params.name !== undefined && { name: params.name }),
 			experimentalOptions: protoExperimentalOptions,
-			customDomain: params.customDomain,
+			...(params.customDomain !== undefined && {
+				customDomain: params.customDomain,
+			}),
 		},
 	});
 }
@@ -527,10 +530,10 @@ export class SandboxService {
 			params.env,
 			params.secrets,
 		);
+		const { env: _env, ...restParams } = params;
 		const mergedParams = {
-			...params,
+			...restParams,
 			secrets: mergedSecrets,
-			env: undefined, // setting env to undefined just to clarify it's not needed anymore
 		};
 
 		const createReq = await buildSandboxCreateRequestProto(
@@ -625,8 +628,8 @@ export class SandboxService {
 		while (true) {
 			try {
 				const resp = await this.#client.cpClient.sandboxList({
-					appId: params.appId,
-					beforeTimestamp,
+					...(params.appId !== undefined && { appId: params.appId }),
+					...(beforeTimestamp !== undefined && { beforeTimestamp }),
 					environmentName: env,
 					includeFinished: false,
 					tags: tagsList,
@@ -637,7 +640,7 @@ export class SandboxService {
 				for (const info of resp.sandboxes) {
 					yield new Sandbox(this.#client, info.id);
 				}
-				beforeTimestamp = resp.sandboxes[resp.sandboxes.length - 1].createdAt;
+				beforeTimestamp = resp.sandboxes[resp.sandboxes.length - 1]!.createdAt;
 			} catch (err) {
 				if (
 					err instanceof ClientError &&
@@ -958,7 +961,7 @@ export class Sandbox {
 		environment?: string,
 	): Promise<Sandbox> {
 		return getDefaultClient().sandboxes.fromName(appName, name, {
-			environment,
+			...(environment !== undefined && { environment }),
 		});
 	}
 
@@ -1006,10 +1009,10 @@ export class Sandbox {
 			params?.env,
 			params?.secrets,
 		);
-		const mergedParams = {
-			...params,
+		const { env: _env, ...restExecParams } = params ?? {};
+		const mergedParams: SandboxExecParams = {
+			...restExecParams,
 			secrets: mergedSecrets,
-			env: undefined, // setting env to undefined just to clarify it's not needed anymore
 		};
 
 		const commandRouterClient =
@@ -1035,7 +1038,7 @@ export class Sandbox {
 			command,
 		);
 
-		const deadline = mergedParams?.timeoutMs
+		const deadline = mergedParams.timeoutMs
 			? Date.now() + mergedParams.timeoutMs
 			: null;
 
@@ -1139,7 +1142,9 @@ export class Sandbox {
 		this.#ensureAttached();
 		const resp = await this.#client.cpClient.sandboxCreateConnectToken({
 			sandboxId: this.sandboxId,
-			userMetadata: params?.userMetadata,
+			...(params?.userMetadata !== undefined && {
+				userMetadata: params.userMetadata,
+			}),
 		});
 		return { url: resp.url, token: resp.token };
 	}
@@ -1499,7 +1504,9 @@ async function* outputStreamSb(
 					timeout: 55,
 					lastEntryId: lastIndex,
 				},
-				{ signal },
+				{
+					...(signal !== undefined && { signal }),
+				},
 			);
 			for await (const batch of outputIterator) {
 				// Successful read - reset backoff counters.

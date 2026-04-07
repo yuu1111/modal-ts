@@ -5,8 +5,8 @@ import packageJson from "./package.json" with { type: "json" };
 export default defineConfig({
 	test: {
 		maxConcurrency: 10,
-		slowTestThreshold: 5_000,
-		testTimeout: 20_000,
+		slowTestThreshold: 5000,
+		testTimeout: 20000,
 		reporters: ["verbose"],
 	},
 	resolve: {

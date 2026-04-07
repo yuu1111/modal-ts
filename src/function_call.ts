@@ -49,7 +49,7 @@ export class FunctionCall {
 
 	/** @ignore */
 	constructor(client: ModalClient | undefined, functionCallId: string) {
-		this.#client = client;
+		if (client !== undefined) this.#client = client;
 		this.functionCallId = functionCallId;
 	}
 
@@ -77,7 +77,9 @@ export class FunctionCall {
 
 		await cpClient.functionCallCancel({
 			functionCallId: this.functionCallId,
-			terminateContainers: params.terminateContainers,
+			...(params.terminateContainers !== undefined && {
+				terminateContainers: params.terminateContainers,
+			}),
 		});
 	}
 }

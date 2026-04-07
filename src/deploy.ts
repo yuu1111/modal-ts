@@ -198,11 +198,15 @@ export async function deployApp(
 			const result = await createFunctionInternal(cpClient, appId, {
 				functionName: `${cls.className}.${methodName}`,
 				moduleName: cls.moduleName,
-				imageId: cls.imageId,
-				mountIds: cls.mountIds,
-				secretIds: cls.secretIds,
-				minContainers: cls.minContainers,
-				experimentalOptions: cls.experimentalOptions,
+				...(cls.imageId !== undefined && { imageId: cls.imageId }),
+				...(cls.mountIds !== undefined && { mountIds: cls.mountIds }),
+				...(cls.secretIds !== undefined && { secretIds: cls.secretIds }),
+				...(cls.minContainers !== undefined && {
+					minContainers: cls.minContainers,
+				}),
+				...(cls.experimentalOptions !== undefined && {
+					experimentalOptions: cls.experimentalOptions,
+				}),
 				isMethod: true,
 			});
 

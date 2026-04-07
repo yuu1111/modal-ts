@@ -121,12 +121,13 @@ export class CloudBucketMount {
 	) {
 		if (bucketType !== undefined) {
 			this.bucketName = bucketName;
-			this.secret = secretOrParams as Secret | undefined;
+			if (secretOrParams !== undefined) this.secret = secretOrParams as Secret;
 			this.readOnly = readOnly!;
 			this.requesterPays = requesterPays!;
-			this.bucketEndpointUrl = bucketEndpointUrl;
-			this.keyPrefix = keyPrefix;
-			this.oidcAuthRoleArn = oidcAuthRoleArn;
+			if (bucketEndpointUrl !== undefined)
+				this.bucketEndpointUrl = bucketEndpointUrl;
+			if (keyPrefix !== undefined) this.keyPrefix = keyPrefix;
+			if (oidcAuthRoleArn !== undefined) this.oidcAuthRoleArn = oidcAuthRoleArn;
 			this.#bucketType = bucketType;
 		} else {
 			const params =

@@ -85,7 +85,7 @@ export function parseGpuConfig(gpu: string | undefined): GPUConfig {
 	let count = 1;
 
 	if (gpu.includes(":")) {
-		const [type, countStr] = gpu.split(":", 2);
+		const [type, countStr] = gpu.split(":", 2) as [string, string];
 		gpuType = type;
 		count = parseInt(countStr, 10);
 		if (Number.isNaN(count) || count < 1) {
@@ -109,7 +109,7 @@ export class App {
 	/** @ignore */
 	constructor(appId: string, name?: string) {
 		this.appId = appId;
-		this.name = name;
+		if (name !== undefined) this.name = name;
 	}
 
 	/**
