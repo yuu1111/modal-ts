@@ -179,7 +179,11 @@ describe("SandboxGetLogs lazy and retry behavior", () => {
 		reader.releaseLock();
 
 		expect(callTimes.length).toBeGreaterThanOrEqual(2);
-		const delta = callTimes[1]! - callTimes[0]!;
+		const t0 = callTimes[0];
+		const t1 = callTimes[1];
+		if (t0 === undefined || t1 === undefined)
+			throw new Error("Expected at least 2 call timestamps");
+		const delta = t1 - t0;
 		// Expect at least ~10ms backoff; keep upper bound generous for CI variance
 		expect(delta).toBeGreaterThanOrEqual(8);
 		expect(delta).toBeLessThan(500);
@@ -231,7 +235,11 @@ describe("SandboxGetLogs lazy and retry behavior", () => {
 
 		// We expect at least 4 invocations
 		expect(callTimes.length).toBeGreaterThanOrEqual(4);
-		const deltaAfterReset = callTimes[3]! - callTimes[2]!;
+		const t2 = callTimes[2];
+		const t3 = callTimes[3];
+		if (t2 === undefined || t3 === undefined)
+			throw new Error("Expected at least 4 call timestamps");
+		const deltaAfterReset = t3 - t2;
 		expect(deltaAfterReset).toBeGreaterThanOrEqual(8);
 		expect(deltaAfterReset).toBeLessThan(500);
 	});

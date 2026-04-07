@@ -75,7 +75,7 @@ export class ControlPlaneInvocation implements Invocation {
 			functionMapResponse.functionCallId,
 			input,
 			functionMapResponse.functionCallJwt,
-			functionMapResponse.pipelinedInputs[0]!.inputJwt,
+			functionMapResponse.pipelinedInputs[0]?.inputJwt,
 		);
 	}
 
@@ -111,8 +111,12 @@ export class ControlPlaneInvocation implements Invocation {
 			throw new Error("Cannot retry Function invocation - input missing");
 		}
 
+		if (!this.inputJwt) {
+			throw new Error("Cannot retry Function invocation - inputJwt missing");
+		}
+
 		const retryItem: FunctionRetryInputsItem = {
-			inputJwt: this.inputJwt!,
+			inputJwt: this.inputJwt,
 			input: this.input,
 			retryCount,
 		};
@@ -123,7 +127,13 @@ export class ControlPlaneInvocation implements Invocation {
 			}),
 			inputs: [retryItem],
 		});
-		this.inputJwt = functionRetryResponse.inputJwts[0]!;
+		const newInputJwt = functionRetryResponse.inputJwts[0];
+		if (!newInputJwt) {
+			throw new Error(
+				"Server returned empty inputJwt from functionRetryInputs",
+			);
+		}
+		this.inputJwt = newInputJwt;
 	}
 }
 

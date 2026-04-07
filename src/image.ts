@@ -294,7 +294,8 @@ export class Image {
 		let baseImageId: string | undefined;
 
 		for (let i = 0; i < this.#layers.length; i++) {
-			const layer = this.#layers[i]!;
+			const layer = this.#layers[i];
+			if (!layer) throw new Error(`Expected layer at index ${i}`);
 
 			const mergedSecrets = await mergeEnvIntoSecrets(
 				this.#client,
@@ -313,7 +314,9 @@ export class Image {
 				baseImages = [];
 			} else {
 				dockerfileCommands = ["FROM base", ...layer.commands];
-				baseImages = [{ dockerTag: "base", imageId: baseImageId! }];
+				if (!baseImageId)
+					throw new Error("Expected baseImageId from previous layer");
+				baseImages = [{ dockerTag: "base", imageId: baseImageId }];
 			}
 
 			const resp = await this.#client.cpClient.imageGetOrCreate({
@@ -385,7 +388,9 @@ export class Image {
 			// the new image is the base for the next layer
 			baseImageId = resp.imageId;
 		}
-		this.#imageId = baseImageId!;
+		if (!baseImageId)
+			throw new Error("No image ID produced after building layers");
+		this.#imageId = baseImageId;
 		this.#client.logger.debug("Image build completed", "image_id", baseImageId);
 		return this;
 	}

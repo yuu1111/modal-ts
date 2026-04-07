@@ -3,7 +3,7 @@
 import { expect, test } from "vitest";
 
 import { ClassParameterSpec, ParameterType } from "../proto/modal_proto/api";
-import { encodeParameterSet } from "./cls";
+import { encodeParameterSet } from "../src/cls";
 
 // Reproduce serialization test from the Python SDK.
 // https://github.com/modal-labs/modal-client/blob/4c62d67ee2816146a2a5d42581f6fe7349fa1bf6/test/serialization_test.py
@@ -28,7 +28,12 @@ test("ParameterSerialization", () => {
 	expect(serializedParams).toEqual(byteData);
 
 	// Reverse the order of map keys and make sure it's deterministic.
-	const reversedSchema = [schema[1]!, schema[0]!];
+	const first = schema[0];
+	const second = schema[1];
+	if (!first || !second) {
+		throw new Error("Expected schema to have two elements");
+	}
+	const reversedSchema = [second, first];
 	const reversedSerializedParams = encodeParameterSet(reversedSchema, values);
 	expect(reversedSerializedParams).toEqual(byteData);
 

@@ -640,7 +640,7 @@ export class SandboxService {
 				for (const info of resp.sandboxes) {
 					yield new Sandbox(this.#client, info.id);
 				}
-				beforeTimestamp = resp.sandboxes[resp.sandboxes.length - 1]!.createdAt;
+				beforeTimestamp = resp.sandboxes[resp.sandboxes.length - 1]?.createdAt;
 			} catch (err) {
 				if (
 					err instanceof ClientError &&
@@ -1223,7 +1223,9 @@ export class Sandbox {
 				timeout: 10,
 			});
 			if (resp.result) {
-				const returnCode = Sandbox.#getReturnCode(resp.result)!;
+				const returnCode = Sandbox.#getReturnCode(resp.result);
+				if (returnCode == null)
+					throw new Error("Sandbox result missing return code");
 				this.#client.logger.debug(
 					"Sandbox wait completed",
 					"sandbox_id",

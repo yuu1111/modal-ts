@@ -30,7 +30,9 @@ export class MockGrpcClient {
 				`Unexpected gRPC call: ${methodKey} with request ${formatValue(actualRequest)}`,
 			);
 		}
-		const handler = queue.shift()!;
+		const handler = queue.shift();
+		if (!handler)
+			throw new Error(`No handler remaining for gRPC call: ${methodKey}`);
 		const response = await handler(actualRequest as Record<string, unknown>);
 		return structuredClone(response);
 	};
@@ -73,7 +75,7 @@ export function createMockModalClients(): {
 }
 
 function rpcToClientMethodName(name: string): string {
-	return name.length ? name[0]!.toLowerCase() + name.slice(1) : name;
+	return name.length ? name[0]?.toLowerCase() + name.slice(1) : name;
 }
 
 function shortName(method: string): string {

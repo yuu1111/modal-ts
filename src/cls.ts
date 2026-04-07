@@ -78,10 +78,16 @@ export class ClsService {
 				"cls_name",
 				name,
 			);
+			const handleMetadata = serviceFunction.handleMetadata;
+			if (!handleMetadata) {
+				throw new Error(
+					`Missing handle metadata for class '${appName}/${name}'`,
+				);
+			}
 			return new Cls(
 				this.#client,
 				serviceFunction.functionId,
-				serviceFunction.handleMetadata!,
+				handleMetadata,
 				undefined,
 			);
 		} catch (err) {

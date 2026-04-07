@@ -65,7 +65,7 @@ test("mergeEnvIntoSecrets merges env with existing secrets", async () => {
 
 	expect(result).toHaveLength(2);
 	expect(result[0]).toBe(existingSecret);
-	expect(result[1]!.secretId).toMatch(/^st-/);
+	expect(result[1]?.secretId).toMatch(/^st-/);
 });
 
 test("mergeEnvIntoSecrets with only env parameter", async () => {
@@ -74,7 +74,7 @@ test("mergeEnvIntoSecrets with only env parameter", async () => {
 	const result = await mergeEnvIntoSecrets(tc, env);
 
 	expect(result).toHaveLength(1);
-	expect(result[0]!.secretId).toMatch(/^st-/);
+	expect(result[0]?.secretId).toMatch(/^st-/);
 });
 
 test("mergeEnvIntoSecrets with empty env object returns existing secrets", async () => {

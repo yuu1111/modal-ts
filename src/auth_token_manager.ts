@@ -129,7 +129,11 @@ export class AuthTokenManager {
 				return 0;
 			}
 
-			let payload = parts[1]!;
+			const rawPayload = parts[1];
+			if (rawPayload === undefined) {
+				return 0;
+			}
+			let payload = rawPayload;
 			while (payload.length % 4 !== 0) {
 				payload += "=";
 			}

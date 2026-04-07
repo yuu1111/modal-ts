@@ -122,8 +122,8 @@ export class CloudBucketMount {
 		if (bucketType !== undefined) {
 			this.bucketName = bucketName;
 			if (secretOrParams !== undefined) this.secret = secretOrParams as Secret;
-			this.readOnly = readOnly!;
-			this.requesterPays = requesterPays!;
+			this.readOnly = readOnly ?? false;
+			this.requesterPays = requesterPays ?? false;
 			if (bucketEndpointUrl !== undefined)
 				this.bucketEndpointUrl = bucketEndpointUrl;
 			if (keyPrefix !== undefined) this.keyPrefix = keyPrefix;

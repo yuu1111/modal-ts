@@ -84,7 +84,10 @@ export async function createMount(
 			ObjectCreationType.OBJECT_CREATION_TYPE_ANONYMOUS_OWNED_BY_APP,
 	});
 
-	return resp.mountId!;
+	if (!resp.mountId) {
+		throw new Error("Server returned empty mountId");
+	}
+	return resp.mountId;
 }
 
 export async function getOrCreateImage(
@@ -96,7 +99,10 @@ export async function getOrCreateImage(
 		appId,
 		image: { dockerfileCommands },
 	});
-	return resp.imageId!;
+	if (!resp.imageId) {
+		throw new Error("Server returned empty imageId");
+	}
+	return resp.imageId;
 }
 
 export async function createSecret(
@@ -111,7 +117,10 @@ export async function createSecret(
 			ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_OVERWRITE_IF_EXISTS,
 		envDict,
 	});
-	return resp.secretId!;
+	if (!resp.secretId) {
+		throw new Error("Server returned empty secretId");
+	}
+	return resp.secretId;
 }
 
 const DEFAULT_DATA_FORMATS = [
@@ -157,8 +166,11 @@ async function createFunctionInternal(
 		},
 	});
 
+	if (!createResp.functionId) {
+		throw new Error("Server returned empty functionId from functionCreate");
+	}
 	return {
-		functionId: createResp.functionId!,
+		functionId: createResp.functionId,
 		definitionId: createResp.handleMetadata?.definitionId,
 		handleMetadata: createResp.handleMetadata,
 	};
@@ -177,7 +189,10 @@ export async function deployApp(
 		objectCreationType:
 			ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_IF_MISSING,
 	});
-	const appId = appResp.appId!;
+	if (!appResp.appId) {
+		throw new Error("Server returned empty appId from appGetOrCreate");
+	}
+	const appId = appResp.appId;
 
 	const functionIds: Record<string, string> = {};
 	const classIds: Record<string, string> = {};
@@ -227,7 +242,12 @@ export async function deployApp(
 			onlyClassFunction: true,
 		});
 
-		classIds[cls.className] = classResp.classId!;
+		if (!classResp.classId) {
+			throw new Error(
+				`Server returned empty classId for class '${cls.className}'`,
+			);
+		}
+		classIds[cls.className] = classResp.classId;
 	}
 
 	await cpClient.appPublish({

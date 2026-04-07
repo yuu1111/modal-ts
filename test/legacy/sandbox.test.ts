@@ -211,7 +211,8 @@ test("SandboxWithTunnels", async () => {
 	expect(Object.keys(tunnels)).toHaveLength(2);
 
 	// Test encrypted tunnel (port 8443)
-	const encryptedTunnel = tunnels[8443]!;
+	const encryptedTunnel = tunnels[8443];
+	if (!encryptedTunnel) throw new Error("Expected tunnel on port 8443");
 	expect(encryptedTunnel.host).toMatch(/\.modal\.host$/);
 	expect(encryptedTunnel.port).toBe(443);
 	expect(encryptedTunnel.url).toMatch(/^https:\/\//);
@@ -221,7 +222,8 @@ test("SandboxWithTunnels", async () => {
 	]);
 
 	// Test unencrypted tunnel (port 8080)
-	const unencryptedTunnel = tunnels[8080]!;
+	const unencryptedTunnel = tunnels[8080];
+	if (!unencryptedTunnel) throw new Error("Expected tunnel on port 8080");
 	expect(unencryptedTunnel.unencryptedHost).toMatch(/\.modal\.host$/);
 	expect(typeof unencryptedTunnel.unencryptedPort).toBe("number");
 	expect(unencryptedTunnel.tcpSocket).toEqual([
@@ -505,7 +507,9 @@ test("NamedSandboxNotFound", async () => {
 test("buildSandboxCreateRequestProto without PTY", async () => {
 	const req = await buildSandboxCreateRequestProto("app-123", "img-456");
 
-	const definition = req.definition!;
+	const definition = req.definition;
+	if (!definition)
+		throw new Error("Expected definition in sandbox create request");
 	expect(definition.ptyInfo).toBeUndefined();
 });
 
@@ -514,8 +518,11 @@ test("buildSandboxCreateRequestProto with PTY", async () => {
 		pty: true,
 	});
 
-	const definition = req.definition!;
-	const ptyInfo = definition.ptyInfo!;
+	const definition = req.definition;
+	if (!definition)
+		throw new Error("Expected definition in sandbox create request");
+	const ptyInfo = definition.ptyInfo;
+	if (!ptyInfo) throw new Error("Expected ptyInfo in sandbox definition");
 	expect(ptyInfo.enabled).toBe(true);
 	expect(ptyInfo.winszRows).toBe(24);
 	expect(ptyInfo.winszCols).toBe(80);

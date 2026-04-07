@@ -4,7 +4,7 @@ import {
 	DefaultLogger,
 	type Logger,
 	parseLogLevel,
-} from "./logger";
+} from "../src/logger";
 
 test("parseLogLevel", () => {
 	expect(parseLogLevel("debug")).toBe("debug");

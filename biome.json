@@ -13,8 +13,7 @@
 	"linter": {
 		"rules": {
 			"style": {
-				"useShorthandAssign": "error",
-				"noNonNullAssertion": "off"
+				"useShorthandAssign": "error"
 			},
 			"suspicious": {
 				"noConsole": "error"

@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { build } from "esbuild";
 
-const root = resolve(import.meta.dirname!, "..");
+const root = resolve(import.meta.dirname ?? process.cwd(), "..");
 const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf-8"));
 
 const shared = {

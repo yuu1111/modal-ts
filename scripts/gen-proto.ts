@@ -9,7 +9,7 @@ import {
 import { platform } from "node:os";
 import { join, resolve } from "node:path";
 
-const root = resolve(import.meta.dirname!, "..");
+const root = resolve(import.meta.dirname ?? process.cwd(), "..");
 const isWindows = platform() === "win32";
 const ext = isWindows ? ".exe" : "";
 

@@ -102,7 +102,11 @@ class Reader {
 		return this.pos >= this.buf.length;
 	}
 	byte(): number {
-		return this.buf[this.pos++]!;
+		const value = this.buf[this.pos++];
+		if (value === undefined) {
+			throw new PickleError("Unexpected end of pickle data");
+		}
+		return value;
 	}
 	take(n: number) {
 		const s = this.buf.subarray(this.pos, this.pos + n);

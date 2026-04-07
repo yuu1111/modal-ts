@@ -49,7 +49,10 @@ export function parseJwtExpiration(
 		if (parts.length !== 3) {
 			return null;
 		}
-		const payloadB64 = parts[1]!;
+		const payloadB64 = parts[1];
+		if (payloadB64 === undefined) {
+			return null;
+		}
 		const padding = "=".repeat((4 - (payloadB64.length % 4)) % 4);
 		const payloadJson = Buffer.from(payloadB64 + padding, "base64").toString(
 			"utf8",
