@@ -44,6 +44,7 @@ import {
 	TimeoutError,
 } from "./errors";
 import { Image } from "./image";
+// biome-ignore lint/suspicious/noShadowRestrictedNames: SDK type name
 import type { Proxy } from "./proxy";
 import {
 	runFilesystemExec,
@@ -267,7 +268,7 @@ export type SandboxCreateParams = {
 	name?: string;
 
 	/** Optional experimental options. */
-	experimentalOptions?: Record<string, any>;
+	experimentalOptions?: Record<string, unknown>;
 
 	/** If set, connections to this Sandbox will be subdomains of this domain rather than the default.
 	 * This requires prior manual setup by Modal and is only available for Enterprise customers.
@@ -541,15 +542,14 @@ export class SandboxService {
 			image.imageId,
 			mergedParams,
 		);
-		let createResp;
-		try {
-			createResp = await this.#client.cpClient.sandboxCreate(createReq);
-		} catch (err) {
-			if (err instanceof ClientError && err.code === Status.ALREADY_EXISTS) {
-				throw new AlreadyExistsError(err.details || err.message);
-			}
-			throw err;
-		}
+		const createResp = await this.#client.cpClient
+			.sandboxCreate(createReq)
+			.catch((err) => {
+				if (err instanceof ClientError && err.code === Status.ALREADY_EXISTS) {
+					throw new AlreadyExistsError(err.details || err.message);
+				}
+				throw err;
+			});
 
 		this.#client.logger.debug(
 			"Created Sandbox",
@@ -877,7 +877,9 @@ export class Sandbox {
 				() => this.#stdoutAbort?.abort(),
 			);
 			this.#stdout = toModalReadStream(
-				bytesStream.pipeThrough(new TextDecoderStream() as any),
+				bytesStream.pipeThrough(
+					new TextDecoderStream() as TransformStream<Uint8Array, string>,
+				),
 			);
 		}
 		return this.#stdout;
@@ -896,7 +898,9 @@ export class Sandbox {
 				() => this.#stderrAbort?.abort(),
 			);
 			this.#stderr = toModalReadStream(
-				bytesStream.pipeThrough(new TextDecoderStream() as any),
+				bytesStream.pipeThrough(
+					new TextDecoderStream() as TransformStream<Uint8Array, string>,
+				),
 			);
 		}
 		return this.#stderr;
@@ -1182,9 +1186,11 @@ export class Sandbox {
 		}
 	}
 
-	async terminate(): Promise<void>;
+	async terminate(): Promise<undefined>;
 	async terminate(params: { wait: true }): Promise<number>;
-	async terminate(params?: SandboxTerminateParams): Promise<number | void> {
+	async terminate(
+		params?: SandboxTerminateParams,
+	): Promise<number | undefined> {
 		this.#ensureAttached();
 		await this.#client.cpClient.sandboxTerminate({ sandboxId: this.sandboxId });
 
@@ -1397,7 +1403,9 @@ export class Sandbox {
 	}
 }
 
-export class ContainerProcess<R extends string | Uint8Array = any> {
+export class ContainerProcess<
+	R extends string | Uint8Array = string | Uint8Array,
+> {
 	stdin: ModalWriteStream<R>;
 	stdout: ModalReadStream<R>;
 	stderr: ModalReadStream<R>;
@@ -1456,10 +1464,14 @@ export class ContainerProcess<R extends string | Uint8Array = any> {
 
 		if (mode === "text") {
 			this.stdout = toModalReadStream(
-				stdoutStream.pipeThrough(new TextDecoderStream() as any),
+				stdoutStream.pipeThrough(
+					new TextDecoderStream() as TransformStream<Uint8Array, string>,
+				),
 			) as ModalReadStream<R>;
 			this.stderr = toModalReadStream(
-				stderrStream.pipeThrough(new TextDecoderStream() as any),
+				stderrStream.pipeThrough(
+					new TextDecoderStream() as TransformStream<Uint8Array, string>,
+				),
 			) as ModalReadStream<R>;
 		} else {
 			this.stdout = toModalReadStream(stdoutStream) as ModalReadStream<R>;

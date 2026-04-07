@@ -1,6 +1,6 @@
 export const ephemeralObjectHeartbeatSleep = 300_000; // 300 seconds
 
-export type HeartbeatFunction = () => Promise<any>;
+export type HeartbeatFunction = () => Promise<unknown>;
 
 export class EphemeralHeartbeatManager {
 	private readonly heartbeatFn: HeartbeatFunction;

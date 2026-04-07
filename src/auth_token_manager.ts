@@ -1,8 +1,19 @@
 import type { Logger } from "./logger";
 
-// Start refreshing this many seconds before the token expires
+/**
+ * @description Minimal interface for the gRPC client used by AuthTokenManager
+ */
+export interface AuthClient {
+	authTokenGet(request: Record<string, never>): Promise<{ token?: string }>;
+}
+
+/**
+ * @description Start refreshing this many seconds before the token expires
+ */
 export const REFRESH_WINDOW = 5 * 60;
-// If the token doesn't have an expiry field, default to current time plus this value (not expected).
+/**
+ * @description If the token doesn't have an expiry field, default to current time plus this value (not expected).
+ */
 export const DEFAULT_EXPIRY_OFFSET = 20 * 60;
 
 /**
@@ -19,13 +30,13 @@ export const DEFAULT_EXPIRY_OFFSET = 20 * 60;
  *     old, still-valid token.
  */
 export class AuthTokenManager {
-	private client: any;
+	private client: AuthClient;
 	private logger: Logger;
 	private currentToken: string = "";
 	private tokenExpiry: number = 0;
 	private refreshPromise: Promise<void> | null = null;
 
-	constructor(client: any, logger: Logger) {
+	constructor(client: AuthClient, logger: Logger) {
 		this.client = client;
 		this.logger = logger;
 	}
@@ -124,8 +135,8 @@ export class AuthTokenManager {
 			}
 
 			const decoded = atob(payload);
-			const claims = JSON.parse(decoded);
-			return claims.exp || 0;
+			const claims: Record<string, unknown> = JSON.parse(decoded);
+			return typeof claims.exp === "number" ? claims.exp : 0;
 		} catch {
 			return 0;
 		}

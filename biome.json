@@ -17,15 +17,7 @@
 				"noNonNullAssertion": "off"
 			},
 			"suspicious": {
-				"noConsole": "error",
-				"noExplicitAny": "off",
-				"noImplicitAnyLet": "off",
-				"noShadowRestrictedNames": "off",
-				"noConfusingVoidType": "off"
-			},
-			"correctness": {
-				"noConstructorReturn": "off",
-				"noUnsafeFinally": "off"
+				"noConsole": "error"
 			},
 			"performance": {
 				"noBarrelFile": "off"
@@ -48,8 +40,7 @@
 			"linter": {
 				"rules": {
 					"suspicious": {
-						"noTemplateCurlyInString": "off",
-						"noNonNullAssertedOptionalChain": "off"
+						"noTemplateCurlyInString": "off"
 					}
 				}
 			}

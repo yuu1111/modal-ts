@@ -44,6 +44,7 @@ export type ProxyFromNameParams = {
 };
 
 /** Proxy objects give your Modal containers a static outbound IP address. */
+// biome-ignore lint/suspicious/noShadowRestrictedNames: Public API name
 export class Proxy {
 	readonly proxyId: string;
 

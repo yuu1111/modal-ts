@@ -144,7 +144,7 @@ class Reader {
 // ─── Encoder ────────────────────────────────────────────────
 export type Protocol = 3 | 4 | 5;
 
-function encodeValue(val: any, w: Writer, proto: Protocol) {
+function encodeValue(val: unknown, w: Writer, proto: Protocol) {
 	// null / bool ------------------------------------------------
 	if (val === null || val === undefined) {
 		w.byte(Op.NONE);
@@ -228,7 +228,7 @@ function encodeValue(val: any, w: Writer, proto: Protocol) {
 	if (typeof val === "object") {
 		w.byte(Op.EMPTY_DICT);
 		maybeMemoize(w, proto);
-		for (const [k, v] of Object.entries(val)) {
+		for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
 			encodeValue(k, w, proto);
 			encodeValue(v, w, proto);
 			w.byte(Op.SETITEM);
@@ -247,7 +247,7 @@ function maybeMemoize(w: Writer, proto: Protocol) {
 	} // super-simple strategy: memo every value >=4
 }
 
-export function dumps(obj: any, protocol: Protocol = 4): Uint8Array {
+export function dumps(obj: unknown, protocol: Protocol = 4): Uint8Array {
 	if (![3, 4, 5].includes(protocol))
 		throw new PickleError(
 			`The JS Modal SDK does not support pickle protocol version ${protocol}`,
@@ -266,7 +266,7 @@ export function dumps(obj: any, protocol: Protocol = 4): Uint8Array {
 }
 
 // ─── Decoder ────────────────────────────────────────────────
-export function loads(buf: Uint8Array): any {
+export function loads(buf: Uint8Array): unknown {
 	const r = new Reader(buf);
 	const op0 = r.byte();
 	if (op0 !== Op.PROTO) throw new PickleError("pickle missing PROTO header");
@@ -276,11 +276,11 @@ export function loads(buf: Uint8Array): any {
 			`The JS Modal SDK does not support pickle protocol version ${proto}`,
 		);
 
-	const stack: any[] = [];
-	const memo: any[] = [];
+	const stack: unknown[] = [];
+	const memo: unknown[] = [];
 	const tdec = new TextDecoder();
 
-	function push(v: any) {
+	function push(v: unknown) {
 		stack.push(v);
 	}
 	function pop() {
@@ -367,7 +367,7 @@ export function loads(buf: Uint8Array): any {
 				break;
 			case Op.APPEND: {
 				const v = pop();
-				const lst = pop();
+				const lst = pop() as unknown[];
 				lst.push(v);
 				push(lst);
 				break;
@@ -377,8 +377,8 @@ export function loads(buf: Uint8Array): any {
 				break;
 			case Op.SETITEM: {
 				const v = pop(),
-					k = pop(),
-					d = pop();
+					k = pop() as string,
+					d = pop() as Record<string, unknown>;
 				d[k] = v;
 				push(d);
 				break;
@@ -439,11 +439,12 @@ export function loads(buf: Uint8Array): any {
 				if (typeof d !== "object" || d === null || Array.isArray(d)) {
 					throw new PickleError("SETITEMS expects a dict below MARK");
 				}
+				const dict = d as Record<string, unknown>;
 				const items = stack.slice(markIndex + 1);
 				// Set key-value pairs (items come in pairs: key, value, key, value, ...)
 				for (let i = 0; i < items.length; i += 2) {
 					if (i + 1 < items.length) {
-						d[items[i]] = items[i + 1];
+						dict[items[i] as string] = items[i + 1];
 					}
 				}
 				stack.length = markIndex - 1; // Remove everything after the dict

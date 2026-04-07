@@ -1,5 +1,5 @@
 export function checkForRenamedParams(
-	params: any,
+	params: object | undefined | null,
 	renames: Record<string, string>,
 ): void {
 	if (!params) return;

@@ -183,23 +183,18 @@ export class TaskCommandRouterClientImpl {
 			"grpc.keepalive_permit_without_calls": 1,
 		};
 
-		let channel;
 		if (isLocalhost(profile)) {
 			logger.warn(
 				"Using insecure TLS (skip certificate verification) for task command router",
 			);
-			channel = createChannel(
-				serverUrl,
-				ChannelCredentials.createInsecure(),
-				channelConfig,
-			);
-		} else {
-			channel = createChannel(
-				serverUrl,
-				ChannelCredentials.createSsl(),
-				channelConfig,
-			);
 		}
+		const channel = createChannel(
+			serverUrl,
+			isLocalhost(profile)
+				? ChannelCredentials.createInsecure()
+				: ChannelCredentials.createSsl(),
+			channelConfig,
+		);
 
 		const client = new TaskCommandRouterClientImpl(
 			serverClient,

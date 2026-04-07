@@ -38,7 +38,7 @@ test("QueueSuite1", async () => {
 	await queue.putMany([1, 2, 3]);
 	const results: number[] = [];
 	for await (const item of queue.iterate()) {
-		results.push(item);
+		results.push(item as number);
 	}
 	expect(results).toEqual([1, 2, 3]);
 });
@@ -53,7 +53,7 @@ test("QueueSuite2", async () => {
 
 	const consumer = async (queue: Queue) => {
 		for await (const item of queue.iterate({ itemPollTimeoutMs: 1000 })) {
-			results.push(item);
+			results.push(item as number);
 		}
 	};
 
@@ -135,7 +135,7 @@ test("QueueDelete success", async () => {
 		queueId: "qu-test-123",
 	}));
 
-	mock.handleUnary("/QueueDelete", (req: any) => {
+	mock.handleUnary("/QueueDelete", (req) => {
 		expect(req.queueId).toBe("qu-test-123");
 		return {};
 	});

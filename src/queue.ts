@@ -284,7 +284,7 @@ export class Queue {
 		n: number,
 		partition?: string,
 		timeoutMs?: number,
-	): Promise<any[]> {
+	): Promise<unknown[]> {
 		const partitionKey = Queue.#validatePartitionKey(partition);
 
 		const startTime = Date.now();
@@ -321,7 +321,7 @@ export class Queue {
 	 * If `timeoutMs` is set, raises `QueueEmptyError` if no items are available
 	 * within that timeout in milliseconds.
 	 */
-	async get(params: QueueGetParams = {}): Promise<any | null> {
+	async get(params: QueueGetParams = {}): Promise<unknown | null> {
 		checkForRenamedParams(params, { timeout: "timeoutMs" });
 
 		const values = await this.#get(1, params.partition, params.timeoutMs);
@@ -335,14 +335,17 @@ export class Queue {
 	 * If `timeoutMs` is set, raises `QueueEmptyError` if no items are available
 	 * within that timeout in milliseconds.
 	 */
-	async getMany(n: number, params: QueueGetManyParams = {}): Promise<any[]> {
+	async getMany(
+		n: number,
+		params: QueueGetManyParams = {},
+	): Promise<unknown[]> {
 		checkForRenamedParams(params, { timeout: "timeoutMs" });
 
 		return await this.#get(n, params.partition, params.timeoutMs);
 	}
 
 	async #put(
-		values: any[],
+		values: unknown[],
 		timeoutMs?: number,
 		partition?: string,
 		partitionTtlMs?: number,
@@ -387,7 +390,7 @@ export class Queue {
 	 * provided `timeoutMs` is reached, or indefinitely if `timeoutMs` is not set.
 	 * Raises {@link QueueFullError} if the Queue is still full after the timeout.
 	 */
-	async put(v: any, params: QueuePutParams = {}): Promise<void> {
+	async put(v: unknown, params: QueuePutParams = {}): Promise<void> {
 		checkForRenamedParams(params, {
 			timeout: "timeoutMs",
 			partitionTtl: "partitionTtlMs",
@@ -408,7 +411,10 @@ export class Queue {
 	 * provided `timeoutMs` is reached, or indefinitely if `timeoutMs` is not set.
 	 * Raises {@link QueueFullError} if the Queue is still full after the timeout.
 	 */
-	async putMany(values: any[], params: QueuePutManyParams = {}): Promise<void> {
+	async putMany(
+		values: unknown[],
+		params: QueuePutManyParams = {},
+	): Promise<void> {
 		checkForRenamedParams(params, {
 			timeout: "timeoutMs",
 			partitionTtl: "partitionTtlMs",
@@ -440,12 +446,12 @@ export class Queue {
 	/** Iterate through items in a Queue without mutation. */
 	async *iterate(
 		params: QueueIterateParams = {},
-	): AsyncGenerator<any, void, unknown> {
+	): AsyncGenerator<unknown, void, unknown> {
 		checkForRenamedParams(params, { itemPollTimeout: "itemPollTimeoutMs" });
 
 		const { partition, itemPollTimeoutMs = 0 } = params;
 
-		let lastEntryId;
+		let lastEntryId: string | undefined;
 		const validatedPartitionKey = Queue.#validatePartitionKey(partition);
 		let fetchDeadline = Date.now() + itemPollTimeoutMs;
 

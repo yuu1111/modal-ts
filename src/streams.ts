@@ -10,7 +10,7 @@
  *
  * Background: https://developer.mozilla.org/en-US/docs/Web/API/Streams_API
  */
-export interface ModalReadStream<R = any> extends ReadableStream<R> {
+export interface ModalReadStream<R = unknown> extends ReadableStream<R> {
 	/** Read the entire stream as a string. */
 	readText(): Promise<string>;
 
@@ -30,7 +30,7 @@ export interface ModalReadStream<R = any> extends ReadableStream<R> {
  *
  * Background: https://developer.mozilla.org/en-US/docs/Web/API/Streams_API
  */
-export interface ModalWriteStream<R = any> extends WritableStream<R> {
+export interface ModalWriteStream<R = unknown> extends WritableStream<R> {
 	/** Write a string to the stream. Only if this is a text stream. */
 	writeText(text: string): Promise<void>;
 
@@ -38,15 +38,15 @@ export interface ModalWriteStream<R = any> extends WritableStream<R> {
 	writeBytes(bytes: Uint8Array): Promise<void>;
 }
 
-export function toModalReadStream<R extends string | Uint8Array = any>(
-	stream: ReadableStream<R>,
-): ModalReadStream<R> {
+export function toModalReadStream<
+	R extends string | Uint8Array = string | Uint8Array,
+>(stream: ReadableStream<R>): ModalReadStream<R> {
 	return Object.assign(stream, readMixin);
 }
 
-export function toModalWriteStream<R extends string | Uint8Array = any>(
-	stream: WritableStream<R>,
-): ModalWriteStream<R> {
+export function toModalWriteStream<
+	R extends string | Uint8Array = string | Uint8Array,
+>(stream: WritableStream<R>): ModalWriteStream<R> {
 	return Object.assign(stream, writeMixin);
 }
 

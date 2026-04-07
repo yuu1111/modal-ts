@@ -47,7 +47,7 @@ const decoder = new Decoder(decoderOptions);
  * @param value - The JavaScript value to encode
  * @returns CBOR-encoded bytes as a Buffer
  */
-export function cborEncode(value: any): Buffer {
+export function cborEncode(value: unknown): Buffer {
 	return encoder.encode(value);
 }
 
@@ -57,6 +57,6 @@ export function cborEncode(value: any): Buffer {
  * @param data - The CBOR-encoded bytes to decode
  * @returns The decoded JavaScript value
  */
-export function cborDecode(data: Buffer | Uint8Array): any {
+export function cborDecode(data: Buffer | Uint8Array): unknown {
 	return decoder.decode(data);
 }

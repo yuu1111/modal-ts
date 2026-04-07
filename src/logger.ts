@@ -9,10 +9,10 @@ const LOG_LEVELS: Record<LogLevel, number> = {
 };
 
 export interface Logger {
-	debug(message: string, ...args: any[]): void;
-	info(message: string, ...args: any[]): void;
-	warn(message: string, ...args: any[]): void;
-	error(message: string, ...args: any[]): void;
+	debug(message: string, ...args: unknown[]): void;
+	info(message: string, ...args: unknown[]): void;
+	warn(message: string, ...args: unknown[]): void;
+	error(message: string, ...args: unknown[]): void;
 }
 
 export function parseLogLevel(level: string): LogLevel {
@@ -43,22 +43,22 @@ export class DefaultLogger implements Logger {
 		this.levelValue = LOG_LEVELS[level];
 	}
 
-	debug(_message: string, ..._args: any[]): void {
+	debug(_message: string, ..._args: unknown[]): void {
 		if (this.levelValue <= LOG_LEVELS.debug) {
 		}
 	}
 
-	info(_message: string, ..._args: any[]): void {
+	info(_message: string, ..._args: unknown[]): void {
 		if (this.levelValue <= LOG_LEVELS.info) {
 		}
 	}
 
-	warn(_message: string, ..._args: any[]): void {
+	warn(_message: string, ..._args: unknown[]): void {
 		if (this.levelValue <= LOG_LEVELS.warn) {
 		}
 	}
 
-	error(_message: string, ..._args: any[]): void {
+	error(_message: string, ..._args: unknown[]): void {
 		if (this.levelValue <= LOG_LEVELS.error) {
 		}
 	}
@@ -74,25 +74,25 @@ class FilteredLogger implements Logger {
 		this.levelValue = LOG_LEVELS[level];
 	}
 
-	debug(message: string, ...args: any[]): void {
+	debug(message: string, ...args: unknown[]): void {
 		if (this.levelValue <= LOG_LEVELS.debug) {
 			this.logger.debug(message, ...args);
 		}
 	}
 
-	info(message: string, ...args: any[]): void {
+	info(message: string, ...args: unknown[]): void {
 		if (this.levelValue <= LOG_LEVELS.info) {
 			this.logger.info(message, ...args);
 		}
 	}
 
-	warn(message: string, ...args: any[]): void {
+	warn(message: string, ...args: unknown[]): void {
 		if (this.levelValue <= LOG_LEVELS.warn) {
 			this.logger.warn(message, ...args);
 		}
 	}
 
-	error(message: string, ...args: any[]): void {
+	error(message: string, ...args: unknown[]): void {
 		if (this.levelValue <= LOG_LEVELS.error) {
 			this.logger.error(message, ...args);
 		}

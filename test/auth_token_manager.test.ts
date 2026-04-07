@@ -1,7 +1,11 @@
 import jwt from "jsonwebtoken";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { AuthTokenManager, REFRESH_WINDOW } from "../src/auth_token_manager";
-import { ModalClient } from "../src/client";
+import {
+	type AuthClient,
+	AuthTokenManager,
+	REFRESH_WINDOW,
+} from "../src/auth_token_manager";
+import { ModalClient, type ModalGrpcClient } from "../src/client";
 import { newLogger } from "../src/logger";
 
 class mockAuthClient {
@@ -31,7 +35,10 @@ describe("AuthTokenManager", () => {
 
 	beforeEach(() => {
 		mockClient = newMockAuthClient();
-		manager = new AuthTokenManager(mockClient as any, newLogger());
+		manager = new AuthTokenManager(
+			mockClient as unknown as AuthClient,
+			newLogger(),
+		);
 	});
 
 	test("TestAuthToken_DecodeJWT", async () => {
@@ -196,7 +203,7 @@ describe("ModalClient with AuthTokenManager", () => {
 	test("TestModalClient_CloseCleansUpAuthTokenManager", () => {
 		const mockCpClient = newMockAuthClient();
 		const client = new ModalClient({
-			cpClient: mockCpClient as any,
+			cpClient: mockCpClient as unknown as ModalGrpcClient,
 		});
 
 		client.close();
@@ -207,11 +214,11 @@ describe("ModalClient with AuthTokenManager", () => {
 		const mockCpClient2 = newMockAuthClient();
 
 		const client1 = new ModalClient({
-			cpClient: mockCpClient1 as any,
+			cpClient: mockCpClient1 as unknown as ModalGrpcClient,
 		});
 
 		const client2 = new ModalClient({
-			cpClient: mockCpClient2 as any,
+			cpClient: mockCpClient2 as unknown as ModalGrpcClient,
 		});
 
 		client1.close();

@@ -50,8 +50,8 @@ test("VolumeDelete success", async () => {
 		metadata: { name: "test-volume" },
 	}));
 
-	mock.handleUnary("/VolumeDelete", (req: any) => {
-		expect(req.volumeId).toBe("vo-test-123");
+	mock.handleUnary("/VolumeDelete", (req: unknown) => {
+		expect((req as Record<string, unknown>).volumeId).toBe("vo-test-123");
 		return {};
 	});
 

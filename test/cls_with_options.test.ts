@@ -14,19 +14,19 @@ const _mockFunctionProto = {
 test("Cls.withOptions stacking", async () => {
 	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
 
-	mock.handleUnary("FunctionGet", (_: any) => {
+	mock.handleUnary("FunctionGet", (_) => {
 		return _mockFunctionProto;
 	});
 
 	const cls = await mc.cls.fromName("libmodal-test-support", "EchoCls");
 
-	mock.handleUnary("FunctionBindParams", (req: any) => {
+	mock.handleUnary("FunctionBindParams", (req) => {
 		expect(req).toMatchObject({ functionId: "fid" });
-		const fo = req.functionOptions;
+		const fo = req.functionOptions as Record<string, unknown>;
 		expect(fo.timeoutSecs).toBe(60);
-		expect(fo.resources.milliCpu).toBe(250);
-		expect(fo.resources.memoryMb).toBe(256);
-		expect(fo.resources.gpuConfig).toBeDefined();
+		expect((fo.resources as Record<string, unknown>).milliCpu).toBe(250);
+		expect((fo.resources as Record<string, unknown>).memoryMb).toBe(256);
+		expect((fo.resources as Record<string, unknown>).gpuConfig).toBeDefined();
 		expect(fo.secretIds).toEqual(["sec-1"]);
 		expect(fo.replaceSecretIds).toBe(true);
 		expect(fo.replaceVolumeMounts).toBe(true);
@@ -58,15 +58,15 @@ test("Cls.withOptions stacking", async () => {
 test("Cls.withConcurrency/withConcurrency/withBatching chaining", async () => {
 	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
 
-	mock.handleUnary("FunctionGet", (_: any) => {
+	mock.handleUnary("FunctionGet", (_) => {
 		return _mockFunctionProto;
 	});
 
 	const cls = await mc.cls.fromName("libmodal-test-support", "EchoCls");
 
-	mock.handleUnary("FunctionBindParams", (req: any) => {
+	mock.handleUnary("FunctionBindParams", (req) => {
 		expect(req).toMatchObject({ functionId: "fid" });
-		const fo = req.functionOptions;
+		const fo = req.functionOptions as Record<string, unknown>;
 		expect(fo.timeoutSecs).toBe(60);
 		expect(fo.maxConcurrentInputs).toBe(10);
 		expect(fo.batchMaxSize).toBe(11);
@@ -88,14 +88,14 @@ test("Cls.withConcurrency/withConcurrency/withBatching chaining", async () => {
 test("Cls.withOptions retries", async () => {
 	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
 
-	mock.handleUnary("FunctionGet", (_: any) => {
+	mock.handleUnary("FunctionGet", (_) => {
 		return _mockFunctionProto;
 	});
 
 	const cls = await mc.cls.fromName("libmodal-test-support", "EchoCls");
 
-	mock.handleUnary("FunctionBindParams", (req: any) => {
-		const fo = req.functionOptions;
+	mock.handleUnary("FunctionBindParams", (req) => {
+		const fo = req.functionOptions as Record<string, unknown>;
 		expect(fo.retryPolicy).toMatchObject({
 			retries: 3,
 			backoffCoefficient: 1.0,
@@ -107,8 +107,8 @@ test("Cls.withOptions retries", async () => {
 
 	await cls.withOptions({ retries: 3 }).instance();
 
-	mock.handleUnary("FunctionBindParams", (req: any) => {
-		const fo = req.functionOptions;
+	mock.handleUnary("FunctionBindParams", (req) => {
+		const fo = req.functionOptions as Record<string, unknown>;
 		expect(fo.retryPolicy).toMatchObject({
 			retries: 2,
 			backoffCoefficient: 2.0,
@@ -132,7 +132,7 @@ test("Cls.withOptions retries", async () => {
 test("Cls.withOptions invalid values", async () => {
 	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
 
-	mock.handleUnary("FunctionGet", (_: any) => {
+	mock.handleUnary("FunctionGet", (_) => {
 		return _mockFunctionProto;
 	});
 
@@ -151,15 +151,15 @@ test("Cls.withOptions invalid values", async () => {
 test("withOptions({ secrets: [] }) binds and does not replace secrets", async () => {
 	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
 
-	mock.handleUnary("FunctionGet", (_: any) => {
+	mock.handleUnary("FunctionGet", (_) => {
 		return _mockFunctionProto;
 	});
 
-	mock.handleUnary("FunctionBindParams", (req: any) => {
+	mock.handleUnary("FunctionBindParams", (req) => {
 		expect(req).toMatchObject({ functionId: "fid" });
-		const fo = req.functionOptions;
+		const fo = req.functionOptions as Record<string, unknown>;
 		expect(Array.isArray(fo.secretIds)).toBe(true);
-		expect(fo.secretIds.length).toBe(0);
+		expect((fo.secretIds as unknown[]).length).toBe(0);
 		expect(fo.replaceSecretIds).toBe(false);
 
 		return { boundFunctionId: "fid-1", handleMetadata: {} };
@@ -174,15 +174,15 @@ test("withOptions({ secrets: [] }) binds and does not replace secrets", async ()
 
 test("withOptions({ volumes: {} }) binds and does not replace volumes", async () => {
 	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
-	mock.handleUnary("FunctionGet", (_: any) => {
+	mock.handleUnary("FunctionGet", (_) => {
 		return _mockFunctionProto;
 	});
 
-	mock.handleUnary("FunctionBindParams", (req: any) => {
+	mock.handleUnary("FunctionBindParams", (req) => {
 		expect(req).toMatchObject({ functionId: "fid" });
-		const fo = req.functionOptions;
+		const fo = req.functionOptions as Record<string, unknown>;
 		expect(Array.isArray(fo.volumeMounts)).toBe(true);
-		expect(fo.volumeMounts.length).toBe(0);
+		expect((fo.volumeMounts as unknown[]).length).toBe(0);
 		expect(fo.replaceVolumeMounts).toBe(false);
 
 		return { boundFunctionId: "fid-1", handleMetadata: {} };
@@ -198,15 +198,15 @@ test("withOptions({ volumes: {} }) binds and does not replace volumes", async ()
 test("withOptions({ cpu, cpuLimit }) sets milliCpu and milliCpuMax", async () => {
 	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
 
-	mock.handleUnary("FunctionGet", (_: any) => {
+	mock.handleUnary("FunctionGet", (_) => {
 		return _mockFunctionProto;
 	});
 
-	mock.handleUnary("FunctionBindParams", (req: any) => {
+	mock.handleUnary("FunctionBindParams", (req) => {
 		expect(req).toMatchObject({ functionId: "fid" });
-		const fo = req.functionOptions;
-		expect(fo.resources.milliCpu).toBe(2000);
-		expect(fo.resources.milliCpuMax).toBe(4500);
+		const fo = req.functionOptions as Record<string, unknown>;
+		expect((fo.resources as Record<string, unknown>).milliCpu).toBe(2000);
+		expect((fo.resources as Record<string, unknown>).milliCpuMax).toBe(4500);
 		return { boundFunctionId: "fid-1", handleMetadata: {} };
 	});
 
@@ -222,7 +222,7 @@ test("withOptions({ cpu, cpuLimit }) sets milliCpu and milliCpuMax", async () =>
 test("withOptions cpuLimit lower than cpu throws error", async () => {
 	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
 
-	mock.handleUnary("FunctionGet", (_: any) => {
+	mock.handleUnary("FunctionGet", (_) => {
 		return _mockFunctionProto;
 	});
 
@@ -237,7 +237,7 @@ test("withOptions cpuLimit lower than cpu throws error", async () => {
 test("withOptions cpuLimit without cpu throws error", async () => {
 	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
 
-	mock.handleUnary("FunctionGet", (_: any) => {
+	mock.handleUnary("FunctionGet", (_) => {
 		return _mockFunctionProto;
 	});
 
@@ -252,15 +252,15 @@ test("withOptions cpuLimit without cpu throws error", async () => {
 test("withOptions({ memory, memoryLimit }) sets memoryMb and memoryMbMax", async () => {
 	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
 
-	mock.handleUnary("FunctionGet", (_: any) => {
+	mock.handleUnary("FunctionGet", (_) => {
 		return _mockFunctionProto;
 	});
 
-	mock.handleUnary("FunctionBindParams", (req: any) => {
+	mock.handleUnary("FunctionBindParams", (req) => {
 		expect(req).toMatchObject({ functionId: "fid" });
-		const fo = req.functionOptions;
-		expect(fo.resources.memoryMb).toBe(1024);
-		expect(fo.resources.memoryMbMax).toBe(2048);
+		const fo = req.functionOptions as Record<string, unknown>;
+		expect((fo.resources as Record<string, unknown>).memoryMb).toBe(1024);
+		expect((fo.resources as Record<string, unknown>).memoryMbMax).toBe(2048);
 		return { boundFunctionId: "fid-1", handleMetadata: {} };
 	});
 
@@ -276,7 +276,7 @@ test("withOptions({ memory, memoryLimit }) sets memoryMb and memoryMbMax", async
 test("withOptions memoryLimit lower than memory throws error", async () => {
 	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
 
-	mock.handleUnary("FunctionGet", (_: any) => {
+	mock.handleUnary("FunctionGet", (_) => {
 		return _mockFunctionProto;
 	});
 
@@ -293,7 +293,7 @@ test("withOptions memoryLimit lower than memory throws error", async () => {
 test("withOptions memoryLimit without memory throws error", async () => {
 	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
 
-	mock.handleUnary("FunctionGet", (_: any) => {
+	mock.handleUnary("FunctionGet", (_) => {
 		return _mockFunctionProto;
 	});
 
@@ -310,7 +310,7 @@ test("withOptions memoryLimit without memory throws error", async () => {
 test("withOptions negative cpu throws error", async () => {
 	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
 
-	mock.handleUnary("FunctionGet", (_: any) => {
+	mock.handleUnary("FunctionGet", (_) => {
 		return _mockFunctionProto;
 	});
 
@@ -325,7 +325,7 @@ test("withOptions negative cpu throws error", async () => {
 test("withOptions zero cpu throws error", async () => {
 	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
 
-	mock.handleUnary("FunctionGet", (_: any) => {
+	mock.handleUnary("FunctionGet", (_) => {
 		return _mockFunctionProto;
 	});
 
@@ -340,7 +340,7 @@ test("withOptions zero cpu throws error", async () => {
 test("withOptions negative memory throws error", async () => {
 	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
 
-	mock.handleUnary("FunctionGet", (_: any) => {
+	mock.handleUnary("FunctionGet", (_) => {
 		return _mockFunctionProto;
 	});
 
@@ -355,7 +355,7 @@ test("withOptions negative memory throws error", async () => {
 test("withOptions zero memory throws error", async () => {
 	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
 
-	mock.handleUnary("FunctionGet", (_: any) => {
+	mock.handleUnary("FunctionGet", (_) => {
 		return _mockFunctionProto;
 	});
 

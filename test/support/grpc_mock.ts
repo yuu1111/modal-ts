@@ -1,20 +1,21 @@
-import { ModalClient } from "../../src/client";
+import { ModalClient, type ModalGrpcClient } from "../../src/client";
 
 export class MockGrpcClient {
 	// Map of short RPC name -> FIFO queue of handlers
 	private readonly methodHandlerQueues: Map<
 		string,
-		Array<(req: unknown) => unknown | Promise<unknown>>
+		Array<(req: Record<string, unknown>) => unknown | Promise<unknown>>
 	> = new Map();
 
 	constructor() {
+		// biome-ignore lint/correctness/noConstructorReturn: Proxy wrapper for dynamic gRPC method dispatch
 		return new Proxy(this, {
 			get(target, propKey) {
 				if (typeof propKey === "string" && !(propKey in target)) {
 					return (actualRequest: unknown) =>
 						target.dispatch(propKey, actualRequest);
 				}
-				return (target as any)[propKey];
+				return (target as Record<string | symbol, unknown>)[propKey];
 			},
 		});
 	}
@@ -30,13 +31,13 @@ export class MockGrpcClient {
 			);
 		}
 		const handler = queue.shift()!;
-		const response = await handler(actualRequest);
+		const response = await handler(actualRequest as Record<string, unknown>);
 		return structuredClone(response);
 	};
 
 	handleUnary(
 		rpcName: string,
-		handler: (req: unknown) => unknown | Promise<unknown>,
+		handler: (req: Record<string, unknown>) => unknown | Promise<unknown>,
 	) {
 		const methodKey = rpcToClientMethodName(shortName(rpcName));
 		const queue = this.methodHandlerQueues.get(methodKey) ?? [];
@@ -63,7 +64,7 @@ export function createMockModalClients(): {
 } {
 	const mockCpClient = new MockGrpcClient();
 	const mockClient = new ModalClient({
-		cpClient: mockCpClient as any,
+		cpClient: mockCpClient as unknown as ModalGrpcClient,
 		tokenId: "test-token-id",
 		tokenSecret: "test-token-secret",
 	});

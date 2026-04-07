@@ -1,3 +1,4 @@
+// biome-ignore lint/suspicious/noShadowRestrictedNames: SDK type name
 import { App, Proxy } from "modal";
 import { expect, test } from "vitest";
 

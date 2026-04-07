@@ -161,7 +161,9 @@ export class Cls {
 	}
 
 	/** Create a new instance of the Cls with parameters and/or runtime options. */
-	async instance(parameters: Record<string, any> = {}): Promise<ClsInstance> {
+	async instance(
+		parameters: Record<string, unknown> = {},
+	): Promise<ClsInstance> {
 		let functionId: string;
 		if (this.#schema.length === 0 && this.#serviceOptions === undefined) {
 			functionId = this.#serviceFunctionId;
@@ -223,7 +225,7 @@ export class Cls {
 	}
 
 	/** Bind parameters to the Cls function. */
-	async #bindParameters(parameters: Record<string, any>): Promise<string> {
+	async #bindParameters(parameters: Record<string, unknown>): Promise<string> {
 		const mergedSecrets = await mergeEnvIntoSecrets(
 			this.#client,
 			this.#serviceOptions?.env,
@@ -247,7 +249,7 @@ export class Cls {
 
 export function encodeParameterSet(
 	schema: ClassParameterSpec[],
-	params: Record<string, any>,
+	params: Record<string, unknown>,
 ): Uint8Array {
 	const encoded: ClassParameterValue[] = [];
 	for (const paramSpec of schema) {
@@ -399,7 +401,7 @@ async function buildFunctionOptionsProto(
 
 function encodeParameter(
 	paramSpec: ClassParameterSpec,
-	value: any,
+	value: unknown,
 ): ClassParameterValue {
 	const name = paramSpec.name;
 	const paramType = paramSpec.type;

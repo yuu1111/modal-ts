@@ -56,7 +56,7 @@ export class ImageService {
 	 * @param secret - Optional. A Secret containing credentials for registry authentication.
 	 */
 	fromRegistry(tag: string, secret?: Secret): Image {
-		let imageRegistryConfig;
+		let imageRegistryConfig: ImageRegistryConfig | undefined;
 		if (secret) {
 			if (!(secret instanceof Secret)) {
 				throw new TypeError(
@@ -78,7 +78,7 @@ export class ImageService {
 	 * @param secret - A Secret containing credentials for registry authentication.
 	 */
 	fromAwsEcr(tag: string, secret: Secret): Image {
-		let imageRegistryConfig;
+		let imageRegistryConfig: ImageRegistryConfig | undefined;
 		if (secret) {
 			if (!(secret instanceof Secret)) {
 				throw new TypeError(
@@ -100,7 +100,7 @@ export class ImageService {
 	 * @param secret - A Secret containing credentials for registry authentication.
 	 */
 	fromGcpArtifactRegistry(tag: string, secret: Secret): Image {
-		let imageRegistryConfig;
+		let imageRegistryConfig: ImageRegistryConfig | undefined;
 		if (secret) {
 			if (!(secret instanceof Secret)) {
 				throw new TypeError(

@@ -119,7 +119,8 @@ test("refreshJwt recovers after transient failure", async () => {
 		}),
 	};
 
-	const client = Object.create(TaskCommandRouterClientImpl.prototype) as any;
+	// biome-ignore lint/suspicious/noExplicitAny: test-only hack to set private properties on prototype stub
+	const client: any = Object.create(TaskCommandRouterClientImpl.prototype);
 	client.serverClient = mockServerClient;
 	client.taskId = "test-task";
 	client.serverUrl = "https://example.com";

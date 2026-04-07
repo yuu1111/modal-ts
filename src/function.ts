@@ -150,9 +150,9 @@ export class Function_ {
 
 	// Execute a single input into a remote Function.
 	async remote(
-		args: any[] = [],
-		kwargs: Record<string, any> = {},
-	): Promise<any> {
+		args: unknown[] = [],
+		kwargs: Record<string, unknown> = {},
+	): Promise<unknown> {
 		this.#client.logger.debug(
 			"Executing function call",
 			"function_id",
@@ -210,8 +210,8 @@ export class Function_ {
 
 	// Spawn a single input into a remote Function.
 	async spawn(
-		args: any[] = [],
-		kwargs: Record<string, any> = {},
+		args: unknown[] = [],
+		kwargs: Record<string, unknown> = {},
 	): Promise<FunctionCall> {
 		this.#client.logger.debug(
 			"Spawning function call",
@@ -278,8 +278,8 @@ export class Function_ {
 	}
 
 	async #createInput(
-		args: any[] = [],
-		kwargs: Record<string, any> = {},
+		args: unknown[] = [],
+		kwargs: Record<string, unknown> = {},
 	): Promise<FunctionInput> {
 		const supported_input_formats = this.#handleMetadata?.supportedInputFormats
 			?.length

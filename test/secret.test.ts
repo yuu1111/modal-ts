@@ -50,7 +50,9 @@ test("SecretFromObject", async () => {
 });
 
 test("SecretFromObjectInvalid", async () => {
-	await expect(tc.secrets.fromObject({ key: 123 } as any)).rejects.toThrowError(
+	await expect(
+		tc.secrets.fromObject({ key: 123 } as unknown as Record<string, string>),
+	).rejects.toThrowError(
 		/entries must be an object mapping string keys to string values/,
 	);
 });
@@ -119,7 +121,7 @@ test("SecretDelete success", async () => {
 		secretId: "st-test-123",
 	}));
 
-	mock.handleUnary("/SecretDelete", (req: any) => {
+	mock.handleUnary("/SecretDelete", (req) => {
 		expect(req.secretId).toBe("st-test-123");
 		return {};
 	});

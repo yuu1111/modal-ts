@@ -53,8 +53,12 @@ function readConfigFile(): Config {
 			encoding: "utf-8",
 		});
 		return parseToml(configContent) as Config;
-	} catch (err: any) {
-		if (err.code === "ENOENT") {
+	} catch (err: unknown) {
+		if (
+			err instanceof Error &&
+			"code" in err &&
+			(err as NodeJS.ErrnoException).code === "ENOENT"
+		) {
 			return {} as Config;
 		}
 		// Ignore failure to read or parse .modal.toml

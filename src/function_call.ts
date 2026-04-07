@@ -61,7 +61,7 @@ export class FunctionCall {
 	}
 
 	/** Get the result of a FunctionCall, optionally waiting with a timeout. */
-	async get(params: FunctionCallGetParams = {}): Promise<any> {
+	async get(params: FunctionCallGetParams = {}): Promise<unknown> {
 		checkForRenamedParams(params, { timeout: "timeoutMs" });
 
 		const invocation = ControlPlaneInvocation.fromFunctionCallId(

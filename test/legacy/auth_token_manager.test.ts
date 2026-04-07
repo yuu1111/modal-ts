@@ -1,6 +1,9 @@
 import jwt from "jsonwebtoken";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { AuthTokenManager } from "../../src/auth_token_manager";
+import {
+	type AuthClient,
+	AuthTokenManager,
+} from "../../src/auth_token_manager";
 import { newLogger } from "../../src/logger";
 
 class mockAuthClient {
@@ -30,7 +33,10 @@ describe("AuthTokenManager", () => {
 
 	beforeEach(() => {
 		mockClient = newMockAuthClient();
-		manager = new AuthTokenManager(mockClient as any, newLogger());
+		manager = new AuthTokenManager(
+			mockClient as unknown as AuthClient,
+			newLogger(),
+		);
 	});
 
 	test("TestAuthToken_DecodeJWT", async () => {

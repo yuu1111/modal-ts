@@ -201,7 +201,7 @@ test("DockerfileCommandsCopyCommandValidation", () => {
 test("DockerfileCommandsWithOptions", async () => {
 	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
 
-	mock.handleUnary("/ImageGetOrCreate", (req: any) => {
+	mock.handleUnary("/ImageGetOrCreate", (req) => {
 		expect(req).toMatchObject({
 			appId: "ap-test",
 			image: {
@@ -215,7 +215,7 @@ test("DockerfileCommandsWithOptions", async () => {
 		return { imageId: "im-base", result: { status: 1 } };
 	});
 
-	mock.handleUnary("/ImageGetOrCreate", (req: any) => {
+	mock.handleUnary("/ImageGetOrCreate", (req) => {
 		expect(req).toMatchObject({
 			appId: "ap-test",
 			image: {
@@ -229,7 +229,7 @@ test("DockerfileCommandsWithOptions", async () => {
 		return { imageId: "im-layer1", result: { status: 1 } };
 	});
 
-	mock.handleUnary("/ImageGetOrCreate", (req: any) => {
+	mock.handleUnary("/ImageGetOrCreate", (req) => {
 		expect(req).toMatchObject({
 			appId: "ap-test",
 			image: {
@@ -247,7 +247,7 @@ test("DockerfileCommandsWithOptions", async () => {
 		return { imageId: "im-layer2", result: { status: 1 } };
 	});
 
-	mock.handleUnary("/ImageGetOrCreate", (req: any) => {
+	mock.handleUnary("/ImageGetOrCreate", (req) => {
 		expect(req).toMatchObject({
 			appId: "ap-test",
 			image: {

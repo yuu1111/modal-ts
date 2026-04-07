@@ -141,6 +141,7 @@ export class CloudBucketMount {
 							keyPrefix?: string;
 							oidcAuthRoleArn?: string;
 						});
+			// biome-ignore lint/correctness/noConstructorReturn: Legacy API compatibility
 			return getDefaultClient().cloudBucketMounts.create(bucketName, params);
 		}
 	}

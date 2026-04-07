@@ -554,7 +554,7 @@ test("buildSandboxCreateRequestProto with CPU and CPULimit", async () => {
 		cpuLimit: 4.5,
 	});
 
-	const resources = req.definition?.resources!;
+	const resources = req.definition!.resources!;
 	expect(resources.milliCpu).toBe(2000);
 	expect(resources.milliCpuMax).toBe(4500);
 });
@@ -582,7 +582,7 @@ test("buildSandboxCreateRequestProto with Memory and MemoryLimit", async () => {
 		memoryLimitMiB: 2048,
 	});
 
-	const resources = req.definition?.resources!;
+	const resources = req.definition!.resources!;
 	expect(resources.memoryMb).toBe(1024);
 	expect(resources.memoryMbMax).toBe(2048);
 });
@@ -755,12 +755,15 @@ test("testSandboxExperimentalDockerMock", async () => {
 	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
 
 	const options = { enable_docker: true };
-	mock.handleUnary("/SandboxCreate", (req: any): SandboxCreateResponse => {
-		expect(req.definition?.experimentalOptions).toMatchObject(options);
+	mock.handleUnary("/SandboxCreate", (req): SandboxCreateResponse => {
+		expect(
+			(req.definition as Record<string, unknown> | undefined)
+				?.experimentalOptions,
+		).toMatchObject(options);
 		return { sandboxId: "sb-1234" };
 	});
 
-	mock.handleUnary("/AppGetOrCreate", (_: any): AppGetOrCreateResponse => {
+	mock.handleUnary("/AppGetOrCreate", (_): AppGetOrCreateResponse => {
 		return { appId: "ap-1234" };
 	});
 
@@ -768,7 +771,7 @@ test("testSandboxExperimentalDockerMock", async () => {
 		createIfMissing: true,
 	});
 
-	mock.handleUnary("ImageGetOrCreate", (_: any): ImageGetOrCreateResponse => {
+	mock.handleUnary("ImageGetOrCreate", (_): ImageGetOrCreateResponse => {
 		return {
 			imageId: "im-123",
 			result: {

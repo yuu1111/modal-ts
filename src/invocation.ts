@@ -24,7 +24,7 @@ const outputsTimeoutMs = 55 * 1000;
  * For now, we support just the control plane, and will add support for the input plane soon.
  */
 export interface Invocation {
-	awaitOutput(timeoutMs?: number): Promise<any>;
+	awaitOutput(timeoutMs?: number): Promise<unknown>;
 	retry(retryCount: number): Promise<void>;
 }
 
@@ -83,7 +83,7 @@ export class ControlPlaneInvocation implements Invocation {
 		return new ControlPlaneInvocation(client.cpClient, functionCallId);
 	}
 
-	async awaitOutput(timeoutMs?: number): Promise<any> {
+	async awaitOutput(timeoutMs?: number): Promise<unknown> {
 		return await pollFunctionOutput(
 			this.cpClient,
 			(timeoutMs: number) => this.#getOutput(timeoutMs),
@@ -176,7 +176,7 @@ export class InputPlaneInvocation implements Invocation {
 		);
 	}
 
-	async awaitOutput(timeoutMs?: number): Promise<any> {
+	async awaitOutput(timeoutMs?: number): Promise<unknown> {
 		return await pollFunctionOutput(
 			this.cpClient,
 			(timeoutMs: number) => this.#getOutput(timeoutMs),
@@ -226,7 +226,7 @@ async function pollFunctionOutput(
 	cpClient: ModalGrpcClient,
 	getOutput: GetOutput,
 	timeoutMs?: number,
-): Promise<any> {
+): Promise<unknown> {
 	const startTime = Date.now();
 	let pollTimeoutMs = outputsTimeoutMs;
 	if (timeoutMs !== undefined) {

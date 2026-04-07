@@ -379,15 +379,14 @@ export const timeoutMiddleware: ClientMiddleware<TimeoutOptions> =
 		} finally {
 			origSignal?.removeEventListener("abort", abortListener);
 			clearTimeout(timer);
+		}
 
-			if (timedOut) {
-				// eslint-disable-next-line no-unsafe-finally
-				throw new ClientError(
-					call.method.path,
-					Status.DEADLINE_EXCEEDED,
-					`Timed out after ${timeoutMs}ms`,
-				);
-			}
+		if (timedOut) {
+			throw new ClientError(
+				call.method.path,
+				Status.DEADLINE_EXCEEDED,
+				`Timed out after ${timeoutMs}ms`,
+			);
 		}
 	};
 

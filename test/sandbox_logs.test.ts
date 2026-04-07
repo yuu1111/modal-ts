@@ -2,10 +2,11 @@ import { setTimeout as sleep } from "node:timers/promises";
 import { ModalClient, Sandbox } from "modal";
 import { ClientError, Status } from "nice-grpc";
 import { describe, expect, test } from "vitest";
+import type { ModalGrpcClient } from "../src/client";
 
-function makeClient(cpClient: any): ModalClient {
+function makeClient(cpClient: unknown): ModalClient {
 	return new ModalClient({
-		cpClient: cpClient as any,
+		cpClient: cpClient as unknown as ModalGrpcClient,
 		tokenId: "test-id",
 		tokenSecret: "test-secret",
 	});
@@ -24,7 +25,7 @@ describe("SandboxGetLogs lazy and retry behavior", () => {
 		let calls = 0;
 		const cpClient = {
 			// Return an empty, immediate EOF stream
-			async *sandboxGetLogs(_req: any) {
+			async *sandboxGetLogs(_req: unknown) {
 				calls++;
 				yield batch("1-0", [], true);
 			},
@@ -46,7 +47,7 @@ describe("SandboxGetLogs lazy and retry behavior", () => {
 	test("testSandboxGetLogsNonRetryablePropagates", async () => {
 		let calls = 0;
 		const cpClient = {
-			sandboxGetLogs(_req: any) {
+			sandboxGetLogs(_req: unknown) {
 				calls++;
 				throw new ClientError(
 					"/modal.client.ModalClient/SandboxGetLogs",
@@ -72,7 +73,7 @@ describe("SandboxGetLogs lazy and retry behavior", () => {
 	test("testSandboxGetLogsRetryExhaustion", async () => {
 		let calls = 0;
 		const cpClient = {
-			sandboxGetLogs(_req: any) {
+			sandboxGetLogs(_req: unknown) {
 				calls++;
 				throw new ClientError(
 					"/modal.client.ModalClient/SandboxGetLogs",
@@ -100,8 +101,8 @@ describe("SandboxGetLogs lazy and retry behavior", () => {
 		const seenLastEntryIds: string[] = [];
 		let attempt = 0;
 		const cpClient = {
-			sandboxGetLogs(req: any) {
-				seenLastEntryIds.push(req.lastEntryId);
+			sandboxGetLogs(req: Record<string, unknown>) {
+				seenLastEntryIds.push(req.lastEntryId as string);
 				attempt++;
 				if (attempt === 1) {
 					return (async function* () {
@@ -132,7 +133,7 @@ describe("SandboxGetLogs lazy and retry behavior", () => {
 	test("testSandboxGetLogsNotCalledUntilStderrIsAccessed", async () => {
 		let calls = 0;
 		const cpClient = {
-			async *sandboxGetLogs(_req: any) {
+			async *sandboxGetLogs(_req: unknown) {
 				calls++;
 				yield batch("1-0", [], true);
 			},
@@ -153,7 +154,7 @@ describe("SandboxGetLogs lazy and retry behavior", () => {
 		const callTimes: number[] = [];
 		let attempt = 0;
 		const cpClient = {
-			sandboxGetLogs(_req: any) {
+			sandboxGetLogs(_req: unknown) {
 				callTimes.push(Date.now());
 				attempt++;
 				if (attempt === 1) {
@@ -188,7 +189,7 @@ describe("SandboxGetLogs lazy and retry behavior", () => {
 		const callTimes: number[] = [];
 		let attempt = 0;
 		const cpClient = {
-			sandboxGetLogs(_req: any) {
+			sandboxGetLogs(_req: unknown) {
 				callTimes.push(Date.now());
 				attempt++;
 				if (attempt === 1) {
@@ -239,7 +240,7 @@ describe("SandboxGetLogs lazy and retry behavior", () => {
 		let cancelled = false;
 
 		const cpClient = {
-			sandboxGetLogs(_req: any, _opts?: { signal?: AbortSignal }) {
+			sandboxGetLogs(_req: unknown, _opts?: { signal?: AbortSignal }) {
 				return (async function* () {
 					try {
 						yield batch("1-0", [textItem("hello")], false);
@@ -269,7 +270,7 @@ describe("SandboxGetLogs lazy and retry behavior", () => {
 		let batchesConsumed = 0;
 
 		const cpClient = {
-			sandboxGetLogs(_req: any, _opts?: { signal?: AbortSignal }) {
+			sandboxGetLogs(_req: unknown, _opts?: { signal?: AbortSignal }) {
 				return (async function* () {
 					yield batch("1-0", [textItem("hello")], false);
 					for (let i = 0; i < 100; i++) {
