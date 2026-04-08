@@ -45,8 +45,9 @@ test("SecretFromObject", async () => {
 });
 
 test("SecretFromObjectInvalid", async () => {
-	// @ts-expect-error testing runtime validation
-	await expect(Secret.fromObject({ key: 123 })).rejects.toThrowError(
+	await expect(
+		Secret.fromObject({ key: 123 } as unknown as Record<string, string>),
+	).rejects.toThrowError(
 		/entries must be an object mapping string keys to string values/,
 	);
 });
