@@ -47,16 +47,6 @@ execSync(
 	{ cwd: root, stdio: "inherit" },
 );
 
-// Add @ts-nocheck to all generated files.
-const generatedFiles = globSync("src/generated/**/*.ts", { cwd: root });
-for (const rel of generatedFiles) {
-	const file = join(root, rel);
-	const content = readFileSync(file, "utf-8");
-	if (!content.includes("@ts-nocheck")) {
-		writeFileSync(file, `// @ts-nocheck\n${content}`);
-	}
-}
-
 // HACK: Patch for bad Protobuf codegen: fix the "Object" type conflicting with
 // builtin `Object` API in JavaScript and breaking Protobuf import.
 const apiFile = join(root, "src", "generated", "modal_proto", "api.ts");
