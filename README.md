@@ -66,7 +66,7 @@ bun run typecheck     # Type check
 bun run lint          # Biome lint
 bun run format        # Biome format
 bun run build         # Build (esbuild + tsc)
-bun test              # Run tests
+bun run test          # Run tests (vitest)
 ```
 
 ## Differences from upstream
