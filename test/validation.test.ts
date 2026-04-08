@@ -45,7 +45,7 @@ test("Cls.withOptions rejects old parameter names", async () => {
 		},
 	}));
 
-	const cls = await mc.cls.fromName("libmodal-test-support", "EchoCls");
+	const cls = await mc.cls.fromName("modal-ts-test-support", "EchoCls");
 
 	await expect(
 		cls

@@ -260,7 +260,7 @@ test("CreateSandboxWithSecrets", async () => {
 	});
 	const image = tc.images.fromRegistry("alpine:3.21");
 
-	const secret = await tc.secrets.fromName("libmodal-test-secret", {
+	const secret = await tc.secrets.fromName("modal-ts-test-secret", {
 		requiredKeys: ["c"],
 	});
 
@@ -352,7 +352,7 @@ test("SandboxExecSecret", async () => {
 	const sb = await tc.sandboxes.create(app, image);
 	onTestFinished(async () => await sb.terminate());
 
-	const secret = await tc.secrets.fromName("libmodal-test-secret", {
+	const secret = await tc.secrets.fromName("modal-ts-test-secret", {
 		requiredKeys: ["c"],
 	});
 	const secret2 = await tc.secrets.fromObject({ d: "3" });

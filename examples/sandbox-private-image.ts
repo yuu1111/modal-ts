@@ -2,12 +2,12 @@ import { ModalClient } from "modal";
 
 const modal = new ModalClient();
 
-const app = await modal.apps.fromName("libmodal-example", {
+const app = await modal.apps.fromName("modal-ts-example", {
 	createIfMissing: true,
 });
 const image = modal.images.fromAwsEcr(
 	"459781239556.dkr.ecr.us-east-1.amazonaws.com/ecr-private-registry-test-7522615:python",
-	await modal.secrets.fromName("libmodal-aws-ecr-test", {
+	await modal.secrets.fromName("modal-ts-aws-ecr-test", {
 		requiredKeys: ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY"],
 	}),
 );

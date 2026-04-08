@@ -6,7 +6,7 @@ test("CreateSandboxWithProxy", async () => {
 	const app = await App.lookup("libmodal-test", { createIfMissing: true });
 	const image = await app.imageFromRegistry("alpine:3.21");
 
-	const proxy = await Proxy.fromName("libmodal-test-proxy", {
+	const proxy = await Proxy.fromName("modal-ts-test-proxy", {
 		environment: "libmodal",
 	});
 	expect(proxy.proxyId).toBeTruthy();

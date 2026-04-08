@@ -6,7 +6,7 @@ import { tc } from "./support/test-client";
 
 test("FunctionCall", async () => {
 	const function_ = await tc.functions.fromName(
-		"libmodal-test-support",
+		"modal-ts-test-support",
 		"echo_string",
 	);
 
@@ -19,7 +19,7 @@ test("FunctionCall", async () => {
 
 test("FunctionCallJsMap", async () => {
 	const function_ = await tc.functions.fromName(
-		"libmodal-test-support",
+		"modal-ts-test-support",
 		"identity_with_repr",
 	);
 
@@ -29,7 +29,7 @@ test("FunctionCallJsMap", async () => {
 
 test("FunctionCallDateTimeRoundtrip", async () => {
 	const function_ = await tc.functions.fromName(
-		"libmodal-test-support",
+		"modal-ts-test-support",
 		"identity_with_repr",
 	);
 
@@ -59,7 +59,7 @@ test("FunctionCallDateTimeRoundtrip", async () => {
 
 test("FunctionCallLargeInput", async () => {
 	const function_ = await tc.functions.fromName(
-		"libmodal-test-support",
+		"modal-ts-test-support",
 		"bytelength",
 	);
 	const len = 3 * 1000 * 1000; // More than 2 MiB, offload to blob storage
@@ -70,7 +70,7 @@ test("FunctionCallLargeInput", async () => {
 
 test("FunctionNotFound", async () => {
 	const promise = tc.functions.fromName(
-		"libmodal-test-support",
+		"modal-ts-test-support",
 		"not_a_real_function",
 	);
 	await expect(promise).rejects.toThrowError(NotFoundError);
@@ -78,7 +78,7 @@ test("FunctionNotFound", async () => {
 
 test("FunctionCallInputPlane", async () => {
 	const function_ = await tc.functions.fromName(
-		"libmodal-test-support",
+		"modal-ts-test-support",
 		"input_plane",
 	);
 	const result = await function_.remote(["hello"]);
@@ -142,7 +142,7 @@ test("FunctionGetWebUrl", async () => {
 
 	mock.handleUnary("FunctionGet", (req) => {
 		expect(req).toMatchObject({
-			appName: "libmodal-test-support",
+			appName: "modal-ts-test-support",
 			objectTag: "web_endpoint",
 		});
 		return {
@@ -152,7 +152,7 @@ test("FunctionGetWebUrl", async () => {
 	});
 
 	const web_endpoint = await mc.functions.fromName(
-		"libmodal-test-support",
+		"modal-ts-test-support",
 		"web_endpoint",
 	);
 	expect(await web_endpoint.getWebUrl()).toBe("https://endpoint.internal");
@@ -162,7 +162,7 @@ test("FunctionGetWebUrl", async () => {
 
 test("FunctionGetWebUrlOnNonWebFunction", async () => {
 	const function_ = await tc.functions.fromName(
-		"libmodal-test-support",
+		"modal-ts-test-support",
 		"echo_string",
 	);
 	expect(await function_.getWebUrl()).toBeUndefined();
@@ -170,11 +170,11 @@ test("FunctionGetWebUrlOnNonWebFunction", async () => {
 
 test("FunctionFromNameWithDotNotation", async () => {
 	const promise = tc.functions.fromName(
-		"libmodal-test-support",
+		"modal-ts-test-support",
 		"MyClass.myMethod",
 	);
 	await expect(promise).rejects.toThrowError(
-		`Cannot retrieve Cls methods using 'functions.fromName()'. Use:\n  const cls = await client.cls.fromName("libmodal-test-support", "MyClass");\n  const instance = await cls.instance();\n  const m = instance.method("myMethod");`,
+		`Cannot retrieve Cls methods using 'functions.fromName()'. Use:\n  const cls = await client.cls.fromName("modal-ts-test-support", "MyClass");\n  const instance = await cls.instance();\n  const m = instance.method("myMethod");`,
 	);
 });
 
@@ -194,7 +194,7 @@ test("FunctionCallPreCborVersionError", async () => {
 
 test("WebEndpointRemoteCallError", async () => {
 	const function_ = await tc.functions.fromName(
-		"libmodal-test-support",
+		"modal-ts-test-support",
 		"web_endpoint_echo",
 	);
 
@@ -207,7 +207,7 @@ test("WebEndpointRemoteCallError", async () => {
 
 test("WebEndpointSpawnCallError", async () => {
 	const function_ = await tc.functions.fromName(
-		"libmodal-test-support",
+		"modal-ts-test-support",
 		"web_endpoint_echo",
 	);
 

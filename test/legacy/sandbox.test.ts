@@ -241,7 +241,7 @@ test("CreateSandboxWithSecrets", async () => {
 	const app = await App.lookup("libmodal-test", { createIfMissing: true });
 	const image = await app.imageFromRegistry("alpine:3.21");
 
-	const secret = await Secret.fromName("libmodal-test-secret", {
+	const secret = await Secret.fromName("modal-ts-test-secret", {
 		requiredKeys: ["c"],
 	});
 	expect(secret).toBeDefined();
@@ -332,7 +332,7 @@ test("SandboxExecSecret", async () => {
 		await sb.terminate();
 	});
 
-	const secret = await Secret.fromName("libmodal-test-secret", {
+	const secret = await Secret.fromName("modal-ts-test-secret", {
 		requiredKeys: ["c"],
 	});
 	const secret2 = await Secret.fromObject({ d: "3" });

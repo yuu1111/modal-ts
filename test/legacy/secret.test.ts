@@ -2,11 +2,11 @@ import { App, Image, Secret } from "modal";
 import { expect, test } from "vitest";
 
 test("SecretFromName", async () => {
-	const secret = await Secret.fromName("libmodal-test-secret");
+	const secret = await Secret.fromName("modal-ts-test-secret");
 	expect(secret).toBeDefined();
 	expect(secret.secretId).toBeDefined();
 	expect(secret.secretId).toMatch(/^st-/);
-	expect(secret.name).toBe("libmodal-test-secret");
+	expect(secret.name).toBe("modal-ts-test-secret");
 
 	const promise = Secret.fromName("missing-secret");
 	await expect(promise).rejects.toThrowError(
@@ -15,12 +15,12 @@ test("SecretFromName", async () => {
 });
 
 test("SecretFromNameWithRequiredKeys", async () => {
-	const secret = await Secret.fromName("libmodal-test-secret", {
+	const secret = await Secret.fromName("modal-ts-test-secret", {
 		requiredKeys: ["a", "b", "c"],
 	});
 	expect(secret).toBeDefined();
 
-	const promise = Secret.fromName("libmodal-test-secret", {
+	const promise = Secret.fromName("modal-ts-test-secret", {
 		requiredKeys: ["a", "b", "c", "missing-key"],
 	});
 	await expect(promise).rejects.toThrowError(

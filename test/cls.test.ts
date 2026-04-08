@@ -3,7 +3,7 @@ import { expect, test } from "vitest";
 import { tc } from "./support/test-client";
 
 test("ClsCall", async () => {
-	const cls = await tc.cls.fromName("libmodal-test-support", "EchoCls");
+	const cls = await tc.cls.fromName("modal-ts-test-support", "EchoCls");
 	const instance = await cls.instance();
 
 	// Try accessing a non-existent method
@@ -14,7 +14,7 @@ test("ClsCall", async () => {
 	expect(result).toEqual("output: hello");
 
 	const cls2 = await tc.cls.fromName(
-		"libmodal-test-support",
+		"modal-ts-test-support",
 		"EchoClsParametrized",
 	);
 	const instance2 = await cls2.instance({ name: "hello-init" });
@@ -25,13 +25,13 @@ test("ClsCall", async () => {
 });
 
 test("ClsNotFound", async () => {
-	const cls = tc.cls.fromName("libmodal-test-support", "NotRealClassName");
+	const cls = tc.cls.fromName("modal-ts-test-support", "NotRealClassName");
 	await expect(cls).rejects.toThrowError(NotFoundError);
 });
 
 test("ClsCallInputPlane", async () => {
 	const cls = await tc.cls.fromName(
-		"libmodal-test-support",
+		"modal-ts-test-support",
 		"EchoClsInputPlane",
 	);
 	const instance = await cls.instance();

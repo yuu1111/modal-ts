@@ -5,7 +5,7 @@ import { ModalClient } from "modal";
 
 const modal = new ModalClient();
 
-const app = await modal.apps.fromName("libmodal-example", {
+const app = await modal.apps.fromName("modal-ts-example", {
 	createIfMissing: true,
 });
 

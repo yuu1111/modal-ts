@@ -4,7 +4,7 @@ import { createMockModalClients } from "../support/grpc_mock";
 
 test("FunctionCall", async () => {
 	const function_ = await Function_.lookup(
-		"libmodal-test-support",
+		"modal-ts-test-support",
 		"echo_string",
 	);
 
@@ -19,7 +19,7 @@ test("FunctionCall", async () => {
 
 test("FunctionCallLargeInput", async () => {
 	const function_ = await Function_.lookup(
-		"libmodal-test-support",
+		"modal-ts-test-support",
 		"bytelength",
 	);
 	const len = 3 * 1000 * 1000; // More than 2 MiB, offload to blob storage
@@ -30,7 +30,7 @@ test("FunctionCallLargeInput", async () => {
 
 test("FunctionNotFound", async () => {
 	const promise = Function_.lookup(
-		"libmodal-test-support",
+		"modal-ts-test-support",
 		"not_a_real_function",
 	);
 	await expect(promise).rejects.toThrowError(NotFoundError);
@@ -38,7 +38,7 @@ test("FunctionNotFound", async () => {
 
 test("FunctionCallInputPlane", async () => {
 	const function_ = await Function_.lookup(
-		"libmodal-test-support",
+		"modal-ts-test-support",
 		"input_plane",
 	);
 	const result = await function_.remote(["hello"]);
@@ -102,7 +102,7 @@ test("FunctionGetWebUrl", async () => {
 
 	mock.handleUnary("FunctionGet", (req) => {
 		expect(req).toMatchObject({
-			appName: "libmodal-test-support",
+			appName: "modal-ts-test-support",
 			objectTag: "web_endpoint",
 		});
 		return {
@@ -112,7 +112,7 @@ test("FunctionGetWebUrl", async () => {
 	});
 
 	const web_endpoint = await mc.functions.fromName(
-		"libmodal-test-support",
+		"modal-ts-test-support",
 		"web_endpoint",
 	);
 	expect(await web_endpoint.getWebUrl()).toBe("https://endpoint.internal");
@@ -122,7 +122,7 @@ test("FunctionGetWebUrl", async () => {
 
 test("FunctionGetWebUrlOnNonWebFunction", async () => {
 	const function_ = await Function_.lookup(
-		"libmodal-test-support",
+		"modal-ts-test-support",
 		"echo_string",
 	);
 	expect(await function_.getWebUrl()).toBeUndefined();

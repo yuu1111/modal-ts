@@ -82,6 +82,10 @@ export function getProfile(profileName?: string): Profile {
 				break;
 			}
 		}
+		// Fall back to "default" profile if no active profile found
+		if (!profileName && Object.hasOwn(config, "default")) {
+			profileName = "default";
+		}
 	}
 	const profileData: Record<string, unknown> =
 		profileName && Object.hasOwn(config, profileName)

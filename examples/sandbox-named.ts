@@ -2,12 +2,12 @@ import { AlreadyExistsError, ModalClient } from "modal";
 
 const modal = new ModalClient();
 
-const app = await modal.apps.fromName("libmodal-example", {
+const app = await modal.apps.fromName("modal-ts-example", {
 	createIfMissing: true,
 });
 const image = modal.images.fromRegistry("alpine:3.21");
 
-const sandboxName = `libmodal-example-named-sandbox`;
+const sandboxName = `modal-ts-example-named-sandbox`;
 
 const sb = await modal.sandboxes.create(app, image, {
 	name: sandboxName,
@@ -34,7 +34,7 @@ try {
 }
 
 const sbFromName = await modal.sandboxes.fromName(
-	"libmodal-example",
+	"modal-ts-example",
 	sandboxName,
 );
 console.log(`Retrieved the same Sandbox from name: ${sbFromName.sandboxId}`);

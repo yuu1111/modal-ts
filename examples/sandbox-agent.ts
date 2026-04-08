@@ -2,7 +2,7 @@ import { ModalClient } from "modal";
 
 const modal = new ModalClient();
 
-const app = await modal.apps.fromName("libmodal-example", {
+const app = await modal.apps.fromName("modal-ts-example", {
 	createIfMissing: true,
 });
 const image = modal.images
@@ -33,7 +33,7 @@ try {
 		// Adding a PTY is important, since Claude requires it!
 		pty: true,
 		secrets: [
-			await modal.secrets.fromName("libmodal-anthropic-secret", {
+			await modal.secrets.fromName("modal-ts-anthropic-secret", {
 				requiredKeys: ["ANTHROPIC_API_KEY"],
 			}),
 		],

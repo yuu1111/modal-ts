@@ -4,7 +4,7 @@ import { tc } from "./support/test-client";
 
 test("FunctionSpawn", async () => {
 	const function_ = await tc.functions.fromName(
-		"libmodal-test-support",
+		"modal-ts-test-support",
 		"echo_string",
 	);
 
@@ -17,7 +17,7 @@ test("FunctionSpawn", async () => {
 	resultKwargs = await functionCall.get();
 	expect(resultKwargs).toBe("output: hello");
 
-	const sleep = await tc.functions.fromName("libmodal-test-support", "sleep");
+	const sleep = await tc.functions.fromName("modal-ts-test-support", "sleep");
 	functionCall = await sleep.spawn([], { t: 5 });
 	expect(functionCall.functionCallId).toMatch(/^fc-/);
 
@@ -26,7 +26,7 @@ test("FunctionSpawn", async () => {
 });
 
 test("FunctionCallGet0", async () => {
-	const sleep = await tc.functions.fromName("libmodal-test-support", "sleep");
+	const sleep = await tc.functions.fromName("modal-ts-test-support", "sleep");
 
 	const call = await sleep.spawn([0.5]);
 	// Polling for output with timeout 0 should raise an error, since the

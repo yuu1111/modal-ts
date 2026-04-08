@@ -14,7 +14,7 @@ if (!modalSecret) {
 const modal = new ModalClient({ tokenId: modalId, tokenSecret: modalSecret });
 
 const echo = await modal.functions.fromName(
-	"libmodal-test-support",
+	"modal-ts-test-support",
 	"echo_string",
 );
 console.log(echo);

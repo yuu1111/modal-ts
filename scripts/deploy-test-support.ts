@@ -10,6 +10,7 @@ import {
 	createMount,
 	createSecret,
 	deployApp,
+	getOrCreateApp,
 	getOrCreateImage,
 } from "../src/deploy";
 import { WebhookType } from "../src/generated/modal_proto/api";
@@ -21,7 +22,7 @@ import typing
 
 import modal
 
-app = modal.App("libmodal-test-support")
+app = modal.App("modal-ts-test-support")
 
 
 @app.function(min_containers=1, _experimental_restrict_output=True)
@@ -115,33 +116,33 @@ async function createAwsSecrets(client: ModalClient) {
 	}
 
 	const ecrSecret = await getAwsSecret("test/libmodal/AwsEcrTest");
-	await createSecret(client, "libmodal-aws-ecr-test", {
+	await createSecret(client, "modal-ts-aws-ecr-test", {
 		AWS_ACCESS_KEY_ID: ecrSecret.AWS_ACCESS_KEY_ID,
 		AWS_SECRET_ACCESS_KEY: ecrSecret.AWS_SECRET_ACCESS_KEY,
 		AWS_REGION: "us-east-1",
 	});
-	console.log("  Created 'libmodal-aws-ecr-test'");
+	console.log("  Created 'modal-ts-aws-ecr-test'");
 
 	const gcpSecret = await getAwsSecret("test/libmodal/GcpArtifactRegistryTest");
-	await createSecret(client, "libmodal-gcp-artifact-registry-test", {
+	await createSecret(client, "modal-ts-gcp-artifact-registry-test", {
 		SERVICE_ACCOUNT_JSON: gcpSecret.SERVICE_ACCOUNT_JSON,
 		REGISTRY_USERNAME: "_json_key",
 		REGISTRY_PASSWORD: gcpSecret.SERVICE_ACCOUNT_JSON,
 	});
-	console.log("  Created 'libmodal-gcp-artifact-registry-test'");
+	console.log("  Created 'modal-ts-gcp-artifact-registry-test'");
 
 	const anthropicSecret = await getAwsSecret("dev/libmodal/AnthropicApiKey");
-	await createSecret(client, "libmodal-anthropic-secret", {
+	await createSecret(client, "modal-ts-anthropic-secret", {
 		ANTHROPIC_API_KEY: anthropicSecret.ANTHROPIC_API_KEY,
 	});
-	console.log("  Created 'libmodal-anthropic-secret'");
+	console.log("  Created 'modal-ts-anthropic-secret'");
 }
 
 async function main() {
 	const client = new ModalClient();
 
-	console.log("Creating secret 'libmodal-test-secret'...");
-	await createSecret(client, "libmodal-test-secret", {
+	console.log("Creating secret 'modal-ts-test-secret'...");
+	await createSecret(client, "modal-ts-test-secret", {
 		a: "1",
 		b: "2",
 		c: "hello world",
@@ -156,18 +157,20 @@ async function main() {
 		);
 	}
 
-	console.log("Deploying 'libmodal-test-support'...");
-	const mountId = await createMount(client.cpClient, "", [
+	console.log("Deploying 'modal-ts-test-support'...");
+	const appId = await getOrCreateApp(client, "modal-ts-test-support");
+
+	const mountId = await createMount(client.cpClient, appId, [
 		{ remotePath: "/root/test_support.py", content: TEST_SUPPORT_PY },
 	]);
 
-	const defaultImageId = await getOrCreateImage(client.cpClient, "");
-	const fastapiImageId = await getOrCreateImage(client.cpClient, "", [
+	const defaultImageId = await getOrCreateImage(client.cpClient, appId);
+	const fastapiImageId = await getOrCreateImage(client.cpClient, appId, [
 		"RUN pip install fastapi",
 	]);
 
 	await deployApp(client, {
-		name: "libmodal-test-support",
+		name: "modal-ts-test-support",
 		functions: [
 			{
 				functionName: "echo_string",
@@ -243,10 +246,11 @@ async function main() {
 			},
 		],
 	});
-	console.log("Deployed 'libmodal-test-support'.");
+	console.log("Deployed 'modal-ts-test-support'.");
 
 	console.log("Deploying 'test-support-1-1'...");
-	const mount11Id = await createMount(client.cpClient, "", [
+	const app11Id = await getOrCreateApp(client, "test-support-1-1");
+	const mount11Id = await createMount(client.cpClient, app11Id, [
 		{
 			remotePath: "/root/test_support_1_1.py",
 			content: TEST_SUPPORT_1_1_PY,
@@ -268,7 +272,7 @@ async function main() {
 	console.log("Deployed 'test-support-1-1'.");
 
 	console.log(
-		"\nNOTE: Tests also require a Proxy named 'libmodal-test-proxy', which must be created via the dashboard.",
+		"\nNOTE: Tests also require a Proxy named 'modal-ts-test-proxy', which must be created via the dashboard.",
 	);
 
 	client.close();

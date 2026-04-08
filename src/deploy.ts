@@ -176,6 +176,26 @@ async function createFunctionInternal(
 	};
 }
 
+/**
+ * @description Appを取得または作成してappIdを返す
+ */
+export async function getOrCreateApp(
+	client: ModalClient,
+	name: string,
+	environment?: string,
+): Promise<string> {
+	const resp = await client.cpClient.appGetOrCreate({
+		appName: name,
+		environmentName: client.environmentName(environment),
+		objectCreationType:
+			ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_IF_MISSING,
+	});
+	if (!resp.appId) {
+		throw new Error("Server returned empty appId from appGetOrCreate");
+	}
+	return resp.appId;
+}
+
 export async function deployApp(
 	client: ModalClient,
 	params: DeployAppParams,
@@ -207,38 +227,69 @@ export async function deployApp(
 	}
 
 	for (const cls of params.classes ?? []) {
-		const classMethods = [];
-
-		for (const methodName of cls.methods) {
-			const result = await createFunctionInternal(cpClient, appId, {
-				functionName: `${cls.className}.${methodName}`,
-				moduleName: cls.moduleName,
-				...(cls.imageId !== undefined && { imageId: cls.imageId }),
-				...(cls.mountIds !== undefined && { mountIds: cls.mountIds }),
-				...(cls.secretIds !== undefined && { secretIds: cls.secretIds }),
-				...(cls.minContainers !== undefined && {
-					minContainers: cls.minContainers,
-				}),
-				...(cls.experimentalOptions !== undefined && {
-					experimentalOptions: cls.experimentalOptions,
-				}),
-				isMethod: true,
-			});
-
-			if (result.definitionId) {
-				definitionIds[result.functionId] = result.definitionId;
+		const methodDefs: Record<
+			string,
+			{
+				functionName: string;
+				functionType: Function_FunctionType;
+				supportedInputFormats: DataFormat[];
+				supportedOutputFormats: DataFormat[];
 			}
+		> = {};
+		for (const methodName of cls.methods) {
+			methodDefs[methodName] = {
+				functionName: `${cls.className}.${methodName}`,
+				functionType: Function_FunctionType.FUNCTION_TYPE_FUNCTION,
+				supportedInputFormats: DEFAULT_DATA_FORMATS,
+				supportedOutputFormats: DEFAULT_DATA_FORMATS,
+			};
+		}
 
-			classMethods.push({
-				functionName: methodName,
-				functionId: result.functionId,
-				functionHandleMetadata: result.handleMetadata,
-			});
+		const precreateResp = await cpClient.functionPrecreate({
+			appId,
+			functionName: cls.className,
+			functionType: Function_FunctionType.FUNCTION_TYPE_FUNCTION,
+			supportedInputFormats: DEFAULT_DATA_FORMATS,
+			supportedOutputFormats: DEFAULT_DATA_FORMATS,
+			methodDefinitions: methodDefs,
+		});
+
+		const createResp = await cpClient.functionCreate({
+			appId,
+			existingFunctionId: precreateResp.functionId ?? "",
+			function: {
+				moduleName: cls.moduleName,
+				functionName: cls.className,
+				mountIds: cls.mountIds ?? [],
+				imageId: cls.imageId ?? "",
+				definitionType: Function_DefinitionType.DEFINITION_TYPE_FILE,
+				functionType: Function_FunctionType.FUNCTION_TYPE_FUNCTION,
+				secretIds: cls.secretIds ?? [],
+				warmPoolSize: cls.minContainers ?? 0,
+				experimentalOptions: cls.experimentalOptions ?? {},
+				isClass: true,
+				isMethod: false,
+				methodDefinitions: methodDefs,
+				methodDefinitionsSet: true,
+				supportedInputFormats: DEFAULT_DATA_FORMATS,
+				supportedOutputFormats: DEFAULT_DATA_FORMATS,
+			},
+		});
+
+		if (!createResp.functionId) {
+			throw new Error(
+				`Server returned empty functionId for class '${cls.className}'`,
+			);
+		}
+
+		const fnId = createResp.functionId;
+		functionIds[cls.className] = fnId;
+		if (createResp.handleMetadata?.definitionId) {
+			definitionIds[fnId] = createResp.handleMetadata.definitionId;
 		}
 
 		const classResp = await cpClient.classCreate({
 			appId,
-			methods: classMethods,
 			onlyClassFunction: true,
 		});
 
@@ -254,6 +305,7 @@ export async function deployApp(
 		appId,
 		name: params.name,
 		appState: AppState.APP_STATE_DEPLOYED,
+		clientVersion: "1.1.3",
 		functionIds,
 		classIds,
 		definitionIds,

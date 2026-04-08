@@ -28,7 +28,7 @@ Tests run against Modal cloud infrastructure and require authentication:
 ```bash
 MODAL_TOKEN_ID=ak-...
 MODAL_TOKEN_SECRET=as-...
-MODAL_ENVIRONMENT=libmodal
+MODAL_ENVIRONMENT=modal-ts
 ```
 
 Test infrastructure deploy: `bun scripts/deploy-test-support.ts`. Tests: max 10 concurrent, 20s timeout.

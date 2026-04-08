@@ -2,12 +2,12 @@ import { ModalClient } from "modal";
 
 const modal = new ModalClient();
 
-const app = await modal.apps.fromName("libmodal-example", {
+const app = await modal.apps.fromName("modal-ts-example", {
 	createIfMissing: true,
 });
 const image = modal.images.fromRegistry("alpine/curl:8.14.1");
 
-const proxy = await modal.proxies.fromName("libmodal-test-proxy", {
+const proxy = await modal.proxies.fromName("modal-ts-test-proxy", {
 	environment: "libmodal",
 });
 console.log("Using Proxy with ID:", proxy.proxyId);

@@ -18,7 +18,7 @@ test("Cls.withOptions stacking", async () => {
 		return _mockFunctionProto;
 	});
 
-	const cls = await mc.cls.fromName("libmodal-test-support", "EchoCls");
+	const cls = await mc.cls.fromName("modal-ts-test-support", "EchoCls");
 
 	mock.handleUnary("FunctionBindParams", (req) => {
 		expect(req).toMatchObject({ functionId: "fid" });
@@ -62,7 +62,7 @@ test("Cls.withConcurrency/withConcurrency/withBatching chaining", async () => {
 		return _mockFunctionProto;
 	});
 
-	const cls = await mc.cls.fromName("libmodal-test-support", "EchoCls");
+	const cls = await mc.cls.fromName("modal-ts-test-support", "EchoCls");
 
 	mock.handleUnary("FunctionBindParams", (req) => {
 		expect(req).toMatchObject({ functionId: "fid" });
@@ -92,7 +92,7 @@ test("Cls.withOptions retries", async () => {
 		return _mockFunctionProto;
 	});
 
-	const cls = await mc.cls.fromName("libmodal-test-support", "EchoCls");
+	const cls = await mc.cls.fromName("modal-ts-test-support", "EchoCls");
 
 	mock.handleUnary("FunctionBindParams", (req) => {
 		const fo = req.functionOptions as Record<string, unknown>;
@@ -136,7 +136,7 @@ test("Cls.withOptions invalid values", async () => {
 		return _mockFunctionProto;
 	});
 
-	const cls = await mc.cls.fromName("libmodal-test-support", "EchoCls");
+	const cls = await mc.cls.fromName("modal-ts-test-support", "EchoCls");
 	await expect(cls.withOptions({ timeoutMs: 1500 }).instance()).rejects.toThrow(
 		/timeoutMs must be a multiple of 1000ms/,
 	);
@@ -165,7 +165,7 @@ test("withOptions({ secrets: [] }) binds and does not replace secrets", async ()
 		return { boundFunctionId: "fid-1", handleMetadata: {} };
 	});
 
-	const cls = await mc.cls.fromName("libmodal-test-support", "EchoCls");
+	const cls = await mc.cls.fromName("modal-ts-test-support", "EchoCls");
 	const instance = await cls.withOptions({ secrets: [] }).instance();
 	expect(instance).toBeTruthy();
 
@@ -188,7 +188,7 @@ test("withOptions({ volumes: {} }) binds and does not replace volumes", async ()
 		return { boundFunctionId: "fid-1", handleMetadata: {} };
 	});
 
-	const cls = await mc.cls.fromName("libmodal-test-support", "EchoCls");
+	const cls = await mc.cls.fromName("modal-ts-test-support", "EchoCls");
 	const instance = await cls.withOptions({ volumes: {} }).instance();
 	expect(instance).toBeTruthy();
 
@@ -210,7 +210,7 @@ test("withOptions({ cpu, cpuLimit }) sets milliCpu and milliCpuMax", async () =>
 		return { boundFunctionId: "fid-1", handleMetadata: {} };
 	});
 
-	const cls = await mc.cls.fromName("libmodal-test-support", "EchoCls");
+	const cls = await mc.cls.fromName("modal-ts-test-support", "EchoCls");
 	const instance = await cls
 		.withOptions({ cpu: 2.0, cpuLimit: 4.5 })
 		.instance();
@@ -226,7 +226,7 @@ test("withOptions cpuLimit lower than cpu throws error", async () => {
 		return _mockFunctionProto;
 	});
 
-	const cls = await mc.cls.fromName("libmodal-test-support", "EchoCls");
+	const cls = await mc.cls.fromName("modal-ts-test-support", "EchoCls");
 	await expect(
 		cls.withOptions({ cpu: 4.0, cpuLimit: 2.0 }).instance(),
 	).rejects.toThrow("cpu (4) cannot be higher than cpuLimit (2)");
@@ -241,7 +241,7 @@ test("withOptions cpuLimit without cpu throws error", async () => {
 		return _mockFunctionProto;
 	});
 
-	const cls = await mc.cls.fromName("libmodal-test-support", "EchoCls");
+	const cls = await mc.cls.fromName("modal-ts-test-support", "EchoCls");
 	await expect(cls.withOptions({ cpuLimit: 4.0 }).instance()).rejects.toThrow(
 		"must also specify cpu when cpuLimit is specified",
 	);
@@ -264,7 +264,7 @@ test("withOptions({ memory, memoryLimit }) sets memoryMb and memoryMbMax", async
 		return { boundFunctionId: "fid-1", handleMetadata: {} };
 	});
 
-	const cls = await mc.cls.fromName("libmodal-test-support", "EchoCls");
+	const cls = await mc.cls.fromName("modal-ts-test-support", "EchoCls");
 	const instance = await cls
 		.withOptions({ memoryMiB: 1024, memoryLimitMiB: 2048 })
 		.instance();
@@ -280,7 +280,7 @@ test("withOptions memoryLimit lower than memory throws error", async () => {
 		return _mockFunctionProto;
 	});
 
-	const cls = await mc.cls.fromName("libmodal-test-support", "EchoCls");
+	const cls = await mc.cls.fromName("modal-ts-test-support", "EchoCls");
 	await expect(
 		cls.withOptions({ memoryMiB: 2048, memoryLimitMiB: 1024 }).instance(),
 	).rejects.toThrow(
@@ -297,7 +297,7 @@ test("withOptions memoryLimit without memory throws error", async () => {
 		return _mockFunctionProto;
 	});
 
-	const cls = await mc.cls.fromName("libmodal-test-support", "EchoCls");
+	const cls = await mc.cls.fromName("modal-ts-test-support", "EchoCls");
 	await expect(
 		cls.withOptions({ memoryLimitMiB: 2048 }).instance(),
 	).rejects.toThrow(
@@ -314,7 +314,7 @@ test("withOptions negative cpu throws error", async () => {
 		return _mockFunctionProto;
 	});
 
-	const cls = await mc.cls.fromName("libmodal-test-support", "EchoCls");
+	const cls = await mc.cls.fromName("modal-ts-test-support", "EchoCls");
 	await expect(cls.withOptions({ cpu: -1.0 }).instance()).rejects.toThrow(
 		"must be a positive number",
 	);
@@ -329,7 +329,7 @@ test("withOptions zero cpu throws error", async () => {
 		return _mockFunctionProto;
 	});
 
-	const cls = await mc.cls.fromName("libmodal-test-support", "EchoCls");
+	const cls = await mc.cls.fromName("modal-ts-test-support", "EchoCls");
 	await expect(cls.withOptions({ cpu: 0.0 }).instance()).rejects.toThrow(
 		"must be a positive number",
 	);
@@ -344,7 +344,7 @@ test("withOptions negative memory throws error", async () => {
 		return _mockFunctionProto;
 	});
 
-	const cls = await mc.cls.fromName("libmodal-test-support", "EchoCls");
+	const cls = await mc.cls.fromName("modal-ts-test-support", "EchoCls");
 	await expect(cls.withOptions({ memoryMiB: -100 }).instance()).rejects.toThrow(
 		"must be a positive number",
 	);
@@ -359,7 +359,7 @@ test("withOptions zero memory throws error", async () => {
 		return _mockFunctionProto;
 	});
 
-	const cls = await mc.cls.fromName("libmodal-test-support", "EchoCls");
+	const cls = await mc.cls.fromName("modal-ts-test-support", "EchoCls");
 	await expect(cls.withOptions({ memoryMiB: 0 }).instance()).rejects.toThrow(
 		"must be a positive number",
 	);

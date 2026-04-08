@@ -2,12 +2,12 @@ import { ModalClient } from "modal";
 
 const modal = new ModalClient();
 
-const app = await modal.apps.fromName("libmodal-example", {
+const app = await modal.apps.fromName("modal-ts-example", {
 	createIfMissing: true,
 });
 const image = modal.images.fromRegistry("alpine:3.21");
 
-const volume = await modal.volumes.fromName("libmodal-example-volume", {
+const volume = await modal.volumes.fromName("modal-ts-example-volume", {
 	createIfMissing: true,
 });
 

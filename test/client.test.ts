@@ -31,7 +31,7 @@ test("ModalClient with custom middleware", async () => {
 	});
 
 	try {
-		await mc.functions.fromName("libmodal-test-support", "non-existent");
+		await mc.functions.fromName("modal-ts-test-support", "non-existent");
 	} catch (_err) {
 		// Don't care about success here, just need the RPC to be made
 	} finally {

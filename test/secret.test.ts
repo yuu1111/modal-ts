@@ -6,9 +6,9 @@ import { createMockModalClients } from "./support/grpc_mock";
 import { tc } from "./support/test-client";
 
 test("SecretFromName", async () => {
-	const secret = await tc.secrets.fromName("libmodal-test-secret");
+	const secret = await tc.secrets.fromName("modal-ts-test-secret");
 	expect(secret.secretId).toMatch(/^st-/);
-	expect(secret.name).toBe("libmodal-test-secret");
+	expect(secret.name).toBe("modal-ts-test-secret");
 
 	const promise = tc.secrets.fromName("missing-secret");
 	await expect(promise).rejects.toThrowError(
@@ -17,12 +17,12 @@ test("SecretFromName", async () => {
 });
 
 test("SecretFromNameWithRequiredKeys", async () => {
-	const secret = await tc.secrets.fromName("libmodal-test-secret", {
+	const secret = await tc.secrets.fromName("modal-ts-test-secret", {
 		requiredKeys: ["a", "b", "c"],
 	});
 	expect(secret.secretId).toMatch(/^st-/);
 
-	const promise = tc.secrets.fromName("libmodal-test-secret", {
+	const promise = tc.secrets.fromName("modal-ts-test-secret", {
 		requiredKeys: ["a", "b", "c", "missing-key"],
 	});
 	await expect(promise).rejects.toThrowError(

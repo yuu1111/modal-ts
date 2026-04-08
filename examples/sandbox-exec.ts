@@ -2,7 +2,7 @@ import { ModalClient } from "modal";
 
 const modal = new ModalClient();
 
-const app = await modal.apps.fromName("libmodal-example", {
+const app = await modal.apps.fromName("modal-ts-example", {
 	createIfMissing: true,
 });
 const image = modal.images.fromRegistry("python:3.13-slim");
@@ -40,7 +40,7 @@ for i in range(50000):
 	);
 	console.log("Return code:", await p.wait());
 
-	const secret = await modal.secrets.fromName("libmodal-test-secret", {
+	const secret = await modal.secrets.fromName("modal-ts-test-secret", {
 		requiredKeys: ["c"],
 	});
 	const printSecret = await sb.exec(["printenv", "c"], {

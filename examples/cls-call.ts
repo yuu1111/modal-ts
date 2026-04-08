@@ -4,7 +4,7 @@ import { ModalClient } from "modal";
 
 const modal = new ModalClient();
 
-const cls = await modal.cls.fromName("libmodal-test-support", "EchoCls");
+const cls = await modal.cls.fromName("modal-ts-test-support", "EchoCls");
 const instance = await cls.instance();
 const method = instance.method("echo_string");
 

@@ -18,7 +18,7 @@ test("Cls.withOptions stacking", async () => {
 		return _mockFunctionProto;
 	});
 
-	const cls = await mc.cls.fromName("libmodal-test-support", "EchoCls");
+	const cls = await mc.cls.fromName("modal-ts-test-support", "EchoCls");
 
 	mock.handleUnary("FunctionBindParams", (req) => {
 		expect(req).toMatchObject({ functionId: "fid" });
@@ -63,7 +63,7 @@ test("Cls.withConcurrency/withConcurrency/withBatching chaining", async () => {
 		return _mockFunctionProto;
 	});
 
-	const cls = await mc.cls.fromName("libmodal-test-support", "EchoCls");
+	const cls = await mc.cls.fromName("modal-ts-test-support", "EchoCls");
 
 	mock.handleUnary("FunctionBindParams", (req) => {
 		expect(req).toMatchObject({ functionId: "fid" });
@@ -94,7 +94,7 @@ test("Cls.withOptions retries", async () => {
 		return _mockFunctionProto;
 	});
 
-	const cls = await mc.cls.fromName("libmodal-test-support", "EchoCls");
+	const cls = await mc.cls.fromName("modal-ts-test-support", "EchoCls");
 
 	mock.handleUnary("FunctionBindParams", (req) => {
 		const fo = req.functionOptions as Record<string, unknown>;
@@ -140,7 +140,7 @@ test("Cls.withOptions invalid values", async () => {
 		return _mockFunctionProto;
 	});
 
-	const cls = await mc.cls.fromName("libmodal-test-support", "EchoCls");
+	const cls = await mc.cls.fromName("modal-ts-test-support", "EchoCls");
 	await expect(cls.withOptions({ timeoutMs: 1500 }).instance()).rejects.toThrow(
 		/timeoutMs must be a multiple of 1000ms/,
 	);
@@ -169,7 +169,7 @@ test("withOptions({ secrets: [] }) binds and does not replace secrets", async ()
 		return { boundFunctionId: "fid-1", handleMetadata: {} };
 	});
 
-	const cls = await mc.cls.fromName("libmodal-test-support", "EchoCls");
+	const cls = await mc.cls.fromName("modal-ts-test-support", "EchoCls");
 	const instance = await cls.withOptions({ secrets: [] }).instance();
 	expect(instance).toBeTruthy();
 
@@ -192,7 +192,7 @@ test("withOptions({ volumes: {} }) binds and does not replace volumes", async ()
 		return { boundFunctionId: "fid-1", handleMetadata: {} };
 	});
 
-	const cls = await mc.cls.fromName("libmodal-test-support", "EchoCls");
+	const cls = await mc.cls.fromName("modal-ts-test-support", "EchoCls");
 	const instance = await cls.withOptions({ volumes: {} }).instance();
 	expect(instance).toBeTruthy();
 

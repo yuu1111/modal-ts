@@ -5,7 +5,7 @@ import { ModalClient } from "modal";
 const modal = new ModalClient();
 
 const func = await modal.functions.fromName(
-	"libmodal-test-support",
+	"modal-ts-test-support",
 	"echo_string",
 );
 
