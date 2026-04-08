@@ -4,14 +4,8 @@ node_modules/
 # Build output
 dist/
 
-
 # OS
 .DS_Store
-
-# Python
-__pycache__/
-venv/
-.venv/
 
 # IDE
 .idea/
