@@ -4,6 +4,7 @@
 	"files": {
 		"includes": [
 			"src/**",
+			"!src/generated/**",
 			"test/**",
 			"examples/**",
 			"*.config.ts",

@@ -31,8 +31,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "version": "bun run typecheck",
-    "prepare": "bun scripts/gen-proto.ts",
-    "prepublishOnly": "bun run build"
+    "prepare": "bun scripts/gen-proto.ts && bun run build"
   },
   "dependencies": {
     "cbor-x": "^1.6.4",

@@ -4,8 +4,6 @@ node_modules/
 # Build output
 dist/
 
-# Generated proto
-src/generated/
 
 # OS
 .DS_Store
