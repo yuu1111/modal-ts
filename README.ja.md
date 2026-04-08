@@ -7,15 +7,15 @@ TypeScript/JavaScript向けの非公式Modal SDK。[modal-labs/libmodal](https:/
 ## インストール
 
 ```bash
-npm install modal
-# or
-bun add modal
+git clone https://github.com/yuu1111/modal-ts.git
+cd modal-ts
+bun install
 ```
 
 ## クイックスタート
 
 ```typescript
-import { ModalClient } from "modal";
+import { ModalClient } from "./src/index";
 
 const modal = new ModalClient();
 
@@ -72,7 +72,6 @@ bun test              # テスト実行
 - **Biome** - ESLint + Prettierの代わりにBiomeを使用
 - **厳格なTypeScript** - `verbatimModuleSyntax`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`を有効化。`any`と`@ts-`ディレクティブなし
 - **esbuild** - tsupの代わりにesbuildを直接使用
-- **サブモジュールなし** - Proto定義を直接コミット
 
 ## ライセンス
 

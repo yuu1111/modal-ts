@@ -1,21 +1,21 @@
 # modal-ts
 
-[日本語版はこちら](./README.ja.md)
+[日本語](./README.ja.md)
 
 Unofficial Modal SDK for TypeScript/JavaScript. Forked from [modal-labs/libmodal](https://github.com/modal-labs/libmodal) (Apache-2.0).
 
 ## Install
 
 ```bash
-npm install modal
-# or
-bun add modal
+git clone https://github.com/yuu1111/modal-ts.git
+cd modal-ts
+bun install
 ```
 
 ## Quick Start
 
 ```typescript
-import { ModalClient } from "modal";
+import { ModalClient } from "./src/index";
 
 const modal = new ModalClient();
 
@@ -72,7 +72,6 @@ This fork diverges from `modal-labs/libmodal`:
 - **Biome** - Uses Biome instead of ESLint + Prettier
 - **Strict TypeScript** - `verbatimModuleSyntax`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` enabled. No `any`, no `@ts-` directives
 - **esbuild** - Direct esbuild instead of tsup
-- **No submodule** - Proto definitions vendored directly
 
 ## License
 
