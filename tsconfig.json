@@ -1,5 +1,5 @@
 {
-  "extends": "@yuu1111/tsconfig",
+  "extends": "./node_modules/@yuu1111/tsconfig/base.json",
   "compilerOptions": {
     "paths": {
       "modal": ["./src/index.ts"]
