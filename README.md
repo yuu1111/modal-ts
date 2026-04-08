@@ -7,15 +7,22 @@ Unofficial Modal SDK for TypeScript/JavaScript. Forked from [modal-labs/libmodal
 ## Install
 
 ```bash
+# From GitHub
+bun add github:yuu1111/modal-ts
+
+# Or clone and link for local development
 git clone https://github.com/yuu1111/modal-ts.git
 cd modal-ts
-bun install
+bun install && bun run build
+bun link
+# Then in your project:
+bun link modal
 ```
 
 ## Quick Start
 
 ```typescript
-import { ModalClient } from "./src/index";
+import { ModalClient } from "modal";
 
 const modal = new ModalClient();
 

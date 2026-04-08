@@ -7,15 +7,22 @@ TypeScript/JavaScript向けの非公式Modal SDK。[modal-labs/libmodal](https:/
 ## インストール
 
 ```bash
+# GitHubから直接
+bun add github:yuu1111/modal-ts
+
+# ローカル開発用にclone & link
 git clone https://github.com/yuu1111/modal-ts.git
 cd modal-ts
-bun install
+bun install && bun run build
+bun link
+# プロジェクト側で:
+bun link modal
 ```
 
 ## クイックスタート
 
 ```typescript
-import { ModalClient } from "./src/index";
+import { ModalClient } from "modal";
 
 const modal = new ModalClient();
 
