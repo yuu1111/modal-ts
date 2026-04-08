@@ -18,7 +18,7 @@ bun run test -- --grep "pattern"         # Filter by test name
 # Proto Regeneration
 
 ```bash
-bun run prepare
+bun run proto
 ```
 
 # Testing
