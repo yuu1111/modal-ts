@@ -32,6 +32,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "version": "bun run typecheck",
+    "docs": "typedoc --entryPoints src/index.ts --out .typedoc",
     "proto": "bun scripts/gen-proto.ts"
   },
   "dependencies": {
@@ -44,8 +45,8 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.4.10",
+    "@types/bun": "^1.3.11",
     "@types/jsonwebtoken": "^9.0.10",
-    "@types/node": "^25.5.2",
     "@yuu1111/biome-config": "^1.0.4",
     "@yuu1111/tsconfig": "^1.0.3",
     "grpc-tools": "^1.13.1",
