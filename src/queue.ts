@@ -201,7 +201,7 @@ export class Queue {
 	readonly name?: string;
 	readonly #ephemeralHbManager?: EphemeralHeartbeatManager;
 
-	/** @ignore */
+	/** @internal */
 	constructor(
 		client: ModalClient,
 		queueId: string,

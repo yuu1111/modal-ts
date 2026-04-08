@@ -31,7 +31,7 @@ MODAL_TOKEN_SECRET=as-...
 MODAL_ENVIRONMENT=libmodal
 ```
 
-Test setup lives in `test-support/`. Tests: max 10 concurrent, 20s timeout.
+Test infrastructure deploy: `bun scripts/deploy-test-support.ts`. Tests: max 10 concurrent, 20s timeout.
 
 # Architecture
 

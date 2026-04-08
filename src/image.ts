@@ -177,7 +177,7 @@ export class Image {
 	#imageRegistryConfig?: ImageRegistryConfig;
 	#layers: Layer[];
 
-	/** @ignore */
+	/** @internal */
 	constructor(
 		client: ModalClient,
 		imageId: string,

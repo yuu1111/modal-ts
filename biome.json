@@ -15,25 +15,12 @@
 			"style": {
 				"useShorthandAssign": "error"
 			},
-			"suspicious": {
-				"noConsole": "error"
-			},
 			"performance": {
 				"noBarrelFile": "off"
 			}
 		}
 	},
 	"overrides": [
-		{
-			"includes": ["examples/**"],
-			"linter": {
-				"rules": {
-					"suspicious": {
-						"noConsole": "off"
-					}
-				}
-			}
-		},
 		{
 			"includes": ["test/**"],
 			"linter": {

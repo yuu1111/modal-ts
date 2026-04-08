@@ -47,7 +47,7 @@ export class FunctionCall {
 	readonly functionCallId: string;
 	#client?: ModalClient;
 
-	/** @ignore */
+	/** @internal */
 	constructor(client: ModalClient | undefined, functionCallId: string) {
 		if (client !== undefined) this.#client = client;
 		this.functionCallId = functionCallId;

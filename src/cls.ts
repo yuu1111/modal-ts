@@ -138,7 +138,7 @@ export class Cls {
 	#serviceFunctionMetadata: FunctionHandleMetadata;
 	#serviceOptions?: ServiceOptions;
 
-	/** @ignore */
+	/** @internal */
 	constructor(
 		client: ModalClient,
 		serviceFunctionId: string,

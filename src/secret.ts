@@ -140,7 +140,7 @@ export class Secret {
 	readonly secretId: string;
 	readonly name?: string;
 
-	/** @ignore */
+	/** @internal */
 	constructor(secretId: string, name?: string) {
 		this.secretId = secretId;
 		if (name !== undefined) this.name = name;

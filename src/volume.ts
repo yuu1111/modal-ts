@@ -128,7 +128,7 @@ export class Volume {
 	private _readOnly: boolean = false;
 	readonly #ephemeralHbManager?: EphemeralHeartbeatManager;
 
-	/** @ignore */
+	/** @internal */
 	constructor(
 		volumeId: string,
 		name?: string,

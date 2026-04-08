@@ -99,17 +99,19 @@ def identity_with_repr(s: typing.Any) -> typing.Any:
  * @description AWS Secrets Manager からシークレットを取得してModal Secretに登録
  */
 async function createAwsSecrets(client: ModalClient) {
-	const {
-		SecretsManagerClient,
-		GetSecretValueCommand,
-	} = await import("@aws-sdk/client-secrets-manager");
+	const { SecretsManagerClient, GetSecretValueCommand } = await import(
+		"@aws-sdk/client-secrets-manager"
+	);
 	const sm = new SecretsManagerClient({});
 
-	async function getAwsSecret(secretId: string): Promise<Record<string, string>> {
+	async function getAwsSecret(
+		secretId: string,
+	): Promise<Record<string, string>> {
 		const resp = await sm.send(
 			new GetSecretValueCommand({ SecretId: secretId }),
 		);
-		return JSON.parse(resp.SecretString!);
+		if (!resp.SecretString) throw new Error(`Secret ${secretId} has no value`);
+		return JSON.parse(resp.SecretString);
 	}
 
 	const ecrSecret = await getAwsSecret("test/libmodal/AwsEcrTest");
@@ -161,7 +163,7 @@ async function main() {
 
 	const defaultImageId = await getOrCreateImage(client.cpClient, "");
 	const fastapiImageId = await getOrCreateImage(client.cpClient, "", [
-		'RUN pip install fastapi',
+		"RUN pip install fastapi",
 	]);
 
 	await deployApp(client, {

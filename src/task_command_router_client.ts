@@ -122,7 +122,7 @@ export async function callWithRetriesOnTransientErrors<T>(
 	}
 }
 
-/** @ignore */
+/** @internal */
 export class TaskCommandRouterClientImpl {
 	private stub: TaskCommandRouterClient;
 	private channel: ReturnType<typeof createChannel>;

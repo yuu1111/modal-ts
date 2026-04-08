@@ -89,7 +89,7 @@ export class CloudBucketMount {
 			oidcAuthRoleArn?: string;
 		},
 	);
-	/** @ignore */
+	/** @internal */
 	constructor(
 		bucketName: string,
 		secret: Secret | undefined,
@@ -146,7 +146,7 @@ export class CloudBucketMount {
 		}
 	}
 
-	/** @ignore */
+	/** @internal */
 	toProto(mountPath: string): CloudBucketMountProto {
 		return CloudBucketMountProto.create({
 			bucketName: this.bucketName,

@@ -48,7 +48,7 @@ export type ProxyFromNameParams = {
 export class Proxy {
 	readonly proxyId: string;
 
-	/** @ignore */
+	/** @internal */
 	constructor(proxyId: string) {
 		this.proxyId = proxyId;
 	}

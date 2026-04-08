@@ -708,7 +708,7 @@ export type SandboxCreateConnectCredentials = {
 
 /** A port forwarded from within a running Modal {@link Sandbox}. */
 export class Tunnel {
-	/** @ignore */
+	/** @internal */
 	constructor(
 		public host: string,
 		public port: number,
@@ -849,7 +849,7 @@ export class Sandbox {
 	#commandRouterClientPromise: Promise<TaskCommandRouterClientImpl> | undefined;
 	#attached: boolean = true;
 
-	/** @ignore */
+	/** @internal */
 	constructor(client: ModalClient, sandboxId: string) {
 		this.#client = client;
 		this.sandboxId = sandboxId;
@@ -1417,7 +1417,7 @@ export class ContainerProcess<
 	readonly #commandRouterClient: TaskCommandRouterClientImpl;
 	readonly #deadline: number | null;
 
-	/** @ignore */
+	/** @internal */
 	constructor(
 		taskId: string,
 		execId: string,

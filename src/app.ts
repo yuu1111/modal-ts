@@ -106,7 +106,7 @@ export class App {
 	readonly appId: string;
 	readonly name?: string;
 
-	/** @ignore */
+	/** @internal */
 	constructor(appId: string, name?: string) {
 		this.appId = appId;
 		if (name !== undefined) this.name = name;

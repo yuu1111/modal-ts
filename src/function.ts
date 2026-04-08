@@ -114,7 +114,7 @@ export class Function_ {
 	#client: ModalClient;
 	#handleMetadata?: FunctionHandleMetadata;
 
-	/** @ignore */
+	/** @internal */
 	constructor(
 		client: ModalClient,
 		functionId: string,

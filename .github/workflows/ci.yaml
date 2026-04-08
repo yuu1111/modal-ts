@@ -35,7 +35,7 @@ jobs:
       - run: bun run build
 
       - name: Deploy test support
-        run: bun test-support/setup.ts
+        run: bun scripts/deploy-test-support.ts
         env:
           MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
           MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}

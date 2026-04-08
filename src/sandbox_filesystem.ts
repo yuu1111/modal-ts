@@ -22,7 +22,7 @@ export class SandboxFile {
 	readonly #fileDescriptor: string;
 	readonly #taskId: string;
 
-	/** @ignore */
+	/** @internal */
 	constructor(client: ModalClient, fileDescriptor: string, taskId: string) {
 		this.#client = client;
 		this.#fileDescriptor = fileDescriptor;

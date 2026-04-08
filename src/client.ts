@@ -47,7 +47,7 @@ export interface ModalClientParams {
 	 * can change without warning.
 	 */
 	grpcMiddleware?: ClientMiddleware[];
-	/** @ignore */
+	/** @internal */
 	cpClient?: ModalGrpcClient;
 }
 
@@ -87,7 +87,7 @@ export class ModalClient {
 	readonly secrets: SecretService;
 	readonly volumes: VolumeService;
 
-	/** @ignore */
+	/** @internal */
 	readonly cpClient: ModalGrpcClient;
 	readonly profile: Profile;
 	readonly logger: Logger;
@@ -144,7 +144,7 @@ export class ModalClient {
 		return version || this.profile.imageBuilderVersion || "2024.10";
 	}
 
-	/** @ignore */
+	/** @internal */
 	ipClient(serverUrl: string): ModalGrpcClient {
 		const existing = this.ipClients.get(serverUrl);
 		if (existing) {
