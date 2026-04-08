@@ -90,14 +90,23 @@ export async function createMount(
 	return resp.mountId;
 }
 
+/**
+ * @description Imageを取得または作成
+ * @param cpClient - gRPCクライアント
+ * @param appId - アプリID
+ * @param dockerfileCommands - 追加のDockerfileコマンド (FROMの後に実行)
+ * @param baseImage - ベースDockerイメージ @default "python:3.12-slim"
+ */
 export async function getOrCreateImage(
 	cpClient: ModalGrpcClient,
 	appId: string,
 	dockerfileCommands: string[] = [],
+	baseImage = "python:3.12-slim",
 ): Promise<string> {
+	const commands = [`FROM ${baseImage}`, ...dockerfileCommands];
 	const resp = await cpClient.imageGetOrCreate({
 		appId,
-		image: { dockerfileCommands },
+		image: { dockerfileCommands: commands },
 	});
 	if (!resp.imageId) {
 		throw new Error("Server returned empty imageId");

@@ -164,9 +164,11 @@ async function main() {
 		{ remotePath: "/root/test_support.py", content: TEST_SUPPORT_PY },
 	]);
 
-	const defaultImageId = await getOrCreateImage(client.cpClient, appId);
+	const defaultImageId = await getOrCreateImage(client.cpClient, appId, [
+		"RUN pip install modal",
+	]);
 	const fastapiImageId = await getOrCreateImage(client.cpClient, appId, [
-		"RUN pip install fastapi",
+		"RUN pip install modal fastapi",
 	]);
 
 	await deployApp(client, {
