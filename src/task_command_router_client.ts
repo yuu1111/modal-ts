@@ -9,11 +9,16 @@ import {
 	Metadata,
 	Status,
 } from "nice-grpc";
+import type { ModalGrpcClient } from "./client";
+import { type TimeoutOptions, timeoutMiddleware } from "./client";
+import type { Profile } from "./config";
+import { isLocalhost } from "./config";
+import { ClientClosedError } from "./errors";
 import {
 	FileDescriptor,
 	TaskGetCommandRouterAccessRequest,
 	type TaskGetCommandRouterAccessResponse,
-} from "../proto/modal_proto/api";
+} from "./generated/modal_proto/api";
 import {
 	TaskCommandRouterDefinition,
 	TaskExecPollRequest,
@@ -30,12 +35,7 @@ import {
 	type TaskMountDirectoryRequest,
 	type TaskSnapshotDirectoryRequest,
 	type TaskSnapshotDirectoryResponse,
-} from "../proto/modal_proto/task_command_router";
-import type { ModalGrpcClient } from "./client";
-import { type TimeoutOptions, timeoutMiddleware } from "./client";
-import type { Profile } from "./config";
-import { isLocalhost } from "./config";
-import { ClientClosedError } from "./errors";
+} from "./generated/modal_proto/task_command_router";
 import type { Logger } from "./logger";
 
 type TaskCommandRouterClient = Client<typeof TaskCommandRouterDefinition>;

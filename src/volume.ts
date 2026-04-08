@@ -1,8 +1,8 @@
 import { ClientError, Status } from "nice-grpc";
-import { ObjectCreationType } from "../proto/modal_proto/api";
 import { getDefaultClient, type ModalClient } from "./client";
 import { EphemeralHeartbeatManager } from "./ephemeral";
 import { InvalidError, NotFoundError } from "./errors";
+import { ObjectCreationType } from "./generated/modal_proto/api";
 
 /** Optional parameters for {@link VolumeService#fromName client.volumes.fromName()}. */
 export type VolumeFromNameParams = {

@@ -1,7 +1,7 @@
 import { ClientError, Status } from "nice-grpc";
-import { GPUConfig, ObjectCreationType } from "../proto/modal_proto/api";
 import { getDefaultClient, type ModalClient } from "./client";
 import { NotFoundError } from "./errors";
+import { GPUConfig, ObjectCreationType } from "./generated/modal_proto/api";
 import type { Image } from "./image";
 import type { Sandbox, SandboxCreateParams } from "./sandbox";
 import type { Secret } from "./secret";

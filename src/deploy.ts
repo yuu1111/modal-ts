@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import type { ModalClient, ModalGrpcClient } from "./client";
 import {
 	AppState,
 	DataFormat,
@@ -6,8 +7,7 @@ import {
 	Function_FunctionType,
 	ObjectCreationType,
 	type WebhookConfig,
-} from "../proto/modal_proto/api";
-import type { ModalClient, ModalGrpcClient } from "./client";
+} from "./generated/modal_proto/api";
 
 export interface DeployAppParams {
 	name: string;

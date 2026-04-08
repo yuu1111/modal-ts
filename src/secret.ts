@@ -1,7 +1,7 @@
 import { ClientError, Status } from "nice-grpc";
-import { ObjectCreationType } from "../proto/modal_proto/api";
 import { getDefaultClient, type ModalClient } from "./client";
 import { InvalidError, NotFoundError } from "./errors";
+import { ObjectCreationType } from "./generated/modal_proto/api";
 
 /** Optional parameters for {@link SecretService#fromName client.secrets.fromName()}. */
 export type SecretFromNameParams = {

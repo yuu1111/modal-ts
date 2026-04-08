@@ -1,8 +1,8 @@
+import { getDefaultClient, type ModalClient } from "./client";
 import {
 	CloudBucketMount_BucketType,
 	CloudBucketMount as CloudBucketMountProto,
-} from "../proto/modal_proto/api";
-import { getDefaultClient, type ModalClient } from "./client";
+} from "./generated/modal_proto/api";
 import type { Secret } from "./secret";
 
 export class CloudBucketMountService {

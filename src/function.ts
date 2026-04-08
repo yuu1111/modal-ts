@@ -3,18 +3,18 @@
 import { createHash } from "node:crypto";
 import { ClientError, Status } from "nice-grpc";
 import {
-	DataFormat,
-	FunctionCallInvocationType,
-	type FunctionHandleMetadata,
-	type FunctionInput,
-} from "../proto/modal_proto/api";
-import {
 	getDefaultClient,
 	type ModalClient,
 	type ModalGrpcClient,
 } from "./client";
 import { InternalFailure, InvalidError, NotFoundError } from "./errors";
 import { FunctionCall } from "./function_call";
+import {
+	DataFormat,
+	FunctionCallInvocationType,
+	type FunctionHandleMetadata,
+	type FunctionInput,
+} from "./generated/modal_proto/api";
 import {
 	ControlPlaneInvocation,
 	InputPlaneInvocation,

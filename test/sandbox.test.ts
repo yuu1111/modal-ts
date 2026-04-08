@@ -1,4 +1,5 @@
 import { expect, onTestFinished, test } from "vitest";
+import { parseGpuConfig } from "../src/app";
 import {
 	type AppGetOrCreateResponse,
 	GenericResult_GenericStatus,
@@ -7,8 +8,7 @@ import {
 	NetworkAccess_NetworkAccessType,
 	PTYInfo_PTYType,
 	type SandboxCreateResponse,
-} from "../proto/modal_proto/api";
-import { parseGpuConfig } from "../src/app";
+} from "../src/generated/modal_proto/api";
 import {
 	buildSandboxCreateRequestProto,
 	buildTaskExecStartRequestProto,

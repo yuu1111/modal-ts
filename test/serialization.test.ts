@@ -1,9 +1,11 @@
 // Test to make sure serialization behaviors are consistent.
 
 import { expect, test } from "vitest";
-
-import { ClassParameterSpec, ParameterType } from "../proto/modal_proto/api";
 import { encodeParameterSet } from "../src/cls";
+import {
+	ClassParameterSpec,
+	ParameterType,
+} from "../src/generated/modal_proto/api";
 
 // Reproduce serialization test from the Python SDK.
 // https://github.com/modal-labs/modal-client/blob/4c62d67ee2816146a2a5d42581f6fe7349fa1bf6/test/serialization_test.py

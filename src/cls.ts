@@ -1,4 +1,8 @@
 import { ClientError, Status } from "nice-grpc";
+import { parseGpuConfig } from "./app";
+import { getDefaultClient, type ModalClient } from "./client";
+import { NotFoundError } from "./errors";
+import { Function_ } from "./function";
 import {
 	ClassParameterInfo_ParameterSerializationFormat,
 	ClassParameterSet,
@@ -9,11 +13,7 @@ import {
 	type FunctionRetryPolicy,
 	ParameterType,
 	type VolumeMount,
-} from "../proto/modal_proto/api";
-import { parseGpuConfig } from "./app";
-import { getDefaultClient, type ModalClient } from "./client";
-import { NotFoundError } from "./errors";
-import { Function_ } from "./function";
+} from "./generated/modal_proto/api";
 import { parseRetries, type Retries } from "./retries";
 import type { Secret } from "./secret";
 import { mergeEnvIntoSecrets } from "./secret";

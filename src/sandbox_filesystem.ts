@@ -1,14 +1,14 @@
-import type {
-	ContainerFilesystemExecRequest,
-	ContainerFilesystemExecResponse,
-	DeepPartial,
-} from "../proto/modal_proto/api";
 import {
 	isRetryableGrpc,
 	type ModalClient,
 	type ModalGrpcClient,
 } from "./client";
 import { SandboxFilesystemError } from "./errors";
+import type {
+	ContainerFilesystemExecRequest,
+	ContainerFilesystemExecResponse,
+	DeepPartial,
+} from "./generated/modal_proto/api";
 
 /** File open modes supported by the filesystem API. */
 export type SandboxFileMode = "r" | "w" | "a" | "r+" | "w+" | "a+";

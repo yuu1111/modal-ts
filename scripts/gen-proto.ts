@@ -13,7 +13,7 @@ const root = resolve(import.meta.dirname ?? process.cwd(), "..");
 const isWindows = platform() === "win32";
 const ext = isWindows ? ".exe" : "";
 
-mkdirSync(join(root, "proto"), { recursive: true });
+mkdirSync(join(root, "src", "generated"), { recursive: true });
 
 const protoc = join(root, "node_modules", "grpc-tools", "bin", `protoc${ext}`);
 const grpcPlugin = join(
@@ -39,7 +39,7 @@ execSync(
 		`"${protoc}"`,
 		`--plugin=protoc-gen-grpc="${grpcPlugin}"`,
 		`--plugin=protoc-gen-ts_proto="${tsProtoPlugin}"`,
-		"--ts_proto_out=./proto",
+		"--ts_proto_out=./src/generated",
 		"--ts_proto_opt=outputServices=nice-grpc,outputServices=generic-definitions,useExactTypes=false",
 		"--proto_path=.",
 		...protoFiles.map((f) => f.replace(/\\/g, "/")),
@@ -48,7 +48,7 @@ execSync(
 );
 
 // Add @ts-nocheck to all generated files.
-const generatedFiles = globSync("proto/**/*.ts", { cwd: root });
+const generatedFiles = globSync("src/generated/**/*.ts", { cwd: root });
 for (const rel of generatedFiles) {
 	const file = join(root, rel);
 	const content = readFileSync(file, "utf-8");
@@ -59,7 +59,7 @@ for (const rel of generatedFiles) {
 
 // HACK: Patch for bad Protobuf codegen: fix the "Object" type conflicting with
 // builtin `Object` API in JavaScript and breaking Protobuf import.
-const apiFile = join(root, "proto", "modal_proto", "api.ts");
+const apiFile = join(root, "src", "generated", "modal_proto", "api.ts");
 if (existsSync(apiFile)) {
 	let api = readFileSync(apiFile, "utf-8");
 	api = api.replace(/Object\.entries/g, "PLACEHOLDER_OBJECT_ENTRIES");

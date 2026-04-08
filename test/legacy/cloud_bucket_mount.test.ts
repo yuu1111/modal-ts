@@ -1,6 +1,6 @@
 import { CloudBucketMount, type Secret } from "modal";
 import { expect, test } from "vitest";
-import { CloudBucketMount_BucketType } from "../../proto/modal_proto/api";
+import { CloudBucketMount_BucketType } from "../../src/generated/modal_proto/api";
 
 test("CloudBucketMount constructor with minimal options", () => {
 	const mount = new CloudBucketMount("my-bucket");

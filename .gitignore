@@ -5,7 +5,7 @@ node_modules/
 dist/
 
 # Generated proto
-proto/
+src/generated/
 
 # OS
 .DS_Store

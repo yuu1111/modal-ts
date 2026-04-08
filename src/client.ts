@@ -10,7 +10,6 @@ import {
 	Status,
 } from "nice-grpc";
 import { v4 as uuidv4 } from "uuid";
-import { ClientType, ModalClientDefinition } from "../proto/modal_proto/api";
 import { AppService } from "./app";
 import { AuthTokenManager } from "./auth_token_manager";
 import { CloudBucketMountService } from "./cloud_bucket_mount";
@@ -18,6 +17,7 @@ import { ClsService } from "./cls";
 import { getProfile, type Profile } from "./config";
 import { FunctionService } from "./function";
 import { FunctionCallService } from "./function_call";
+import { ClientType, ModalClientDefinition } from "./generated/modal_proto/api";
 import { ImageService } from "./image";
 import { createLogger, type Logger, type LogLevel } from "./logger";
 import { ProxyService } from "./proxy";

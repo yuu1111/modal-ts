@@ -1,10 +1,6 @@
 // Queue object, to be used with Modal Queues.
 
 import { ClientError, Status } from "nice-grpc";
-import {
-	ObjectCreationType,
-	type QueueNextItemsRequest,
-} from "../proto/modal_proto/api";
 import { getDefaultClient, type ModalClient } from "./client";
 import { EphemeralHeartbeatManager } from "./ephemeral";
 import {
@@ -13,6 +9,10 @@ import {
 	QueueEmptyError,
 	QueueFullError,
 } from "./errors";
+import {
+	ObjectCreationType,
+	type QueueNextItemsRequest,
+} from "./generated/modal_proto/api";
 import { loads as pickleDecode, dumps as pickleEncode } from "./pickle";
 import { checkForRenamedParams } from "./validation";
 

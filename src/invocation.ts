@@ -1,3 +1,5 @@
+import type { ModalClient, ModalGrpcClient } from "./client";
+import { FunctionTimeoutError, InternalFailure, RemoteError } from "./errors";
 import {
 	DataFormat,
 	type FunctionCallInvocationType,
@@ -9,9 +11,7 @@ import {
 	GeneratorDone,
 	type GenericResult,
 	GenericResult_GenericStatus,
-} from "../proto/modal_proto/api";
-import type { ModalClient, ModalGrpcClient } from "./client";
-import { FunctionTimeoutError, InternalFailure, RemoteError } from "./errors";
+} from "./generated/modal_proto/api";
 import { cborDecode } from "./serialization";
 
 // From: modal-client/modal/_utils/function_utils.py

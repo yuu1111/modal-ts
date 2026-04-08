@@ -1,6 +1,6 @@
 import type { Secret } from "modal";
 import { expect, test } from "vitest";
-import { CloudBucketMount_BucketType } from "../proto/modal_proto/api";
+import { CloudBucketMount_BucketType } from "../src/generated/modal_proto/api";
 import { tc } from "./support/test-client";
 
 test("CloudBucketMountService.create() with minimal options", () => {

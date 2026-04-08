@@ -1,31 +1,6 @@
 import { setTimeout } from "node:timers/promises";
 import { ClientError, Status } from "nice-grpc";
 import { v4 as uuidv4 } from "uuid";
-import {
-	type CloudBucketMount as CloudBucketMountProto,
-	FileDescriptor,
-	type GenericResult,
-	GenericResult_GenericStatus,
-	type NetworkAccess,
-	NetworkAccess_NetworkAccessType,
-	PortSpec,
-	PortSpecs,
-	PTYInfo,
-	PTYInfo_PTYType,
-	Resources,
-	SandboxCreateRequest,
-	type SandboxTagsGetResponse,
-	SchedulerPlacement,
-	TunnelType,
-	type VolumeMount,
-} from "../proto/modal_proto/api";
-import {
-	TaskExecStartRequest,
-	TaskExecStderrConfig,
-	TaskExecStdoutConfig,
-	TaskMountDirectoryRequest,
-	TaskSnapshotDirectoryRequest,
-} from "../proto/modal_proto/task_command_router";
 import type { App } from "./app";
 import { parseGpuConfig } from "./app";
 import {
@@ -43,6 +18,31 @@ import {
 	SandboxTimeoutError,
 	TimeoutError,
 } from "./errors";
+import {
+	type CloudBucketMount as CloudBucketMountProto,
+	FileDescriptor,
+	type GenericResult,
+	GenericResult_GenericStatus,
+	type NetworkAccess,
+	NetworkAccess_NetworkAccessType,
+	PortSpec,
+	PortSpecs,
+	PTYInfo,
+	PTYInfo_PTYType,
+	Resources,
+	SandboxCreateRequest,
+	type SandboxTagsGetResponse,
+	SchedulerPlacement,
+	TunnelType,
+	type VolumeMount,
+} from "./generated/modal_proto/api";
+import {
+	TaskExecStartRequest,
+	TaskExecStderrConfig,
+	TaskExecStdoutConfig,
+	TaskMountDirectoryRequest,
+	TaskSnapshotDirectoryRequest,
+} from "./generated/modal_proto/task_command_router";
 import { Image } from "./image";
 // biome-ignore lint/suspicious/noShadowRestrictedNames: SDK type name
 import type { Proxy } from "./proxy";

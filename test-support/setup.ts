@@ -12,7 +12,7 @@ import {
 	deployApp,
 	getOrCreateImage,
 } from "../src/deploy";
-import { WebhookType } from "../proto/modal_proto/api";
+import { WebhookType } from "../src/generated/modal_proto/api";
 
 const TEST_SUPPORT_PY = `\
 import os

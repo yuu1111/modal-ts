@@ -1,7 +1,10 @@
 import { App, Image, Sandbox, Secret, Volume } from "modal";
 import { expect, onTestFinished, test } from "vitest";
-import { GPUConfig, PTYInfo_PTYType } from "../../proto/modal_proto/api";
 import { parseGpuConfig } from "../../src/app";
+import {
+	GPUConfig,
+	PTYInfo_PTYType,
+} from "../../src/generated/modal_proto/api";
 import { buildSandboxCreateRequestProto } from "../../src/sandbox";
 
 test("CreateOneSandbox", async () => {

@@ -1,4 +1,7 @@
 import { ClientError, Status } from "nice-grpc";
+import { type App, parseGpuConfig } from "./app";
+import { getDefaultClient, type ModalClient } from "./client";
+import { InvalidError, NotFoundError } from "./errors";
 import {
 	type GenericResult,
 	GenericResult_GenericStatus,
@@ -6,10 +9,7 @@ import {
 	Image as ImageProto,
 	type ImageRegistryConfig,
 	RegistryAuthType,
-} from "../proto/modal_proto/api";
-import { type App, parseGpuConfig } from "./app";
-import { getDefaultClient, type ModalClient } from "./client";
-import { InvalidError, NotFoundError } from "./errors";
+} from "./generated/modal_proto/api";
 import { mergeEnvIntoSecrets, Secret } from "./secret";
 
 /**
