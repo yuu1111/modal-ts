@@ -63,7 +63,9 @@ const readMixin = {
 				if (value) {
 					if (typeof value === "string") chunks.push(value);
 					else {
-						chunks.push(decoder.decode(value.buffer as ArrayBuffer, { stream: true }));
+						chunks.push(
+							decoder.decode(value.buffer as ArrayBuffer, { stream: true }),
+						);
 					}
 				}
 				if (done) {
