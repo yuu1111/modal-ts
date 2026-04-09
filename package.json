@@ -1,9 +1,9 @@
 {
   "name": "modal-ts",
   "version": "0.8.0",
-  "description": "Modal SDK for JavaScript/TypeScript",
+  "description": "Unofficial Modal SDK for JavaScript/TypeScript",
   "license": "Apache-2.0",
-  "homepage": "https://modal.com/docs/guide/sdk-javascript-go",
+  "homepage": "https://github.com/yuu1111/modal-ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/yuu1111/modal-ts.git"
