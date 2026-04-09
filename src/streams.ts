@@ -1,55 +1,70 @@
 /**
- * Wrapper around `ReadableStream` with convenience functions.
+ * @description `ReadableStream` に便利なメソッドを追加したラッパーインターフェース
  *
- * The Stream API is a modern standard for asynchronous data streams across
- * network and process boundaries. It allows you to read data in chunks, pipe
- * and transform it, and handle backpressure.
- *
- * This wrapper adds some extra functions like `.readText()` to read the entire
- * stream as a string, or `readBytes()` to read binary data.
+ * `.readText()` でストリーム全体を文字列として読み取り、
+ * `.readBytes()` でバイナリデータとして読み取ることができる。
  *
  * Background: https://developer.mozilla.org/en-US/docs/Web/API/Streams_API
  */
 export interface ModalReadStream<R = unknown> extends ReadableStream<R> {
-	/** Read the entire stream as a string. */
+	/**
+	 * @description ストリーム全体を文字列として読み取る
+	 */
 	readText(): Promise<string>;
 
-	/** Read the entire stream as a byte array. */
+	/**
+	 * @description ストリーム全体をバイト配列として読み取る
+	 */
 	readBytes(): Promise<Uint8Array>;
 }
 
 /**
- * Wrapper around `WritableStream` with convenience functions.
+ * @description `WritableStream` に便利なメソッドを追加したラッパーインターフェース
  *
- * The Stream API is a modern standard for asynchronous data streams across
- * network and process boundaries. It allows you to read data in chunks, pipe
- * and transform it, and handle backpressure.
- *
- * This wrapper adds some extra functions like `.writeText()` to write a string
- * to the stream, or `writeBytes()` to write binary data.
+ * `.writeText()` で文字列を書き込み、
+ * `.writeBytes()` でバイナリデータを書き込むことができる。
  *
  * Background: https://developer.mozilla.org/en-US/docs/Web/API/Streams_API
  */
 export interface ModalWriteStream<R = unknown> extends WritableStream<R> {
-	/** Write a string to the stream. Only if this is a text stream. */
+	/**
+	 * @description テキストストリームに文字列を書き込む
+	 * @param text - 書き込む文字列
+	 */
 	writeText(text: string): Promise<void>;
 
-	/** Write a byte array to the stream. Only if this is a byte stream. */
+	/**
+	 * @description バイトストリームにバイト配列を書き込む
+	 * @param bytes - 書き込むバイト配列
+	 */
 	writeBytes(bytes: Uint8Array): Promise<void>;
 }
 
+/**
+ * @description ReadableStream を ModalReadStream に変換する
+ * @param stream - 変換元の ReadableStream
+ * @returns 便利メソッド付きの ModalReadStream
+ */
 export function toModalReadStream<
 	R extends string | Uint8Array = string | Uint8Array,
 >(stream: ReadableStream<R>): ModalReadStream<R> {
 	return Object.assign(stream, readMixin);
 }
 
+/**
+ * @description WritableStream を ModalWriteStream に変換する
+ * @param stream - 変換元の WritableStream
+ * @returns 便利メソッド付きの ModalWriteStream
+ */
 export function toModalWriteStream<
 	R extends string | Uint8Array = string | Uint8Array,
 >(stream: WritableStream<R>): ModalWriteStream<R> {
 	return Object.assign(stream, writeMixin);
 }
 
+/**
+ * @description ModalReadStream に追加する読み取り用メソッド群
+ */
 const readMixin = {
 	async readText<R extends string | Uint8Array>(
 		this: ReadableStream<R>,
@@ -114,6 +129,9 @@ const readMixin = {
 	},
 };
 
+/**
+ * @description ModalWriteStream に追加する書き込み用メソッド群
+ */
 const writeMixin = {
 	async writeText<R extends string | Uint8Array>(
 		this: WritableStream<R>,
@@ -143,9 +161,13 @@ const writeMixin = {
 };
 
 /**
- * Construct a ReadableStream from an iterator.
- * If the stream is canceled, we signal the iterator via return() to stop
- * consumption and allow the source to clean up promptly.
+ * @description AsyncIterable から ReadableStream を構築する
+ *
+ * ストリームがキャンセルされた場合、イテレータの return() を呼び出して
+ * ソース側のクリーンアップを即座に行う。
+ * @param iterable - 変換元の非同期イテラブル
+ * @param onCancel - キャンセル時に呼ばれるコールバック
+ * @returns バイトストリーム
  */
 export function streamConsumingIter(
 	iterable: AsyncIterable<Uint8Array>,

@@ -28,6 +28,18 @@ import { checkForRenamedParams } from "./validation";
 import { getSDKVersion } from "./version";
 import { VolumeService } from "./volume";
 
+/**
+ * @description ModalClientの初期化パラメータ
+ * @property tokenId - Modal APIトークンID @optional
+ * @property tokenSecret - Modal APIトークンシークレット @optional
+ * @property environment - 使用する環境名 @optional
+ * @property endpoint - gRPCエンドポイントURL @optional
+ * @property timeoutMs - デフォルトのリクエストタイムアウト(ミリ秒) @optional
+ * @property maxRetries - 最大リトライ回数 @optional
+ * @property logger - カスタムロガー @optional
+ * @property logLevel - ログレベル @optional
+ * @property grpcMiddleware - カスタムgRPCミドルウェア(認証・リトライの後に適用) @optional
+ */
 export interface ModalClientParams {
 	tokenId?: string;
 	tokenSecret?: string;
@@ -51,6 +63,9 @@ export interface ModalClientParams {
 	cpClient?: ModalGrpcClient;
 }
 
+/**
+ * @description Modal gRPCクライアントの型エイリアス
+ */
 export type ModalGrpcClient = Client<
 	typeof ModalClientDefinition,
 	TimeoutOptions & RetryOptions
@@ -136,10 +151,20 @@ export class ModalClient {
 		this.volumes = new VolumeService(this);
 	}
 
+	/**
+	 * @description 有効な環境名を返す
+	 * @param environment - 明示的な環境名(省略時はプロファイルの値)
+	 * @returns 環境名
+	 */
 	environmentName(environment?: string): string {
 		return environment || this.profile.environment || "";
 	}
 
+	/**
+	 * @description イメージビルダーのバージョンを返す
+	 * @param version - 明示的なバージョン(省略時はプロファイルの値)
+	 * @returns バージョン文字列 @default "2024.10"
+	 */
 	imageBuilderVersion(version?: string): string {
 		return version || this.profile.imageBuilderVersion || "2024.10";
 	}
@@ -158,12 +183,19 @@ export class ModalClient {
 		return newClient;
 	}
 
+	/**
+	 * @description クライアントを閉じて認証トークンのリフレッシュを停止する
+	 */
 	close(): void {
 		this.logger.debug("Closing Modal client");
 		this.authTokenManager = null;
 		this.logger.debug("Modal client closed");
 	}
 
+	/**
+	 * @description SDKバージョン文字列を返す
+	 * @returns バージョン文字列
+	 */
 	version(): string {
 		return getSDKVersion();
 	}
@@ -344,8 +376,11 @@ export class ModalClient {
 	}
 }
 
+/**
+ * @description gRPC呼び出しのタイムアウト設定
+ * @property timeoutMs - タイムアウト(ミリ秒) @optional
+ */
 export type TimeoutOptions = {
-	/** Timeout for this call, interpreted as a duration in milliseconds */
 	timeoutMs?: number;
 };
 
@@ -387,6 +422,9 @@ export const timeoutMiddleware: ClientMiddleware<TimeoutOptions> =
 		}
 	};
 
+/**
+ * @description リトライ対象のgRPCステータスコード
+ */
 const retryableGrpcStatusCodes = new Set([
 	Status.DEADLINE_EXCEEDED,
 	Status.UNAVAILABLE,
@@ -395,6 +433,11 @@ const retryableGrpcStatusCodes = new Set([
 	Status.UNKNOWN,
 ]);
 
+/**
+ * @description エラーがリトライ可能なgRPCステータスコードかを判定する
+ * @param err - 判定対象のエラー
+ * @returns リトライ可能ならtrue
+ */
 export function isRetryableGrpc(err: unknown) {
 	if (err instanceof ClientError) {
 		return retryableGrpcStatusCodes.has(err.code);
@@ -434,12 +477,20 @@ type RetryOptions = {
 	additionalStatusCodes?: Status[];
 };
 
-// Legacy default client - lazily initialized
+/**
+ * @description レガシーデフォルトクライアント(遅延初期化)
+ */
 let defaultClient: ModalClient | undefined;
 
-// Initialization options for the default client (from initializeClient)
+/**
+ * @description デフォルトクライアントの初期化オプション
+ */
 let defaultClientOptions: ModalClientParams | undefined;
 
+/**
+ * @description デフォルトのModalClientインスタンスを取得(なければ作成)
+ * @returns ModalClientインスタンス
+ */
 export function getDefaultClient(): ModalClient {
 	if (!defaultClient) {
 		defaultClient = new ModalClient(defaultClientOptions);
@@ -447,7 +498,10 @@ export function getDefaultClient(): ModalClient {
 	return defaultClient;
 }
 
-// Legacy client export for backward compatibility - proxies to control plane client
+/**
+ * @description レガシーgRPCクライアントProxy(後方互換用)
+ * @deprecated {@link ModalClient} を使用してください
+ */
 export const client = new Proxy({} as ModalGrpcClient, {
 	get(_target, prop) {
 		return getDefaultClient().cpClient[prop as keyof ModalGrpcClient];

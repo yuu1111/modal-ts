@@ -23,13 +23,21 @@ import {
 import { cborEncode } from "./serialization";
 import { checkForRenamedParams } from "./validation";
 
-// From: modal/_utils/blob_utils.py
+/**
+ * @description Blobアップロードの閾値
+ */
 const maxObjectSizeBytes = 2 * 1024 * 1024; // 2 MiB
 
-// From: client/modal/_functions.py
+/**
+ * @description InternalFailure時の最大リトライ回数
+ */
 const maxSystemRetries = 8;
 
-/** Optional parameters for `client.functions.fromName()`. */
+/**
+ * @description `client.functions.fromName()` のオプションパラメータ
+ * @property environment - 環境名 @optional
+ * @property createIfMissing - 存在しない場合に作成するか @optional
+ */
 export type FunctionFromNameParams = {
 	environment?: string;
 	createIfMissing?: boolean;
@@ -51,7 +59,12 @@ export class FunctionService {
 	}
 
 	/**
-	 * Reference a {@link Function_ Function} by its name in an App.
+	 * @description App内のFunctionを名前で取得する
+	 * @param appName - アプリ名
+	 * @param name - Function名
+	 * @param params - オプションパラメータ
+	 * @returns Functionインスタンス
+	 * @throws NotFoundError 指定されたFunctionが存在しない場合
 	 */
 	async fromName(
 		appName: string,
@@ -93,13 +106,23 @@ export class FunctionService {
 	}
 }
 
-/** Simple data structure storing stats for a running {@link Function_ Function}. */
+/**
+ * @description 実行中のFunctionの統計情報
+ * @property backlog - 未処理の入力数
+ * @property numTotalRunners - 総ランナー数
+ */
 export interface FunctionStats {
 	backlog: number;
 	numTotalRunners: number;
 }
 
-/** Optional parameters for {@link Function_#updateAutoscaler Function_.updateAutoscaler()}. */
+/**
+ * @description オートスケーラーの更新パラメータ
+ * @property minContainers - 最小コンテナ数 @optional
+ * @property maxContainers - 最大コンテナ数 @optional
+ * @property bufferContainers - バッファコンテナ数 @optional
+ * @property scaledownWindowMs - スケールダウン猶予期間(ミリ秒) @optional
+ */
 export interface FunctionUpdateAutoscalerParams {
 	minContainers?: number;
 	maxContainers?: number;
@@ -107,7 +130,9 @@ export interface FunctionUpdateAutoscalerParams {
 	scaledownWindowMs?: number;
 }
 
-/** Represents a deployed Modal Function, which can be invoked remotely. */
+/**
+ * @description デプロイ済みModal Functionを表し、リモート実行が可能
+ */
 export class Function_ {
 	readonly functionId: string;
 	readonly methodName?: string;
@@ -148,7 +173,12 @@ export class Function_ {
 		}
 	}
 
-	// Execute a single input into a remote Function.
+	/**
+	 * @description Functionを同期的にリモート実行し、結果を返す
+	 * @param args - 位置引数の配列
+	 * @param kwargs - キーワード引数のマッピング
+	 * @returns Function実行結果
+	 */
 	async remote(
 		args: unknown[] = [],
 		kwargs: Record<string, unknown> = {},
@@ -208,7 +238,12 @@ export class Function_ {
 		);
 	}
 
-	// Spawn a single input into a remote Function.
+	/**
+	 * @description Functionを非同期的にスポーンし、FunctionCallを返す
+	 * @param args - 位置引数の配列
+	 * @param kwargs - キーワード引数のマッピング
+	 * @returns 非同期実行を追跡するFunctionCall
+	 */
 	async spawn(
 		args: unknown[] = [],
 		kwargs: Record<string, unknown> = {},
@@ -236,7 +271,10 @@ export class Function_ {
 		return new FunctionCall(this.#client, invocation.functionCallId);
 	}
 
-	// Returns statistics about the Function.
+	/**
+	 * @description Functionの現在の統計情報を取得する
+	 * @returns バックログとランナー数を含む統計情報
+	 */
 	async getCurrentStats(): Promise<FunctionStats> {
 		const resp = await this.#client.cpClient.functionGetCurrentStats(
 			{ functionId: this.functionId },
@@ -248,7 +286,10 @@ export class Function_ {
 		};
 	}
 
-	// Overrides the current autoscaler behavior for this Function.
+	/**
+	 * @description Functionのオートスケーラー設定を更新する
+	 * @param params - オートスケーラー設定
+	 */
 	async updateAutoscaler(
 		params: FunctionUpdateAutoscalerParams,
 	): Promise<void> {
@@ -310,6 +351,12 @@ export class Function_ {
 	}
 }
 
+/**
+ * @description 大きなペイロードをBlobストレージにアップロードする
+ * @param cpClient - gRPCクライアント
+ * @param data - アップロードするバイナリデータ
+ * @returns Blob ID
+ */
 async function blobUpload(
 	cpClient: ModalGrpcClient,
 	data: Uint8Array,

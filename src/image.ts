@@ -28,9 +28,9 @@ export class ImageService {
 	}
 
 	/**
-	 * Creates an {@link Image} from an Image ID
-	 *
-	 * @param imageId - Image ID.
+	 * @description Image ID から {@link Image} を作成する
+	 * @param imageId - Image ID
+	 * @returns Image インスタンス
 	 */
 	async fromId(imageId: string): Promise<Image> {
 		try {
@@ -50,10 +50,10 @@ export class ImageService {
 	}
 
 	/**
-	 * Creates an {@link Image} from a raw registry tag, optionally using a {@link Secret} for authentication.
-	 *
-	 * @param tag - The registry tag for the Image.
-	 * @param secret - Optional. A Secret containing credentials for registry authentication.
+	 * @description レジストリタグから {@link Image} を作成する。認証用に {@link Secret} を指定可能
+	 * @param tag - Image のレジストリタグ
+	 * @param secret - レジストリ認証用の Secret
+	 * @returns Image インスタンス
 	 */
 	fromRegistry(tag: string, secret?: Secret): Image {
 		let imageRegistryConfig: ImageRegistryConfig | undefined;
@@ -72,10 +72,10 @@ export class ImageService {
 	}
 
 	/**
-	 * Creates an {@link Image} from a raw registry tag, optionally using a {@link Secret} for authentication.
-	 *
-	 * @param tag - The registry tag for the Image.
-	 * @param secret - A Secret containing credentials for registry authentication.
+	 * @description AWS ECR のレジストリタグから {@link Image} を作成する
+	 * @param tag - Image のレジストリタグ
+	 * @param secret - AWS 認証用の Secret
+	 * @returns Image インスタンス
 	 */
 	fromAwsEcr(tag: string, secret: Secret): Image {
 		let imageRegistryConfig: ImageRegistryConfig | undefined;
@@ -94,10 +94,10 @@ export class ImageService {
 	}
 
 	/**
-	 * Creates an {@link Image} from a raw registry tag, optionally using a {@link Secret} for authentication.
-	 *
-	 * @param tag - The registry tag for the Image.
-	 * @param secret - A Secret containing credentials for registry authentication.
+	 * @description GCP Artifact Registry のレジストリタグから {@link Image} を作成する
+	 * @param tag - Image のレジストリタグ
+	 * @param secret - GCP 認証用の Secret
+	 * @returns Image インスタンス
 	 */
 	fromGcpArtifactRegistry(tag: string, secret: Secret): Image {
 		let imageRegistryConfig: ImageRegistryConfig | undefined;
@@ -116,14 +116,9 @@ export class ImageService {
 	}
 
 	/**
-	 * Delete an {@link Image} by ID.
-	 *
-	 * Deletion is irreversible and will prevent Functions/Sandboxes from using the Image.
-	 *
-	 * Note: When building an Image, each chained method call will create an
-	 * intermediate Image layer, each with its own ID. Deleting an Image will not
-	 * delete any of its intermediate layers, only the image identified by the
-	 * provided ID.
+	 * @description ID で {@link Image} を削除する。削除は不可逆で、Function/Sandbox からの使用を妨げる。中間レイヤーは削除されない
+	 * @param imageId - 削除する Image の ID
+	 * @param _ - 将来の拡張用パラメータ
 	 */
 	async delete(imageId: string, _: ImageDeleteParams = {}): Promise<void> {
 		try {
@@ -142,10 +137,18 @@ export class ImageService {
 	}
 }
 
-/** Optional parameters for {@link ImageService#delete client.images.delete()}. */
+/**
+ * @description {@link ImageService#delete client.images.delete()} のオプションパラメータ
+ */
 export type ImageDeleteParams = Record<never, never>;
 
-/** Optional parameters for {@link Image#dockerfileCommands Image.dockerfileCommands()}. */
+/**
+ * @description {@link Image#dockerfileCommands Image.dockerfileCommands()} のオプションパラメータ
+ * @property env - ビルド環境に設定する環境変数
+ * @property secrets - ビルド環境で環境変数として利用可能にする {@link Secret} の配列
+ * @property gpu - ビルド環境の GPU 予約 (例: "A100", "T4:2", "A100-80GB:4")
+ * @property forceBuild - キャッシュを無視してビルドするかどうか
+ */
 export type ImageDockerfileCommandsParams = {
 	/** Environment variables to set in the build environment. */
 	env?: Record<string, string>;
@@ -160,7 +163,14 @@ export type ImageDockerfileCommandsParams = {
 	forceBuild?: boolean;
 };
 
-/** Represents a single image layer with its build configuration. */
+/**
+ * @description 単一の Image レイヤーとそのビルド設定を表す
+ * @property commands - Dockerfile コマンドの配列
+ * @property env - 環境変数
+ * @property secrets - ビルド環境で利用する Secret の配列
+ * @property gpuConfig - GPU 設定
+ * @property forceBuild - キャッシュ無視フラグ
+ */
 type Layer = {
 	commands: string[];
 	env?: Record<string, string>;
@@ -169,7 +179,9 @@ type Layer = {
 	forceBuild?: boolean;
 };
 
-/** A container image, used for starting {@link Sandbox}es. */
+/**
+ * @description {@link Sandbox} の起動に使用するコンテナイメージ
+ */
 export class Image {
 	#client: ModalClient;
 	#imageId: string;
@@ -241,14 +253,10 @@ export class Image {
 	}
 
 	/**
-	 * Extend an image with arbitrary Dockerfile-like commands.
-	 *
-	 * Each call creates a new Image layer that will be built sequentially.
-	 * The provided options apply only to this layer.
-	 *
-	 * @param commands - Array of Dockerfile commands as strings
-	 * @param params - Optional configuration for this layer's build
-	 * @returns A new Image instance
+	 * @description 任意の Dockerfile コマンドで Image を拡張する。各呼び出しは順次ビルドされる新しいレイヤーを作成する
+	 * @param commands - Dockerfile コマンドの文字列配列
+	 * @param params - このレイヤーのビルド設定
+	 * @returns 新しい Image インスタンス
 	 */
 	dockerfileCommands(
 		commands: string[],
@@ -279,9 +287,9 @@ export class Image {
 	}
 
 	/**
-	 * Eagerly builds an Image on Modal.
-	 *
-	 * @param app - App to use to build the Image.
+	 * @description Modal 上で Image を即座にビルドする
+	 * @param app - ビルドに使用する App
+	 * @returns ビルドされた Image インスタンス
 	 */
 	async build(app: App): Promise<Image> {
 		if (this.imageId !== "") {

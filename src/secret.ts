@@ -3,18 +3,29 @@ import { getDefaultClient, type ModalClient } from "./client";
 import { InvalidError, NotFoundError } from "./errors";
 import { ObjectCreationType } from "./generated/modal_proto/api";
 
-/** Optional parameters for {@link SecretService#fromName client.secrets.fromName()}. */
+/**
+ * @description {@link SecretService#fromName client.secrets.fromName()} のオプションパラメータ
+ * @property environment - 使用する環境名
+ * @property requiredKeys - Secret に必須のキー一覧
+ */
 export type SecretFromNameParams = {
 	environment?: string;
 	requiredKeys?: string[];
 };
 
-/** Optional parameters for {@link SecretService#fromObject client.secrets.fromObject()}. */
+/**
+ * @description {@link SecretService#fromObject client.secrets.fromObject()} のオプションパラメータ
+ * @property environment - 使用する環境名
+ */
 export type SecretFromObjectParams = {
 	environment?: string;
 };
 
-/** Optional parameters for {@link SecretService#delete client.secrets.delete()}. */
+/**
+ * @description {@link SecretService#delete client.secrets.delete()} のオプションパラメータ
+ * @property environment - 使用する環境名
+ * @property allowMissing - 存在しない場合にエラーを抑制するかどうか
+ */
 export type SecretDeleteParams = {
 	environment?: string;
 	allowMissing?: boolean;
@@ -35,7 +46,12 @@ export class SecretService {
 		this.#client = client;
 	}
 
-	/** Reference a {@link Secret} by its name. */
+	/**
+	 * @description 名前で {@link Secret} を参照する
+	 * @param name - Secret の名前
+	 * @param params - オプションパラメータ
+	 * @returns Secret インスタンス
+	 */
 	async fromName(name: string, params?: SecretFromNameParams): Promise<Secret> {
 		try {
 			const resp = await this.#client.cpClient.secretGetOrCreate({
@@ -64,7 +80,12 @@ export class SecretService {
 		}
 	}
 
-	/** Create a {@link Secret} from a plain object of key-value pairs. */
+	/**
+	 * @description キーと値のペアから {@link Secret} を作成する
+	 * @param entries - 文字列のキーと値のオブジェクト
+	 * @param params - オプションパラメータ
+	 * @returns Secret インスタンス
+	 */
 	async fromObject(
 		entries: Record<string, string>,
 		params?: SecretFromObjectParams,
@@ -102,9 +123,9 @@ export class SecretService {
 	}
 
 	/**
-	 * Delete a named {@link Secret}.
-	 *
-	 * Warning: Deletion is irreversible and will affect any Apps currently using the Secret.
+	 * @description 名前付き {@link Secret} を削除する。削除は不可逆で、現在使用中の App にも影響する
+	 * @param name - 削除する Secret の名前
+	 * @param params - オプションパラメータ
 	 */
 	async delete(name: string, params?: SecretDeleteParams): Promise<void> {
 		try {
@@ -135,7 +156,9 @@ export class SecretService {
 	}
 }
 
-/** Secrets provide a dictionary of environment variables for {@link Image}s. */
+/**
+ * @description {@link Image} に環境変数の辞書を提供する Secret
+ */
 export class Secret {
 	readonly secretId: string;
 	readonly name?: string;
@@ -167,6 +190,13 @@ export class Secret {
 	}
 }
 
+/**
+ * @description 環境変数オブジェクトを Secret 配列にマージする。env が指定されている場合、一時的な Secret を作成して追加する
+ * @param client - Modal クライアント
+ * @param env - マージする環境変数
+ * @param secrets - 既存の Secret 配列
+ * @returns マージ済みの Secret 配列
+ */
 export async function mergeEnvIntoSecrets(
 	client: ModalClient,
 	env?: Record<string, string>,

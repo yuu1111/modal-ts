@@ -1,3 +1,9 @@
+/**
+ * @description リネームされた旧パラメータ名が使用されている場合にエラーを投げる
+ * @param params - チェック対象のパラメータオブジェクト
+ * @param renames - 旧名から新名へのマッピング
+ * @throws 旧パラメータ名が使用されている場合
+ */
 export function checkForRenamedParams(
 	params: object | undefined | null,
 	renames: Record<string, string>,

@@ -16,22 +16,40 @@ import {
 import { loads as pickleDecode, dumps as pickleEncode } from "./pickle";
 import { checkForRenamedParams } from "./validation";
 
+/**
+ * @description put 操作の初期バックオフ時間(ミリ秒)
+ */
 const queueInitialPutBackoffMs = 100;
-const queueDefaultPartitionTtlMs = 24 * 3600 * 1000; // 24 hours
 
-/** Optional parameters for {@link QueueService#fromName client.queues.fromName()}. */
+/**
+ * @description パーティションのデフォルト TTL(ミリ秒、24時間)
+ */
+const queueDefaultPartitionTtlMs = 24 * 3600 * 1000;
+
+/**
+ * @description {@link QueueService#fromName client.queues.fromName()} のオプションパラメータ
+ * @property environment - 使用する環境名
+ * @property createIfMissing - 存在しない場合に自動作成するかどうか
+ */
 export type QueueFromNameParams = {
 	environment?: string;
 	createIfMissing?: boolean;
 };
 
-/** Optional parameters for {@link QueueService#delete client.queues.delete()}. */
+/**
+ * @description {@link QueueService#delete client.queues.delete()} のオプションパラメータ
+ * @property environment - 使用する環境名
+ * @property allowMissing - 存在しない場合にエラーを抑制するかどうか
+ */
 export type QueueDeleteParams = {
 	environment?: string;
 	allowMissing?: boolean;
 };
 
-/** Optional parameters for {@link QueueService#ephemeral client.queues.ephemeral()}. */
+/**
+ * @description {@link QueueService#ephemeral client.queues.ephemeral()} のオプションパラメータ
+ * @property environment - 使用する環境名
+ */
 export type QueueEphemeralParams = {
 	environment?: string;
 };
@@ -52,8 +70,9 @@ export class QueueService {
 	}
 
 	/**
-	 * Create a nameless, temporary {@link Queue}.
-	 * You will need to call {@link Queue#closeEphemeral Queue.closeEphemeral()} to delete the Queue.
+	 * @description 名前のない一時的な {@link Queue} を作成する。削除するには {@link Queue#closeEphemeral Queue.closeEphemeral()} を呼び出す必要がある
+	 * @param params - オプションパラメータ
+	 * @returns 一時的な Queue インスタンス
 	 */
 	async ephemeral(params: QueueEphemeralParams = {}): Promise<Queue> {
 		const resp = await this.#client.cpClient.queueGetOrCreate({
@@ -75,7 +94,10 @@ export class QueueService {
 	}
 
 	/**
-	 * Reference a {@link Queue} by name.
+	 * @description 名前で {@link Queue} を参照する
+	 * @param name - Queue の名前
+	 * @param params - オプションパラメータ
+	 * @returns Queue インスタンス
 	 */
 	async fromName(
 		name: string,
@@ -106,9 +128,9 @@ export class QueueService {
 	}
 
 	/**
-	 * Delete a {@link Queue} by name.
-	 *
-	 * Warning: Deletion is irreversible and will affect any Apps currently using the Queue.
+	 * @description 名前付き {@link Queue} を削除する。削除は不可逆で、現在使用中の App にも影響する
+	 * @param name - 削除する Queue の名前
+	 * @param params - オプションパラメータ
 	 */
 	async delete(name: string, params: QueueDeleteParams = {}): Promise<void> {
 		try {
@@ -138,7 +160,11 @@ export class QueueService {
 	}
 }
 
-/** Optional parameters for {@link Queue#clear Queue.clear()}. */
+/**
+ * @description {@link Queue#clear Queue.clear()} のオプションパラメータ
+ * @property partition - クリアするパーティション。未設定の場合はデフォルトパーティションを使用
+ * @property all - すべてのパーティションをクリアするかどうか
+ */
 export type QueueClearParams = {
 	/** Partition to clear, uses default partition if not set. */
 	partition?: string;
@@ -147,7 +173,11 @@ export type QueueClearParams = {
 	all?: boolean;
 };
 
-/** Optional parameters for {@link Queue#get Queue.get()}. */
+/**
+ * @description {@link Queue#get Queue.get()} のオプションパラメータ
+ * @property timeoutMs - Queue が空の場合の待機時間(ミリ秒)。デフォルトは無期限
+ * @property partition - 値を取得するパーティション。未設定の場合はデフォルトパーティションを使用
+ */
 export type QueueGetParams = {
 	/** How long to wait if the Queue is empty in milliseconds (default: indefinite). */
 	timeoutMs?: number;
@@ -156,10 +186,17 @@ export type QueueGetParams = {
 	partition?: string;
 };
 
-/** Optional parameters for {@link Queue#getMany Queue.getMany()}. */
+/**
+ * @description {@link Queue#getMany Queue.getMany()} のオプションパラメータ
+ */
 export type QueueGetManyParams = QueueGetParams;
 
-/** Optional parameters for {@link Queue#put Queue.put()}. */
+/**
+ * @description {@link Queue#put Queue.put()} のオプションパラメータ
+ * @property timeoutMs - Queue が満杯の場合の待機時間(ミリ秒)。デフォルトは無期限
+ * @property partition - アイテムを追加するパーティション。未設定の場合はデフォルトパーティションを使用
+ * @property partitionTtlMs - パーティションの TTL(ミリ秒) @default 86400000
+ */
 export type QueuePutParams = {
 	/** How long to wait if the Queue is full in milliseconds (default: indefinite). */
 	timeoutMs?: number;
@@ -171,10 +208,16 @@ export type QueuePutParams = {
 	partitionTtlMs?: number;
 };
 
-/** Optional parameters for {@link Queue#putMany Queue.putMany()}. */
+/**
+ * @description {@link Queue#putMany Queue.putMany()} のオプションパラメータ
+ */
 export type QueuePutManyParams = QueuePutParams;
 
-/** Optional parameters for {@link Queue#len Queue.len()}. */
+/**
+ * @description {@link Queue#len Queue.len()} のオプションパラメータ
+ * @property partition - 長さを計算するパーティション。未設定の場合はデフォルトパーティションを使用
+ * @property total - すべてのパーティションの合計長を返すかどうか
+ */
 export type QueueLenParams = {
 	/** Partition to compute length, uses default partition if not set. */
 	partition?: string;
@@ -183,7 +226,11 @@ export type QueueLenParams = {
 	total?: boolean;
 };
 
-/** Optional parameters for {@link Queue#iterate Queue.iterate()}. */
+/**
+ * @description {@link Queue#iterate Queue.iterate()} のオプションパラメータ
+ * @property itemPollTimeoutMs - 次のアイテムまでの待機時間(ミリ秒)。超過するとイテレーション終了 @default 0
+ * @property partition - イテレートするパーティション。未設定の場合はデフォルトパーティションを使用
+ */
 export type QueueIterateParams = {
 	/** How long to wait between successive items before exiting iteration in milliseconds (default: 0). */
 	itemPollTimeoutMs?: number;
@@ -235,7 +282,9 @@ export class Queue {
 		return getDefaultClient().queues.ephemeral(params);
 	}
 
-	/** Delete the ephemeral Queue. Only usable with ephemeral Queues. */
+	/**
+	 * @description 一時的な Queue を削除する。一時的な Queue でのみ使用可能
+	 */
 	closeEphemeral(): void {
 		if (this.#ephemeralHbManager) {
 			this.#ephemeralHbManager.stop();
@@ -265,7 +314,8 @@ export class Queue {
 	}
 
 	/**
-	 * Remove all objects from a Queue partition.
+	 * @description Queue パーティションからすべてのオブジェクトを削除する
+	 * @param params - オプションパラメータ
 	 */
 	async clear(params: QueueClearParams = {}): Promise<void> {
 		if (params.partition && params.all) {
@@ -315,11 +365,10 @@ export class Queue {
 	}
 
 	/**
-	 * Remove and return the next object from the Queue.
-	 *
-	 * By default, this will wait until at least one item is present in the Queue.
-	 * If `timeoutMs` is set, raises `QueueEmptyError` if no items are available
-	 * within that timeout in milliseconds.
+	 * @description Queue から次のオブジェクトを取り出して返す。デフォルトではアイテムが存在するまで待機する
+	 * @param params - オプションパラメータ
+	 * @returns Queue から取り出したオブジェクト
+	 * @throws timeoutMs 設定時、タイムアウト内にアイテムがなければ QueueEmptyError
 	 */
 	async get(params: QueueGetParams = {}): Promise<unknown | null> {
 		checkForRenamedParams(params, { timeout: "timeoutMs" });
@@ -329,11 +378,11 @@ export class Queue {
 	}
 
 	/**
-	 * Remove and return up to `n` objects from the Queue.
-	 *
-	 * By default, this will wait until at least one item is present in the Queue.
-	 * If `timeoutMs` is set, raises `QueueEmptyError` if no items are available
-	 * within that timeout in milliseconds.
+	 * @description Queue から最大 n 個のオブジェクトを取り出して返す。デフォルトではアイテムが存在するまで待機する
+	 * @param n - 取得する最大アイテム数
+	 * @param params - オプションパラメータ
+	 * @returns 取り出したオブジェクトの配列
+	 * @throws timeoutMs 設定時、タイムアウト内にアイテムがなければ QueueEmptyError
 	 */
 	async getMany(
 		n: number,
@@ -384,11 +433,10 @@ export class Queue {
 	}
 
 	/**
-	 * Add an item to the end of the Queue.
-	 *
-	 * If the Queue is full, this will retry with exponential backoff until the
-	 * provided `timeoutMs` is reached, or indefinitely if `timeoutMs` is not set.
-	 * Raises {@link QueueFullError} if the Queue is still full after the timeout.
+	 * @description Queue の末尾にアイテムを追加する。満杯の場合は指数バックオフでリトライする
+	 * @param v - 追加するアイテム
+	 * @param params - オプションパラメータ
+	 * @throws タイムアウト後も満杯の場合 {@link QueueFullError}
 	 */
 	async put(v: unknown, params: QueuePutParams = {}): Promise<void> {
 		checkForRenamedParams(params, {
@@ -405,11 +453,10 @@ export class Queue {
 	}
 
 	/**
-	 * Add several items to the end of the Queue.
-	 *
-	 * If the Queue is full, this will retry with exponential backoff until the
-	 * provided `timeoutMs` is reached, or indefinitely if `timeoutMs` is not set.
-	 * Raises {@link QueueFullError} if the Queue is still full after the timeout.
+	 * @description Queue の末尾に複数のアイテムを追加する。満杯の場合は指数バックオフでリトライする
+	 * @param values - 追加するアイテムの配列
+	 * @param params - オプションパラメータ
+	 * @throws タイムアウト後も満杯の場合 {@link QueueFullError}
 	 */
 	async putMany(
 		values: unknown[],
@@ -428,7 +475,11 @@ export class Queue {
 		);
 	}
 
-	/** Return the number of objects in the Queue. */
+	/**
+	 * @description Queue 内のオブジェクト数を返す
+	 * @param params - オプションパラメータ
+	 * @returns オブジェクト数
+	 */
 	async len(params: QueueLenParams = {}): Promise<number> {
 		if (params.partition && params.total) {
 			throw new InvalidError(
@@ -443,7 +494,10 @@ export class Queue {
 		return resp.len;
 	}
 
-	/** Iterate through items in a Queue without mutation. */
+	/**
+	 * @description Queue 内のアイテムを変更せずにイテレートする
+	 * @param params - オプションパラメータ
+	 */
 	async *iterate(
 		params: QueueIterateParams = {},
 	): AsyncGenerator<unknown, void, unknown> {

@@ -5,6 +5,9 @@ import {
 } from "./generated/modal_proto/api";
 import type { Secret } from "./secret";
 
+/**
+ * @description {@link CloudBucketMount} の作成を管理するサービス
+ */
 export class CloudBucketMountService {
 	readonly #client: ModalClient;
 
@@ -12,6 +15,12 @@ export class CloudBucketMountService {
 		this.#client = client;
 	}
 
+	/**
+	 * @description クラウドバケットマウントを作成する
+	 * @param bucketName - バケット名
+	 * @param params - マウントオプション
+	 * @returns 作成された CloudBucketMount
+	 */
 	create(
 		bucketName: string,
 		params: {
@@ -64,7 +73,9 @@ export class CloudBucketMountService {
 	}
 }
 
-/** Cloud Bucket Mounts provide access to cloud storage buckets within Modal Functions. */
+/**
+ * @description Modal Function 内からクラウドストレージバケットにアクセスするためのマウント
+ */
 export class CloudBucketMount {
 	readonly bucketName!: string;
 	readonly secret?: Secret;

@@ -21,19 +21,27 @@ export class FunctionCallService {
 	}
 
 	/**
-	 * Create a new {@link FunctionCall} from ID.
+	 * @description IDからFunctionCallを取得する
+	 * @param functionCallId - FunctionCall ID
+	 * @returns FunctionCallインスタンス
 	 */
 	async fromId(functionCallId: string): Promise<FunctionCall> {
 		return new FunctionCall(this.#client, functionCallId);
 	}
 }
 
-/** Optional parameters for {@link FunctionCall#get FunctionCall.get()}. */
+/**
+ * @description FunctionCall.get()のオプションパラメータ
+ * @property timeoutMs - 結果待ちのタイムアウト(ミリ秒) @optional
+ */
 export type FunctionCallGetParams = {
 	timeoutMs?: number;
 };
 
-/** Optional parameters for {@link FunctionCall#cancel FunctionCall.cancel()}. */
+/**
+ * @description FunctionCall.cancel()のオプションパラメータ
+ * @property terminateContainers - コンテナも終了するか @optional
+ */
 export type FunctionCallCancelParams = {
 	terminateContainers?: boolean;
 };
@@ -60,7 +68,11 @@ export class FunctionCall {
 		return new FunctionCall(undefined, functionCallId);
 	}
 
-	/** Get the result of a FunctionCall, optionally waiting with a timeout. */
+	/**
+	 * @description FunctionCallの結果を取得する(タイムアウト付き待機可)
+	 * @param params - オプションパラメータ
+	 * @returns Function実行結果
+	 */
 	async get(params: FunctionCallGetParams = {}): Promise<unknown> {
 		checkForRenamedParams(params, { timeout: "timeoutMs" });
 
@@ -71,7 +83,10 @@ export class FunctionCall {
 		return invocation.awaitOutput(params.timeoutMs);
 	}
 
-	/** Cancel a running FunctionCall. */
+	/**
+	 * @description 実行中のFunctionCallをキャンセルする
+	 * @param params - オプションパラメータ
+	 */
 	async cancel(params: FunctionCallCancelParams = {}) {
 		const cpClient = this.#client?.cpClient || getDefaultClient().cpClient;
 

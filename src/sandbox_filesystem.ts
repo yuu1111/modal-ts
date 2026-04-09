@@ -10,12 +10,15 @@ import type {
 	DeepPartial,
 } from "./generated/modal_proto/api";
 
-/** File open modes supported by the filesystem API. */
+/**
+ * @description ファイルシステムAPIがサポートするファイルオープンモード
+ */
 export type SandboxFileMode = "r" | "w" | "a" | "r+" | "w+" | "a+";
 
 /**
- * SandboxFile represents an open file in the {@link Sandbox} filesystem.
- * Provides read/write operations similar to Node.js `fsPromises.FileHandle`.
+ * @description {@link Sandbox} ファイルシステム内の開かれたファイルを表す
+ *
+ * Node.js の `fsPromises.FileHandle` に類似した読み書き操作を提供する。
  */
 export class SandboxFile {
 	readonly #client: ModalClient;
@@ -30,8 +33,8 @@ export class SandboxFile {
 	}
 
 	/**
-	 * Read data from the file.
-	 * @returns Promise that resolves to the read data as Uint8Array
+	 * @description ファイルからデータを読み取る
+	 * @returns 読み取ったデータのバイト配列
 	 */
 	async read(): Promise<Uint8Array> {
 		const resp = await runFilesystemExec(this.#client.cpClient, {
@@ -55,8 +58,8 @@ export class SandboxFile {
 	}
 
 	/**
-	 * Write data to the file.
-	 * @param data - Data to write (string or Uint8Array)
+	 * @description ファイルにデータを書き込む
+	 * @param data - 書き込むバイト配列
 	 */
 	async write(data: Uint8Array): Promise<void> {
 		await runFilesystemExec(this.#client.cpClient, {
@@ -69,7 +72,7 @@ export class SandboxFile {
 	}
 
 	/**
-	 * Flush any buffered data to the file.
+	 * @description バッファされたデータをファイルにフラッシュする
 	 */
 	async flush(): Promise<void> {
 		await runFilesystemExec(this.#client.cpClient, {
@@ -81,7 +84,7 @@ export class SandboxFile {
 	}
 
 	/**
-	 * Close the file handle.
+	 * @description ファイルハンドルを閉じる
 	 */
 	async close(): Promise<void> {
 		await runFilesystemExec(this.#client.cpClient, {
@@ -93,6 +96,12 @@ export class SandboxFile {
 	}
 }
 
+/**
+ * @description Sandbox ファイルシステム操作を実行しレスポンスを収集する
+ * @param cpClient - gRPC クライアント
+ * @param request - 実行リクエスト
+ * @returns 出力チャンクとレスポンス
+ */
 export async function runFilesystemExec(
 	cpClient: ModalGrpcClient,
 	request: DeepPartial<ContainerFilesystemExecRequest>,

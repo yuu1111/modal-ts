@@ -20,7 +20,11 @@ import { mergeEnvIntoSecrets } from "./secret";
 import { checkForRenamedParams } from "./validation";
 import type { Volume } from "./volume";
 
-/** Optional parameters for {@link ClsService#fromName client.cls.fromName()}. */
+/**
+ * @description {@link ClsService#fromName client.cls.fromName()} のオプションパラメータ
+ * @property environment - Modal環境名 @optional
+ * @property createIfMissing - 存在しない場合に作成するかどうか @optional
+ */
 export type ClsFromNameParams = {
 	environment?: string;
 	createIfMissing?: boolean;
@@ -98,6 +102,22 @@ export class ClsService {
 	}
 }
 
+/**
+ * @description Cls のランタイムオプション上書きパラメータ
+ * @property cpu - CPU コア数 @optional
+ * @property cpuLimit - CPU コア数の上限 @optional
+ * @property memoryMiB - メモリ(MiB) @optional
+ * @property memoryLimitMiB - メモリ上限(MiB) @optional
+ * @property gpu - GPU 設定文字列 @optional
+ * @property env - 環境変数 @optional
+ * @property secrets - シークレット @optional
+ * @property volumes - ボリュームマウント @optional
+ * @property retries - リトライポリシー @optional
+ * @property maxContainers - 最大コンテナ数 @optional
+ * @property bufferContainers - バッファコンテナ数 @optional
+ * @property scaledownWindowMs - スケールダウン待機時間(ミリ秒) @optional
+ * @property timeoutMs - タイムアウト(ミリ秒) @optional
+ */
 export type ClsWithOptionsParams = {
 	cpu?: number;
 	cpuLimit?: number;
@@ -114,16 +134,29 @@ export type ClsWithOptionsParams = {
 	timeoutMs?: number;
 };
 
+/**
+ * @description Cls の同時実行設定パラメータ
+ * @property maxInputs - 最大同時入力数
+ * @property targetInputs - 目標同時入力数 @optional
+ */
 export type ClsWithConcurrencyParams = {
 	maxInputs: number;
 	targetInputs?: number;
 };
 
+/**
+ * @description Cls のダイナミックバッチング設定パラメータ
+ * @property maxBatchSize - 最大バッチサイズ
+ * @property waitMs - バッチ待機時間(ミリ秒)
+ */
 export type ClsWithBatchingParams = {
 	maxBatchSize: number;
 	waitMs: number;
 };
 
+/**
+ * @description Cls サービスの内部オプション(公開パラメータ + 内部フィールド)
+ */
 type ServiceOptions = ClsWithOptionsParams & {
 	maxConcurrentInputs?: number;
 	targetConcurrentInputs?: number;
@@ -131,7 +164,9 @@ type ServiceOptions = ClsWithOptionsParams & {
 	batchWaitMs?: number;
 };
 
-/** Represents a deployed Modal Cls. */
+/**
+ * @description デプロイ済みの Modal Cls を表すクラス
+ */
 export class Cls {
 	#client: ModalClient;
 	#serviceFunctionId: string;
@@ -166,7 +201,11 @@ export class Cls {
 		return getDefaultClient().cls.fromName(appName, name, params);
 	}
 
-	/** Create a new instance of the Cls with parameters and/or runtime options. */
+	/**
+	 * @description パラメータやランタイムオプションを適用した Cls インスタンスを生成する
+	 * @param parameters - Cls コンストラクタに渡すパラメータ
+	 * @returns Cls インスタンス
+	 */
 	async instance(
 		parameters: Record<string, unknown> = {},
 	): Promise<ClsInstance> {
@@ -189,7 +228,11 @@ export class Cls {
 		return new ClsInstance(methods);
 	}
 
-	/** Override the static Function configuration at runtime. */
+	/**
+	 * @description 静的な Function 設定をランタイムで上書きする
+	 * @param options - 上書きオプション
+	 * @returns 新しいオプションが適用された Cls
+	 */
 	withOptions(options: ClsWithOptionsParams): Cls {
 		const merged = mergeServiceOptions(this.#serviceOptions, options);
 		return new Cls(
@@ -200,7 +243,11 @@ export class Cls {
 		);
 	}
 
-	/** Create an instance of the Cls with input concurrency enabled or overridden with new values. */
+	/**
+	 * @description 同時実行設定を有効化または上書きした Cls を返す
+	 * @param params - 同時実行パラメータ
+	 * @returns 同時実行設定が適用された Cls
+	 */
 	withConcurrency(params: ClsWithConcurrencyParams): Cls {
 		const merged = mergeServiceOptions(this.#serviceOptions, {
 			maxConcurrentInputs: params.maxInputs,
@@ -216,7 +263,11 @@ export class Cls {
 		);
 	}
 
-	/** Create an instance of the Cls with dynamic batching enabled or overridden with new values. */
+	/**
+	 * @description ダイナミックバッチングを有効化または上書きした Cls を返す
+	 * @param params - バッチングパラメータ
+	 * @returns バッチング設定が適用された Cls
+	 */
 	withBatching(params: ClsWithBatchingParams): Cls {
 		const merged = mergeServiceOptions(this.#serviceOptions, {
 			batchMaxSize: params.maxBatchSize,
@@ -230,7 +281,11 @@ export class Cls {
 		);
 	}
 
-	/** Bind parameters to the Cls function. */
+	/**
+	 * @description パラメータを Cls 関数にバインドする
+	 * @param parameters - バインドするパラメータ
+	 * @returns バインドされた関数ID
+	 */
 	async #bindParameters(parameters: Record<string, unknown>): Promise<string> {
 		const mergedSecrets = await mergeEnvIntoSecrets(
 			this.#client,
@@ -253,6 +308,12 @@ export class Cls {
 	}
 }
 
+/**
+ * @description Cls パラメータスキーマに基づいてパラメータセットをエンコードする
+ * @param schema - パラメータスキーマ
+ * @param params - エンコードするパラメータ
+ * @returns シリアライズされたバイト列
+ */
 export function encodeParameterSet(
 	schema: ClassParameterSpec[],
 	params: Record<string, unknown>,
@@ -267,6 +328,12 @@ export function encodeParameterSet(
 	return ClassParameterSet.encode({ parameters: encoded }).finish();
 }
 
+/**
+ * @description ベースオプションに差分をマージする
+ * @param base - ベースオプション
+ * @param diff - マージする差分
+ * @returns マージ結果(空の場合は undefined)
+ */
 function mergeServiceOptions(
 	base: ServiceOptions | undefined,
 	diff: Partial<ServiceOptions>,
@@ -278,6 +345,11 @@ function mergeServiceOptions(
 	return Object.keys(merged).length === 0 ? undefined : merged;
 }
 
+/**
+ * @description ServiceOptions から gRPC FunctionOptions プロトコルバッファを構築する
+ * @param options - サービスオプション
+ * @returns FunctionOptions プロトメッセージ(オプションが空の場合は undefined)
+ */
 async function buildFunctionOptionsProto(
 	options?: ServiceOptions,
 ): Promise<FunctionOptions | undefined> {
@@ -405,6 +477,12 @@ async function buildFunctionOptionsProto(
 	return functionOptions;
 }
 
+/**
+ * @description パラメータスペックに基づいて単一パラメータをエンコードする
+ * @param paramSpec - パラメータのスキーマ定義
+ * @param value - エンコードする値
+ * @returns エンコードされたパラメータ値
+ */
 function encodeParameter(
 	paramSpec: ClassParameterSpec,
 	value: unknown,
@@ -461,7 +539,9 @@ function encodeParameter(
 	return paramValue;
 }
 
-/** Represents an instance of a deployed Modal {@link Cls}, optionally with parameters. */
+/**
+ * @description デプロイ済み Modal {@link Cls} のインスタンス(パラメータ適用済み)
+ */
 export class ClsInstance {
 	#methods: Map<string, Function_>;
 
@@ -469,6 +549,12 @@ export class ClsInstance {
 		this.#methods = methods;
 	}
 
+	/**
+	 * @description 名前を指定してメソッドを取得する
+	 * @param name - メソッド名
+	 * @returns メソッドに対応する Function
+	 * @throws メソッドが見つからない場合は {@link NotFoundError}
+	 */
 	method(name: string): Function_ {
 		const method = this.#methods.get(name);
 		if (!method) {

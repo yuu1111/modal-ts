@@ -38,12 +38,17 @@ export class ProxyService {
 	}
 }
 
-/** Optional parameters for {@link ProxyService#fromName client.proxies.fromName()}. */
+/**
+ * @description {@link ProxyService#fromName client.proxies.fromName()} のオプションパラメータ
+ * @property environment - Modal環境名 @optional
+ */
 export type ProxyFromNameParams = {
 	environment?: string;
 };
 
-/** Proxy objects give your Modal containers a static outbound IP address. */
+/**
+ * @description Modal コンテナに静的なアウトバウンド IP アドレスを提供するプロキシ
+ */
 // biome-ignore lint/suspicious/noShadowRestrictedNames: Public API name
 export class Proxy {
 	readonly proxyId: string;

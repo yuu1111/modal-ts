@@ -4,7 +4,9 @@ import path from "node:path";
 import { parse as parseToml } from "smol-toml";
 import { getDefaultClient } from "./client";
 
-/** Raw representation of the .modal.toml file. */
+/**
+ * @description .modal.toml ファイルの生データ表現
+ */
 interface Config {
 	[profile: string]: {
 		server_url?: string;
@@ -17,7 +19,15 @@ interface Config {
 	};
 }
 
-/** Resolved configuration object from `Config` and environment variables. */
+/**
+ * @description `Config` と環境変数から解決された設定オブジェクト
+ * @property serverUrl - Modal APIサーバーのURL
+ * @property tokenId - 認証トークンID @optional
+ * @property tokenSecret - 認証トークンシークレット @optional
+ * @property environment - Modal環境名 @optional
+ * @property imageBuilderVersion - イメージビルダーのバージョン @optional
+ * @property logLevel - ログレベル @optional
+ */
 export interface Profile {
 	serverUrl: string;
 	tokenId?: string;
@@ -27,6 +37,11 @@ export interface Profile {
 	logLevel?: string;
 }
 
+/**
+ * @description プロファイルのサーバーURLがローカルホストかどうかを判定する
+ * @param profile - 判定対象のプロファイル
+ * @returns ローカルホストの場合 true
+ */
 export function isLocalhost(profile: Profile): boolean {
 	const url = new URL(profile.serverUrl);
 	const hostname = url.hostname;
@@ -38,6 +53,10 @@ export function isLocalhost(profile: Profile): boolean {
 	);
 }
 
+/**
+ * @description Modal設定ファイル(.modal.toml)のパスを返す
+ * @returns 設定ファイルの絶対パス(環境変数 MODAL_CONFIG_PATH が優先)
+ */
 export function configFilePath(): string {
 	const configPath = process.env.MODAL_CONFIG_PATH;
 	if (configPath && configPath !== "") {
@@ -46,6 +65,10 @@ export function configFilePath(): string {
 	return path.join(homedir(), ".modal.toml");
 }
 
+/**
+ * @description 設定ファイルを読み込みパースする
+ * @returns パースされた設定オブジェクト(ファイルが存在しない場合は空オブジェクト)
+ */
 function readConfigFile(): Config {
 	try {
 		const configPath = configFilePath();
@@ -67,13 +90,19 @@ function readConfigFile(): Config {
 	}
 }
 
-// Synchronous on startup to avoid top-level await in CJS output.
-//
-// Any performance impact is minor because the .modal.toml file is small and
-// only read once. This is comparable to how OpenSSL certificates can be probed
-// synchronously, for instance.
+/**
+ * @description 起動時に同期的に読み込まれた設定データ
+ *
+ * CJS出力でのトップレベル await を避けるため同期読み込みを使用。
+ * .modal.toml は小さく一度だけ読まれるためパフォーマンスへの影響は軽微。
+ */
 const config: Config = readConfigFile();
 
+/**
+ * @description 指定されたプロファイル名(または自動検出)から設定を解決する
+ * @param profileName - プロファイル名(省略時はアクティブまたは "default" を使用)
+ * @returns 環境変数とTOML設定をマージしたプロファイル
+ */
 export function getProfile(profileName?: string): Profile {
 	if (!profileName) {
 		for (const [name, profileData] of Object.entries(config)) {
@@ -121,14 +150,14 @@ export function getProfile(profileName?: string): Profile {
 }
 
 /**
- * @deprecated Use `client.environmentName()` instead.
+ * @deprecated `client.environmentName()` を使用してください。
  */
 export function environmentName(environment?: string): string {
 	return environment || getDefaultClient().profile.environment || "";
 }
 
 /**
- * @deprecated Use `client.imageBuilderVersion()` instead.
+ * @deprecated `client.imageBuilderVersion()` を使用してください。
  */
 export function imageBuilderVersion(version?: string): string {
 	return version || getDefaultClient().profile.imageBuilderVersion || "2024.10";

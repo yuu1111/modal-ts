@@ -1,6 +1,13 @@
 /* eslint-disable no-console */
+
+/**
+ * @description ログの重要度レベル
+ */
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
+/**
+ * @description ログレベルの数値マッピング(小さいほど詳細)
+ */
 const LOG_LEVELS: Record<LogLevel, number> = {
 	debug: 0,
 	info: 1,
@@ -8,6 +15,9 @@ const LOG_LEVELS: Record<LogLevel, number> = {
 	error: 3,
 };
 
+/**
+ * @description ロガーインターフェース
+ */
 export interface Logger {
 	debug(message: string, ...args: unknown[]): void;
 	info(message: string, ...args: unknown[]): void;
@@ -15,6 +25,12 @@ export interface Logger {
 	error(message: string, ...args: unknown[]): void;
 }
 
+/**
+ * @description ログレベル文字列をパースして正規化する
+ * @param level - ログレベル文字列(空文字列の場合は "warn")
+ * @returns 正規化されたログレベル
+ * @throws 無効なログレベル値の場合
+ */
 export function parseLogLevel(level: string): LogLevel {
 	if (!level) {
 		return "warn";
@@ -36,6 +52,9 @@ export function parseLogLevel(level: string): LogLevel {
 	);
 }
 
+/**
+ * @description レベルに応じてフィルタリングするデフォルトロガー実装
+ */
 export class DefaultLogger implements Logger {
 	private levelValue: number;
 
@@ -64,6 +83,9 @@ export class DefaultLogger implements Logger {
 	}
 }
 
+/**
+ * @description 既存のロガーにレベルフィルタリングを追加するラッパー
+ */
 class FilteredLogger implements Logger {
 	private levelValue: number;
 
@@ -99,6 +121,12 @@ class FilteredLogger implements Logger {
 	}
 }
 
+/**
+ * @description ロガーを作成する(既存ロガーがあればフィルタ付きラッパー、なければデフォルト)
+ * @param logger - ラップ対象のロガー @optional
+ * @param logLevel - ログレベル文字列 @optional @default ""
+ * @returns 設定されたロガー
+ */
 export function createLogger(logger?: Logger, logLevel: string = ""): Logger {
 	const level = parseLogLevel(logLevel);
 
@@ -109,6 +137,11 @@ export function createLogger(logger?: Logger, logLevel: string = ""): Logger {
 	return new DefaultLogger(level);
 }
 
+/**
+ * @description 新しいデフォルトロガーを作成する
+ * @param logLevel - ログレベル文字列 @optional @default ""
+ * @returns デフォルトロガー
+ */
 export function newLogger(logLevel: string = ""): Logger {
 	return createLogger(undefined, logLevel);
 }

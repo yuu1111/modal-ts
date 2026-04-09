@@ -191,6 +191,9 @@ export class Probe {
 	}
 }
 
+/**
+ * @description Sandbox作成時のパラメータ
+ */
 export type SandboxCreateParams = {
 	/** Reservation of physical CPU cores for the Sandbox, can be fractional. */
 	cpu?: number;
@@ -276,6 +279,13 @@ export type SandboxCreateParams = {
 	customDomain?: string;
 };
 
+/**
+ * @description SandboxCreateParamsからgRPCリクエストを構築する
+ * @param appId - アプリID
+ * @param imageId - コンテナイメージID
+ * @param params - Sandbox作成パラメータ
+ * @returns SandboxCreateRequestプロトメッセージ
+ */
 export async function buildSandboxCreateRequestProto(
 	appId: string,
 	imageId: string,
@@ -517,7 +527,11 @@ export class SandboxService {
 	}
 
 	/**
-	 * Create a new {@link Sandbox} in the {@link App} with the specified {@link Image} and options.
+	 * @description 指定したAppとImageで新しいSandboxを作成する
+	 * @param app - Appインスタンス
+	 * @param image - コンテナイメージ
+	 * @param params - Sandbox作成パラメータ
+	 * @returns 作成されたSandbox
 	 */
 	async create(
 		app: App,
@@ -559,9 +573,11 @@ export class SandboxService {
 		return new Sandbox(this.#client, createResp.sandboxId);
 	}
 
-	/** Returns a running {@link Sandbox} object from an ID.
-	 *
-	 * @returns Sandbox with ID
+	/**
+	 * @description IDから実行中のSandboxを取得する
+	 * @param sandboxId - Sandbox ID
+	 * @returns Sandboxインスタンス
+	 * @throws NotFoundError 指定されたSandboxが存在しない場合
 	 */
 	async fromId(sandboxId: string): Promise<Sandbox> {
 		try {
@@ -578,15 +594,13 @@ export class SandboxService {
 		return new Sandbox(this.#client, sandboxId);
 	}
 
-	/** Get a running {@link Sandbox} by name from a deployed {@link App}.
-	 *
-	 * Raises a {@link NotFoundError} if no running Sandbox is found with the given name.
-	 * A Sandbox's name is the `name` argument passed to {@link SandboxService#create sandboxes.create()}.
-	 *
-	 * @param appName - Name of the deployed App
-	 * @param name - Name of the Sandbox
-	 * @param params - Optional parameters for getting the Sandbox
-	 * @returns Promise that resolves to a Sandbox
+	/**
+	 * @description デプロイ済みApp内の名前付きSandboxを取得する
+	 * @param appName - アプリ名
+	 * @param name - Sandbox名
+	 * @param params - オプションパラメータ
+	 * @returns Sandboxインスタンス
+	 * @throws NotFoundError 指定されたSandboxが存在しない場合
 	 */
 	async fromName(
 		appName: string,
@@ -610,8 +624,8 @@ export class SandboxService {
 	}
 
 	/**
-	 * List all {@link Sandbox}es for the current Environment or App ID (if specified).
-	 * If tags are specified, only Sandboxes that have at least those tags are returned.
+	 * @description 現在の環境またはApp IDのSandbox一覧を返す
+	 * @param params - フィルタリングパラメータ
 	 */
 	async *list(
 		params: SandboxListParams = {},
@@ -654,7 +668,9 @@ export class SandboxService {
 	}
 }
 
-/** Optional parameters for {@link SandboxService#list client.sandboxes.list()}. */
+/**
+ * @description client.sandboxes.list()のオプションパラメータ
+ */
 export type SandboxListParams = {
 	/** Filter Sandboxes for a specific {@link App}. */
 	appId?: string;
@@ -664,12 +680,17 @@ export type SandboxListParams = {
 	environment?: string;
 };
 
-/** Optional parameters for {@link SandboxService#fromName client.sandboxes.fromName()}. */
+/**
+ * @description client.sandboxes.fromName()のオプションパラメータ
+ * @property environment - 環境名 @optional
+ */
 export type SandboxFromNameParams = {
 	environment?: string;
 };
 
-/** Optional parameters for {@link Sandbox#exec Sandbox.exec()}. */
+/**
+ * @description Sandbox.exec()のオプションパラメータ
+ */
 export type SandboxExecParams = {
 	/** Specifies text or binary encoding for input and output streams. */
 	mode?: StreamMode;
@@ -689,18 +710,27 @@ export type SandboxExecParams = {
 	pty?: boolean;
 };
 
-/** Optional parameters for {@link Sandbox#createConnectToken Sandbox.createConnectToken()}. */
+/**
+ * @description Sandbox.terminate()のオプションパラメータ
+ */
 export type SandboxTerminateParams = {
 	/** If true, wait for the Sandbox to finish and return the exit code. */
 	wait?: boolean;
 };
 
+/**
+ * @description Sandbox.createConnectToken()のオプションパラメータ
+ */
 export type SandboxCreateConnectTokenParams = {
 	/** Optional user-provided metadata string that will be added to the headers by the proxy when forwarding requests to the Sandbox. */
 	userMetadata?: string;
 };
 
-/** Credentials returned by {@link Sandbox#createConnectToken Sandbox.createConnectToken()}. */
+/**
+ * @description Sandbox.createConnectToken()が返す接続情報
+ * @property url - 接続先URL
+ * @property token - 認証トークン
+ */
 export type SandboxCreateConnectCredentials = {
 	url: string;
 	token: string;
@@ -741,6 +771,10 @@ export class Tunnel {
 	}
 }
 
+/**
+ * @description デフォルトのPTY設定を返す
+ * @returns PTYInfoプロトメッセージ
+ */
 export function defaultSandboxPTYInfo(): PTYInfo {
 	return PTYInfo.create({
 		enabled: true,
@@ -761,6 +795,11 @@ export function defaultSandboxPTYInfo(): PTYInfo {
 // By probing in production, the limit is 131072 bytes (2**17).
 // We need some bytes of overhead for the rest of the command line besides the args,
 // e.g. 'runsc exec ...'. So we use 2**16 as the limit.
+/**
+ * @description execの引数がLinuxのARG_MAX制限を超えないか検証する
+ * @param args - コマンド引数の配列
+ * @throws InvalidError 引数の合計長がARG_MAXを超える場合
+ */
 export function validateExecArgs(args: string[]): void {
 	const ARG_MAX_BYTES = 2 ** 16;
 
@@ -774,6 +813,14 @@ export function validateExecArgs(args: string[]): void {
 	}
 }
 
+/**
+ * @description SandboxExecParamsからTaskExecStartRequestを構築する
+ * @param taskId - タスクID
+ * @param execId - 実行ID
+ * @param command - 実行するコマンドと引数
+ * @param params - execパラメータ
+ * @returns TaskExecStartRequestプロトメッセージ
+ */
 export function buildTaskExecStartRequestProto(
 	taskId: string,
 	execId: string,
@@ -833,7 +880,9 @@ export function buildTaskExecStartRequestProto(
 	});
 }
 
-/** Sandboxes are secure, isolated containers in Modal that boot in seconds. */
+/**
+ * @description 数秒で起動するModal上のセキュアで隔離されたコンテナ
+ */
 export class Sandbox {
 	readonly #client: ModalClient;
 	readonly sandboxId: string;
@@ -855,6 +904,9 @@ export class Sandbox {
 		this.sandboxId = sandboxId;
 	}
 
+	/**
+	 * @description Sandboxの標準入力ストリーム
+	 */
 	get stdin(): ModalWriteStream<string> {
 		if (!this.#stdin) {
 			this.#stdin = toModalWriteStream(
@@ -864,6 +916,9 @@ export class Sandbox {
 		return this.#stdin;
 	}
 
+	/**
+	 * @description Sandboxの標準出力ストリーム
+	 */
 	get stdout(): ModalReadStream<string> {
 		if (!this.#stdout) {
 			this.#stdoutAbort = new AbortController();
@@ -885,6 +940,9 @@ export class Sandbox {
 		return this.#stdout;
 	}
 
+	/**
+	 * @description Sandboxの標準エラー出力ストリーム
+	 */
 	get stderr(): ModalReadStream<string> {
 		if (!this.#stderr) {
 			this.#stderrAbort = new AbortController();
@@ -906,7 +964,10 @@ export class Sandbox {
 		return this.#stderr;
 	}
 
-	/** Set tags (key-value pairs) on the Sandbox. Tags can be used to filter results in {@link SandboxService#list Sandbox.list}. */
+	/**
+	 * @description Sandboxにタグ(キーバリューペア)を設定する
+	 * @param tags - タグのキーバリューマッピング
+	 */
 	async setTags(tags: Record<string, string>): Promise<void> {
 		this.#ensureAttached();
 		const tagsList = Object.entries(tags).map(([tagName, tagValue]) => ({
@@ -927,7 +988,10 @@ export class Sandbox {
 		}
 	}
 
-	/** Get tags (key-value pairs) currently attached to this Sandbox from the server. */
+	/**
+	 * @description Sandboxに設定されているタグを取得する
+	 * @returns タグのキーバリューマッピング
+	 */
 	async getTags(): Promise<Record<string, string>> {
 		this.#ensureAttached();
 		let resp: SandboxTagsGetResponse;
@@ -1186,6 +1250,11 @@ export class Sandbox {
 		}
 	}
 
+	/**
+	 * @description Sandboxを終了する
+	 * @param params - オプションパラメータ(waitでexit codeを返す)
+	 * @returns wait: trueの場合はexit code
+	 */
 	async terminate(): Promise<undefined>;
 	async terminate(params: { wait: true }): Promise<number>;
 	async terminate(
@@ -1205,9 +1274,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * Disconnect from the Sandbox, cleaning up local resources.
-	 * The Sandbox continues running on Modal's infrastructure.
-	 * After calling detach(), most operations on this Sandbox object will throw.
+	 * @description Sandboxとの接続を切断しローカルリソースを解放する(Sandbox自体はModal上で継続動作)
 	 */
 	detach(): void {
 		this.#commandRouterClient?.close();
@@ -1216,6 +1283,10 @@ export class Sandbox {
 		this.#commandRouterClientPromise = undefined;
 	}
 
+	/**
+	 * @description Sandboxの終了を待機してexit codeを返す
+	 * @returns exit code
+	 */
 	async wait(): Promise<number> {
 		while (true) {
 			const resp = await this.#client.cpClient.sandboxWait({
@@ -1240,11 +1311,11 @@ export class Sandbox {
 		}
 	}
 
-	/** Get {@link Tunnel} metadata for the Sandbox.
-	 *
-	 * Raises {@link SandboxTimeoutError} if the tunnels are not available after the timeout.
-	 *
-	 * @returns A dictionary of {@link Tunnel} objects which are keyed by the container port.
+	/**
+	 * @description SandboxのTunnelメタデータを取得する
+	 * @param timeoutMs - タイムアウト(ミリ秒) @default 50000
+	 * @returns コンテナポートをキーとしたTunnelのマッピング
+	 * @throws SandboxTimeoutError タイムアウト時
 	 */
 	async tunnels(timeoutMs = 50000): Promise<Record<number, Tunnel>> {
 		this.#ensureAttached();
@@ -1405,6 +1476,9 @@ export class Sandbox {
 	}
 }
 
+/**
+ * @description Sandbox内で実行されるプロセスを表し、stdin/stdout/stderrストリームを提供する
+ */
 export class ContainerProcess<
 	R extends string | Uint8Array = string | Uint8Array,
 > {
@@ -1481,7 +1555,10 @@ export class ContainerProcess<
 		}
 	}
 
-	/** Wait for process completion and return the exit code. */
+	/**
+	 * @description プロセスの終了を待機してexit codeを返す
+	 * @returns exit code
+	 */
 	async wait(): Promise<number> {
 		const resp = await this.#commandRouterClient.execWait(
 			this.#taskId,

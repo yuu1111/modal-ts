@@ -4,18 +4,29 @@ import { EphemeralHeartbeatManager } from "./ephemeral";
 import { InvalidError, NotFoundError } from "./errors";
 import { ObjectCreationType } from "./generated/modal_proto/api";
 
-/** Optional parameters for {@link VolumeService#fromName client.volumes.fromName()}. */
+/**
+ * @description {@link VolumeService#fromName client.volumes.fromName()} のオプションパラメータ
+ * @property environment - 使用する環境名
+ * @property createIfMissing - 存在しない場合に自動作成するかどうか
+ */
 export type VolumeFromNameParams = {
 	environment?: string;
 	createIfMissing?: boolean;
 };
 
-/** Optional parameters for {@link VolumeService#ephemeral client.volumes.ephemeral()}. */
+/**
+ * @description {@link VolumeService#ephemeral client.volumes.ephemeral()} のオプションパラメータ
+ * @property environment - 使用する環境名
+ */
 export type VolumeEphemeralParams = {
 	environment?: string;
 };
 
-/** Optional parameters for {@link VolumeService#delete client.volumes.delete()}. */
+/**
+ * @description {@link VolumeService#delete client.volumes.delete()} のオプションパラメータ
+ * @property environment - 使用する環境名
+ * @property allowMissing - 存在しない場合にエラーを抑制するかどうか
+ */
 export type VolumeDeleteParams = {
 	environment?: string;
 	allowMissing?: boolean;
@@ -37,7 +48,10 @@ export class VolumeService {
 	}
 
 	/**
-	 * Reference a {@link Volume} by its name.
+	 * @description 名前で {@link Volume} を参照する
+	 * @param name - Volume の名前
+	 * @param params - オプションパラメータ
+	 * @returns Volume インスタンス
 	 */
 	async fromName(name: string, params?: VolumeFromNameParams): Promise<Volume> {
 		try {
@@ -64,8 +78,9 @@ export class VolumeService {
 	}
 
 	/**
-	 * Create a nameless, temporary {@link Volume}.
-	 * It persists until closeEphemeral() is called, or the process exits.
+	 * @description 名前のない一時的な {@link Volume} を作成する。closeEphemeral() が呼ばれるかプロセスが終了するまで存続する
+	 * @param params - オプションパラメータ
+	 * @returns 一時的な Volume インスタンス
 	 */
 	async ephemeral(params: VolumeEphemeralParams = {}): Promise<Volume> {
 		const resp = await this.#client.cpClient.volumeGetOrCreate({
@@ -87,9 +102,9 @@ export class VolumeService {
 	}
 
 	/**
-	 * Delete a named {@link Volume}.
-	 *
-	 * Warning: Deletion is irreversible and will affect any Apps currently using the Volume.
+	 * @description 名前付き {@link Volume} を削除する。削除は不可逆で、現在使用中の App にも影響する
+	 * @param name - 削除する Volume の名前
+	 * @param params - オプションパラメータ
 	 */
 	async delete(name: string, params?: VolumeDeleteParams): Promise<void> {
 		try {
@@ -121,7 +136,9 @@ export class VolumeService {
 	}
 }
 
-/** Volumes provide persistent storage that can be mounted in Modal {@link Function_ Function}s. */
+/**
+ * @description Modal {@link Function_ Function} にマウント可能な永続ストレージを提供する Volume
+ */
 export class Volume {
 	readonly volumeId: string;
 	readonly name?: string;
@@ -152,7 +169,10 @@ export class Volume {
 		return getDefaultClient().volumes.fromName(name, options);
 	}
 
-	/** Configure Volume to mount as read-only. */
+	/**
+	 * @description Volume を読み取り専用でマウントするよう設定する
+	 * @returns 読み取り専用に設定された新しい Volume インスタンス
+	 */
 	readOnly(): Volume {
 		return new Volume(this.volumeId, this.name, true, this.#ephemeralHbManager);
 	}
@@ -168,7 +188,9 @@ export class Volume {
 		return getDefaultClient().volumes.ephemeral(options);
 	}
 
-	/** Delete the ephemeral Volume. Only usable with emphemeral Volumes. */
+	/**
+	 * @description 一時的な Volume を削除する。一時的な Volume でのみ使用可能
+	 */
 	closeEphemeral(): void {
 		if (this.#ephemeralHbManager) {
 			this.#ephemeralHbManager.stop();

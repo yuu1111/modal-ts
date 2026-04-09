@@ -1,4 +1,6 @@
-/** Retry policy configuration for a Modal Function/Cls. */
+/**
+ * @description Modal Function/Cls のリトライポリシー設定
+ */
 export class Retries {
 	readonly maxRetries: number;
 	readonly backoffCoefficient: number;
@@ -49,6 +51,11 @@ export class Retries {
 	}
 }
 
+/**
+ * @description リトライ設定を正規化する(数値の場合は Retries インスタンスに変換)
+ * @param retries - リトライ回数または Retries インスタンス
+ * @returns 正規化された Retries(未定義の場合は undefined)
+ */
 export function parseRetries(
 	retries: number | Retries | undefined,
 ): Retries | undefined {

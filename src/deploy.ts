@@ -9,6 +9,13 @@ import {
 	type WebhookConfig,
 } from "./generated/modal_proto/api";
 
+/**
+ * @description アプリのデプロイ設定
+ * @property name - デプロイするアプリ名
+ * @property environment - デプロイ先の環境名 @optional
+ * @property functions - デプロイするFunction定義の配列 @optional
+ * @property classes - デプロイするClass定義の配列 @optional
+ */
 export interface DeployAppParams {
 	name: string;
 	environment?: string;
@@ -16,6 +23,17 @@ export interface DeployAppParams {
 	classes?: DeployClassParams[];
 }
 
+/**
+ * @description 個別Functionのデプロイ設定
+ * @property functionName - Function名
+ * @property moduleName - Pythonモジュールパス
+ * @property imageId - 使用するコンテナイメージID @optional
+ * @property mountIds - アタッチするMountのID配列 @optional
+ * @property secretIds - アタッチするSecretのID配列 @optional
+ * @property minContainers - 最小コンテナ数(warm pool) @optional @default 0
+ * @property experimentalOptions - 実験的オプション @optional
+ * @property webhookConfig - Webhookエンドポイント設定 @optional
+ */
 export interface DeployFunctionParams {
 	functionName: string;
 	moduleName: string;
@@ -27,6 +45,17 @@ export interface DeployFunctionParams {
 	webhookConfig?: Partial<WebhookConfig>;
 }
 
+/**
+ * @description Classのデプロイ設定
+ * @property className - Class名
+ * @property moduleName - Pythonモジュールパス
+ * @property methods - 公開するメソッド名の配列
+ * @property imageId - 使用するコンテナイメージID @optional
+ * @property mountIds - アタッチするMountのID配列 @optional
+ * @property secretIds - アタッチするSecretのID配列 @optional
+ * @property minContainers - 最小コンテナ数(warm pool) @optional @default 0
+ * @property experimentalOptions - 実験的オプション @optional
+ */
 export interface DeployClassParams {
 	className: string;
 	moduleName: string;
@@ -38,21 +67,44 @@ export interface DeployClassParams {
 	experimentalOptions?: Record<string, string>;
 }
 
+/**
+ * @description Mountにアップロードするファイルエントリ
+ * @property remotePath - コンテナ内のファイルパス
+ * @property content - ファイルの内容(文字列またはバイナリ)
+ */
 export interface MountFileEntry {
 	remotePath: string;
 	content: string | Uint8Array;
 }
 
+/**
+ * @description デプロイ結果
+ * @property appId - デプロイされたアプリのID
+ * @property functionIds - Function名からIDへのマッピング
+ * @property classIds - Class名からIDへのマッピング
+ */
 export interface DeployResult {
 	appId: string;
 	functionIds: Record<string, string>;
 	classIds: Record<string, string>;
 }
 
+/**
+ * @description SHA-256ハッシュを16進文字列で返す
+ * @param data - ハッシュ対象のバイナリデータ
+ * @returns 16進数ハッシュ文字列
+ */
 function sha256(data: Uint8Array): string {
 	return createHash("sha256").update(data).digest("hex");
 }
 
+/**
+ * @description ファイル群からMountを作成してIDを返す
+ * @param cpClient - gRPCクライアント
+ * @param appId - 紐付けるアプリID
+ * @param files - アップロードするファイルエントリの配列
+ * @returns Mount ID
+ */
 export async function createMount(
 	cpClient: ModalGrpcClient,
 	appId: string,
@@ -114,6 +166,13 @@ export async function getOrCreateImage(
 	return resp.imageId;
 }
 
+/**
+ * @description 環境変数からSecretを作成してIDを返す
+ * @param client - ModalClientインスタンス
+ * @param name - Secret名
+ * @param envDict - 環境変数のキーバリューマッピング
+ * @returns Secret ID
+ */
 export async function createSecret(
 	client: ModalClient,
 	name: string,
@@ -132,11 +191,21 @@ export async function createSecret(
 	return resp.secretId;
 }
 
+/**
+ * @description gRPCペイロードのデフォルトシリアライズ形式
+ */
 const DEFAULT_DATA_FORMATS = [
 	DataFormat.DATA_FORMAT_PICKLE,
 	DataFormat.DATA_FORMAT_CBOR,
 ];
 
+/**
+ * @description 単一FunctionをgRPC経由で作成する内部関数
+ * @param cpClient - gRPCクライアント
+ * @param appId - アプリID
+ * @param fn - Function定義パラメータ
+ * @returns functionId, definitionId, handleMetadata
+ */
 async function createFunctionInternal(
 	cpClient: ModalGrpcClient,
 	appId: string,
@@ -187,6 +256,10 @@ async function createFunctionInternal(
 
 /**
  * @description Appを取得または作成してappIdを返す
+ * @param client - ModalClientインスタンス
+ * @param name - アプリ名
+ * @param environment - 環境名 @optional
+ * @returns App ID
  */
 export async function getOrCreateApp(
 	client: ModalClient,
@@ -205,6 +278,12 @@ export async function getOrCreateApp(
 	return resp.appId;
 }
 
+/**
+ * @description アプリをModal上にデプロイする
+ * @param client - ModalClientインスタンス
+ * @param params - デプロイ設定
+ * @returns デプロイ結果(appId, functionIds, classIds)
+ */
 export async function deployApp(
 	client: ModalClient,
 	params: DeployAppParams,
@@ -323,6 +402,11 @@ export async function deployApp(
 	return { appId, functionIds, classIds };
 }
 
+/**
+ * @description 部分的なWebhookConfigをデフォルト値で補完する
+ * @param partial - 部分的なWebhookConfig
+ * @returns 完全なWebhookConfig
+ */
 function buildWebhookConfig(partial: Partial<WebhookConfig>): WebhookConfig {
 	return {
 		type: partial.type ?? 0,
