@@ -1,6 +1,6 @@
 {
   "name": "modal-ts",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "description": "Unofficial Modal SDK for JavaScript/TypeScript",
   "license": "Apache-2.0",
   "homepage": "https://github.com/yuu1111/modal-ts",
@@ -10,8 +10,18 @@
   },
   "bugs": "https://github.com/yuu1111/modal-ts/issues",
   "author": "yuu1111",
-  "contributors": ["Modal Labs (https://modal.com)"],
-  "keywords": ["modal", "serverless", "sdk", "grpc", "sandbox", "gpu", "cloud"],
+  "contributors": [
+    "Modal Labs (https://modal.com)"
+  ],
+  "keywords": [
+    "modal",
+    "serverless",
+    "sdk",
+    "grpc",
+    "sandbox",
+    "gpu",
+    "cloud"
+  ],
   "engines": {
     "node": ">=18"
   },
