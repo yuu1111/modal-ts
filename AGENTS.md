@@ -46,4 +46,4 @@ Tests: max 10 concurrent, 20s timeout.
 
 - **Duration params** use `Ms` suffix (e.g., `timeoutMs`)
 - **Memory params** use `MiB` suffix (e.g., `memoryMiB`)
-- **gRPC**: nice-grpc + protobuf-ts (promises-based)
+- **gRPC**: nice-grpc + protobufjs (promises-based)

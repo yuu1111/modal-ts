@@ -9,10 +9,16 @@
     "url": "git+https://github.com/yuu1111/modal-ts.git"
   },
   "bugs": "https://github.com/yuu1111/modal-ts/issues",
+  "author": "yuu1111",
+  "contributors": ["Modal Labs (https://modal.com)"],
+  "keywords": ["modal", "serverless", "sdk", "grpc", "sandbox", "gpu", "cloud"],
+  "engines": {
+    "node": ">=18"
+  },
   "type": "module",
   "sideEffects": false,
   "files": [
-    "/dist"
+    "dist"
   ],
   "main": "dist/index.cjs",
   "exports": {
@@ -35,6 +41,7 @@
     "format": "biome check --write --unsafe .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "prepublishOnly": "bun run build",
     "version": "bun run typecheck",
     "docs": "typedoc --entryPoints src/index.ts --out .typedoc",
     "proto": "bun scripts/gen-proto.ts"
