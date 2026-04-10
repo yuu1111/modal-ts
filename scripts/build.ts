@@ -21,7 +21,9 @@ const shared = {
 	},
 };
 
-await build({ ...shared, format: "esm", outfile: "dist/index.js" });
-await build({ ...shared, format: "cjs", outfile: "dist/index.cjs" });
+await Promise.all([
+	build({ ...shared, format: "esm", outfile: "dist/index.js" }),
+	build({ ...shared, format: "cjs", outfile: "dist/index.cjs" }),
+]);
 
 execSync("tsc -p tsconfig.build.json", { cwd: root, stdio: "inherit" });
