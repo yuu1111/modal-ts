@@ -2,7 +2,7 @@
  * @description `ReadableStream` に便利なメソッドを追加したラッパーインターフェース
  *
  * `.readText()` でストリーム全体を文字列として読み取り、
- * `.readBytes()` でバイナリデータとして読み取ることができる。
+ * `.readBytes()` でバイナリデータとして読み取ることができる
  *
  * Background: https://developer.mozilla.org/en-US/docs/Web/API/Streams_API
  */
@@ -22,7 +22,7 @@ export interface ModalReadStream<R = unknown> extends ReadableStream<R> {
  * @description `WritableStream` に便利なメソッドを追加したラッパーインターフェース
  *
  * `.writeText()` で文字列を書き込み、
- * `.writeBytes()` でバイナリデータを書き込むことができる。
+ * `.writeBytes()` でバイナリデータを書き込むことができる
  *
  * Background: https://developer.mozilla.org/en-US/docs/Web/API/Streams_API
  */
@@ -63,6 +63,20 @@ export function toModalWriteStream<
 }
 
 /**
+ * @description 文字列なら UTF-8 バイト列に変換し、Uint8Array はそのまま返す
+ * @param chunk - 変換対象
+ * @returns バイト列
+ */
+export function encodeIfString(chunk: Uint8Array | string): Uint8Array {
+	return typeof chunk === "string" ? encoder.encode(chunk) : chunk;
+}
+
+/**
+ * @description モジュール共有の TextEncoder インスタンス
+ */
+const encoder = new TextEncoder();
+
+/**
  * @description ModalReadStream に追加する読み取り用メソッド群
  */
 const readMixin = {
@@ -84,7 +98,8 @@ const readMixin = {
 		} finally {
 			reader.releaseLock();
 		}
-		decoder.decode(); // flush
+		const flushed = decoder.decode();
+		if (flushed) parts.push(flushed);
 		return parts.join("");
 	},
 
@@ -97,9 +112,8 @@ const readMixin = {
 		try {
 			while (true) {
 				const { value, done } = await reader.read();
-				if (value) {
-					const chunk: Uint8Array =
-						typeof value === "string" ? new TextEncoder().encode(value) : value;
+				if (value !== undefined) {
+					const chunk = encodeIfString(value as string | Uint8Array);
 					chunks.push(chunk);
 					totalLength += chunk.byteLength;
 				}
@@ -108,6 +122,7 @@ const readMixin = {
 		} finally {
 			reader.releaseLock();
 		}
+		if (chunks.length === 1) return chunks[0] as Uint8Array;
 		const result = new Uint8Array(totalLength);
 		let offset = 0;
 		for (const chunk of chunks) {

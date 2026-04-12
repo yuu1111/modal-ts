@@ -52,6 +52,7 @@ import type { Proxy } from "@/services/proxy/proxy";
 import { mergeEnvIntoSecrets, type Secret } from "@/services/secret/secret";
 import type { Volume } from "@/services/volume/volume";
 import {
+	encodeIfString,
 	type ModalReadStream,
 	type ModalWriteStream,
 	streamConsumingIter,
@@ -1735,8 +1736,4 @@ function inputStreamCp<R extends string | Uint8Array>(
 			);
 		},
 	});
-}
-
-function encodeIfString(chunk: Uint8Array | string): Uint8Array {
-	return typeof chunk === "string" ? new TextEncoder().encode(chunk) : chunk;
 }
