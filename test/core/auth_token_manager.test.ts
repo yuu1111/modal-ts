@@ -8,7 +8,7 @@ import {
 import { ModalClient, type ModalGrpcClient } from "../../src/core/client";
 import { newLogger } from "../../src/utils/logger";
 
-class mockAuthClient {
+class MockAuthClient {
 	private authToken: string = "";
 
 	setAuthToken(token: string) {
@@ -20,21 +20,16 @@ class mockAuthClient {
 	});
 }
 
-function newMockAuthClient() {
-	return new mockAuthClient();
-}
-
-// Creates a JWT token for testing
 function createTestJWT(expiry: number): string {
 	return jwt.sign({ exp: expiry }, "walter-test");
 }
 
 describe("AuthTokenManager", () => {
-	let mockClient: mockAuthClient;
+	let mockClient: MockAuthClient;
 	let manager: AuthTokenManager;
 
 	beforeEach(() => {
-		mockClient = newMockAuthClient();
+		mockClient = new MockAuthClient();
 		manager = new AuthTokenManager(
 			mockClient as unknown as AuthClient,
 			newLogger(),
@@ -201,7 +196,7 @@ describe("AuthTokenManager", () => {
 
 describe("ModalClient with AuthTokenManager", () => {
 	test("TestModalClient_CloseCleansUpAuthTokenManager", () => {
-		const mockCpClient = newMockAuthClient();
+		const mockCpClient = new MockAuthClient();
 		const client = new ModalClient({
 			cpClient: mockCpClient as unknown as ModalGrpcClient,
 		});
@@ -210,8 +205,8 @@ describe("ModalClient with AuthTokenManager", () => {
 	});
 
 	test("TestModalClient_MultipleInstancesHaveSeparateManagers", () => {
-		const mockCpClient1 = newMockAuthClient();
-		const mockCpClient2 = newMockAuthClient();
+		const mockCpClient1 = new MockAuthClient();
+		const mockCpClient2 = new MockAuthClient();
 
 		const client1 = new ModalClient({
 			cpClient: mockCpClient1 as unknown as ModalGrpcClient,

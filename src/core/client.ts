@@ -189,6 +189,7 @@ export class ModalClient {
 	close(): void {
 		this.logger.debug("Closing Modal client");
 		this.authTokenManager = null;
+		this.ipClients.clear();
 		this.logger.debug("Modal client closed");
 	}
 
@@ -245,10 +246,10 @@ export class ModalClient {
 				return yield* call.next(call.request, restOptions);
 			}
 
-			const retryableCodes = new Set([
-				...retryableGrpcStatusCodes,
-				...additionalStatusCodes,
-			]);
+			const retryableCodes =
+				additionalStatusCodes.length === 0
+					? retryableGrpcStatusCodes
+					: new Set([...retryableGrpcStatusCodes, ...additionalStatusCodes]);
 
 			// One idempotency key for the whole call (all attempts).
 			const idempotencyKey = uuidv4();
