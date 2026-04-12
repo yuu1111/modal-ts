@@ -1,21 +1,25 @@
-// Minimal pickle codec in TypeScript supporting protocol 3, 4 and 5
-// ============================================================
-// Focus: JSON‑compatible primitives (null, bool, number, string, arrays, plain
-//         objects) plus Uint8Array.  The encoder can *emit* protocol 3, 4 or 5
-// (default 4).  The decoder can *read* any pickle whose first PROTO opcode is
-// 3, 4 or 5 **provided it only uses the opcodes below**.  This is *not* a full
-// Python pickler, but is more than good enough for lightweight data exchange.
-// -------------------------------------------------------------
-// Implemented opcodes
-//   Generic:  PROTO, STOP, NONE, NEWTRUE, NEWFALSE
-//   Numbers:  BININT1, BININT2, BININT4 (aka BININT), BINFLOAT
-//   Text:     SHORT_BINUNICODE, BINUNICODE, BINUNICODE8
-//   Bytes:    SHORT_BINBYTES,  BINBYTES,  BINBYTES8
-//   Containers: EMPTY_LIST, APPEND, EMPTY_DICT, SETITEM, MARK, SETITEMS, APPENDS
-//   Memo:     MEMOIZE   (≥4), BINPUT/LONG_BINPUT + BINGET/LONG_BINGET (≤3)
-//   Frames:   FRAME (proto‑5) – we just skip the announced length.
-// -------------------------------------------------------------
+/**
+ * @description protocol 3, 4, 5 対応の最小 pickle コーデック
+ *
+ * JSON 互換プリミティブ(null, bool, number, string, 配列, プレーンオブジェクト)
+ * と Uint8Array をサポートする。エンコーダは protocol 3/4/5 を出力でき(デフォルト 4),
+ * デコーダは最初の PROTO が 3/4/5 でサポート済み opcode のみ使用する pickle を読み取る。
+ * 完全な Python pickler ではないが, 軽量データ交換には十分。
+ */
 
+/**
+ * @description エンコード用 UTF-8 変換シングルトン
+ */
+const textEncoder = new TextEncoder();
+
+/**
+ * @description デコード用 UTF-8 変換シングルトン
+ */
+const textDecoder = new TextDecoder();
+
+/**
+ * @description pickle 処理固有のエラー
+ */
 class PickleError extends Error {
 	constructor(message: string) {
 		super(message);
@@ -23,59 +27,82 @@ class PickleError extends Error {
 	}
 }
 
-// ─── Opcode values (single‑byte) ─────────────────────────────
+/**
+ * @description pickle opcode 定義 (単バイト値)
+ */
 enum Op {
-	PROTO = 0x80, // PROTO n
-	STOP = 0x2e, // .
-	NONE = 0x4e, // N
-	NEWTRUE = 0x88, // \x88
-	NEWFALSE = 0x89, // \x89
+	PROTO = 0x80,
+	STOP = 0x2e,
+	NONE = 0x4e,
+	NEWTRUE = 0x88,
+	NEWFALSE = 0x89,
 
-	BININT1 = 0x4b, // K  (uint8)
-	BININT2 = 0x4d, // M  (uint16 LE)
-	BININT4 = 0x4a, // J  (int32 LE)
-	BINFLOAT = 0x47, // G  (float64 BE)
+	BININT1 = 0x4b,
+	BININT2 = 0x4d,
+	BININT4 = 0x4a,
+	BINFLOAT = 0x47,
 
-	SHORT_BINUNICODE = 0x8c, // \x8c len(1) data
-	BINUNICODE = 0x58, // X len(4) data
-	BINUNICODE8 = 0x8d, // \x8d len(8) data (≥4)
+	SHORT_BINUNICODE = 0x8c,
+	BINUNICODE = 0x58,
+	BINUNICODE8 = 0x8d,
 
-	SHORT_BINBYTES = 0x43, // C len(1) data (≥3)
-	BINBYTES = 0x42, // B len(4) data (≥3)
-	BINBYTES8 = 0x8e, // \x8e len(8) data (≥4)
+	SHORT_BINBYTES = 0x43,
+	BINBYTES = 0x42,
+	BINBYTES8 = 0x8e,
 
-	EMPTY_LIST = 0x5d, // ]
-	APPEND = 0x61, // a
-	EMPTY_DICT = 0x7d, // }
-	SETITEM = 0x73, // s
-	MARK = 0x28, // (  (mark stack position)
+	EMPTY_LIST = 0x5d,
+	APPEND = 0x61,
+	EMPTY_DICT = 0x7d,
+	SETITEM = 0x73,
+	MARK = 0x28,
 
-	// Memo / frame machinery
-	BINPUT = 0x71, // q  idx(1)
-	LONG_BINPUT = 0x72, // r  idx(4)
-	BINGET = 0x68, // h  idx(1)
-	LONG_BINGET = 0x6a, // j  idx(4)
-	MEMOIZE = 0x94, // \x94 (≥4)
-	FRAME = 0x95, // \x95 size(8) (proto‑5)
-	APPENDS = 0x65, // e
-	SETITEMS = 0x75, // u
+	BINPUT = 0x71,
+	LONG_BINPUT = 0x72,
+	BINGET = 0x68,
+	LONG_BINGET = 0x6a,
+	MEMOIZE = 0x94,
+	FRAME = 0x95,
+	APPENDS = 0x65,
+	SETITEMS = 0x75,
 }
 
-// ─── Binary helpers ─────────────────────────────────────────
+/**
+ * @description pickle バイナリ出力を組み立てるバッファ
+ */
 class Writer {
 	private out: number[] = [];
+
+	/**
+	 * @description 1 バイト書き込み
+	 * @param b - 書き込む値 (下位 8 ビットのみ使用)
+	 */
 	byte(b: number) {
 		this.out.push(b & 0xff);
 	}
+
+	/**
+	 * @description バイト列をそのまま書き込み
+	 * @param arr - 書き込むバイト列
+	 */
 	bytes(arr: Uint8Array | number[]) {
 		for (const b of arr) this.byte(b as number);
 	}
+
+	/**
+	 * @description 32 ビット符号なし整数をリトルエンディアンで書き込み
+	 * @param x - 書き込む値
+	 */
 	uint32LE(x: number) {
 		this.byte(x);
 		this.byte(x >>> 8);
 		this.byte(x >>> 16);
 		this.byte(x >>> 24);
 	}
+
+	/**
+	 * @description 64 ビット符号なし整数をリトルエンディアンで書き込み
+	 * @param n - 書き込む値
+	 */
 	uint64LE(n: number | bigint) {
 		let v = BigInt(n);
 		for (let i = 0; i < 8; i++) {
@@ -83,24 +110,48 @@ class Writer {
 			v >>= 8n;
 		}
 	}
+
+	/**
+	 * @description 64 ビット浮動小数点数をビッグエンディアンで書き込み
+	 * @param v - 書き込む値
+	 */
 	float64BE(v: number) {
 		const dv = new DataView(new ArrayBuffer(8));
 		dv.setFloat64(0, v, false);
 		this.bytes(new Uint8Array(dv.buffer));
 	}
+
+	/**
+	 * @description バッファ内容を Uint8Array として取得
+	 * @returns 蓄積されたバイト列
+	 */
 	toUint8(): Uint8Array {
 		return new Uint8Array(this.out);
 	}
 }
 
+/**
+ * @description pickle バイナリデータの順次読み取りカーソル
+ */
 class Reader {
 	constructor(
 		private buf: Uint8Array,
 		public pos = 0,
 	) {}
+
+	/**
+	 * @description バッファ末尾に達したか
+	 * @returns 末尾なら true
+	 */
 	eof() {
 		return this.pos >= this.buf.length;
 	}
+
+	/**
+	 * @description 1 バイト読み取り
+	 * @returns 読み取った値
+	 * @throws データ末尾を超えた場合
+	 */
 	byte(): number {
 		const value = this.buf[this.pos++];
 		if (value === undefined) {
@@ -108,11 +159,22 @@ class Reader {
 		}
 		return value;
 	}
+
+	/**
+	 * @description n バイトの subarray を返す (ゼロコピー)
+	 * @param n - 読み取るバイト数
+	 * @returns バッファの部分ビュー
+	 */
 	take(n: number) {
 		const s = this.buf.subarray(this.pos, this.pos + n);
 		this.pos += n;
 		return s;
 	}
+
+	/**
+	 * @description 32 ビット符号なし整数をリトルエンディアンで読み取り
+	 * @returns 読み取った値
+	 */
 	uint32LE() {
 		const b0 = this.byte(),
 			b1 = this.byte(),
@@ -120,11 +182,21 @@ class Reader {
 			b3 = this.byte();
 		return b0 | (b1 << 8) | (b2 << 16) | (b3 << 24);
 	}
+
+	/**
+	 * @description 64 ビット符号なし整数をリトルエンディアンで読み取り
+	 * @returns 読み取った値 (number 精度に収まる範囲)
+	 */
 	uint64LE() {
 		const lo = this.uint32LE() >>> 0;
 		const hi = this.uint32LE() >>> 0;
 		return hi * 2 ** 32 + lo;
 	}
+
+	/**
+	 * @description 32 ビット符号付き整数をリトルエンディアンで読み取り
+	 * @returns 読み取った値
+	 */
 	int32LE() {
 		const v = new DataView(
 			this.buf.buffer,
@@ -134,6 +206,11 @@ class Reader {
 		this.pos += 4;
 		return v;
 	}
+
+	/**
+	 * @description 64 ビット浮動小数点数をビッグエンディアンで読み取り
+	 * @returns 読み取った値
+	 */
 	float64BE() {
 		const v = new DataView(
 			this.buf.buffer,
@@ -145,11 +222,18 @@ class Reader {
 	}
 }
 
-// ─── Encoder ────────────────────────────────────────────────
+/**
+ * @description pickle protocol バージョン
+ */
 export type Protocol = 3 | 4 | 5;
 
+/**
+ * @description JS 値を pickle opcode 列に再帰的にエンコードする
+ * @param val - エンコード対象の値
+ * @param w - 出力先 Writer
+ * @param proto - 使用する protocol バージョン
+ */
 function encodeValue(val: unknown, w: Writer, proto: Protocol) {
-	// null / bool ------------------------------------------------
 	if (val === null || val === undefined) {
 		w.byte(Op.NONE);
 		return;
@@ -159,7 +243,6 @@ function encodeValue(val: unknown, w: Writer, proto: Protocol) {
 		return;
 	}
 
-	// number -----------------------------------------------------
 	if (typeof val === "number") {
 		if (Number.isInteger(val)) {
 			if (val >= 0 && val <= 0xff) {
@@ -169,21 +252,21 @@ function encodeValue(val: unknown, w: Writer, proto: Protocol) {
 				w.byte(Op.BININT2);
 				w.byte(val & 0xff);
 				w.byte((val >> 8) & 0xff);
-			} else {
+			} else if (val >= -2147483648 && val <= 2147483647) {
 				w.byte(Op.BININT4);
 				w.uint32LE(val >>> 0);
+			} else {
+				throw new PickleError(`Integer out of encodable range: ${val}`);
 			}
 		} else {
 			w.byte(Op.BINFLOAT);
 			w.float64BE(val);
 		}
-		maybeMemoize(w, proto);
 		return;
 	}
 
-	// string -----------------------------------------------------
 	if (typeof val === "string") {
-		const utf8 = new TextEncoder().encode(val);
+		const utf8 = textEncoder.encode(val);
 		if (proto >= 4 && utf8.length < 256) {
 			w.byte(Op.SHORT_BINUNICODE);
 			w.byte(utf8.length);
@@ -199,7 +282,6 @@ function encodeValue(val: unknown, w: Writer, proto: Protocol) {
 		return;
 	}
 
-	// bytes / Uint8Array ----------------------------------------
 	if (val instanceof Uint8Array) {
 		const len = val.length;
 		if (proto >= 4 && len < 256) {
@@ -217,7 +299,6 @@ function encodeValue(val: unknown, w: Writer, proto: Protocol) {
 		return;
 	}
 
-	// Array ------------------------------------------------------
 	if (Array.isArray(val)) {
 		w.byte(Op.EMPTY_LIST);
 		maybeMemoize(w, proto);
@@ -228,7 +309,6 @@ function encodeValue(val: unknown, w: Writer, proto: Protocol) {
 		return;
 	}
 
-	// plain object ----------------------------------------------
 	if (typeof val === "object") {
 		w.byte(Op.EMPTY_DICT);
 		maybeMemoize(w, proto);
@@ -245,12 +325,23 @@ function encodeValue(val: unknown, w: Writer, proto: Protocol) {
 	);
 }
 
+/**
+ * @description protocol 4 以上のとき MEMOIZE opcode を出力する
+ * @param w - 出力先 Writer
+ * @param proto - 使用中の protocol バージョン
+ */
 function maybeMemoize(w: Writer, proto: Protocol) {
 	if (proto >= 4) {
 		w.byte(Op.MEMOIZE);
-	} // super-simple strategy: memo every value >=4
+	}
 }
 
+/**
+ * @description JS 値を pickle バイト列にシリアライズする
+ * @param obj - シリアライズ対象
+ * @param protocol - pickle protocol バージョン @defaultValue 4
+ * @returns pickle バイト列
+ */
 export function dumps(obj: unknown, protocol: Protocol = 4): Uint8Array {
 	if (![3, 4, 5].includes(protocol))
 		throw new PickleError(
@@ -260,7 +351,7 @@ export function dumps(obj: unknown, protocol: Protocol = 4): Uint8Array {
 	w.byte(Op.PROTO);
 	w.byte(protocol);
 	if (protocol === 5) {
-		// Emit a minimal zero‑length FRAME so CPython recognises proto‑5 content.
+		// CPython が proto-5 と認識するためにゼロ長 FRAME を出力
 		w.byte(Op.FRAME);
 		w.uint64LE(0);
 	}
@@ -269,7 +360,11 @@ export function dumps(obj: unknown, protocol: Protocol = 4): Uint8Array {
 	return w.toUint8();
 }
 
-// ─── Decoder ────────────────────────────────────────────────
+/**
+ * @description pickle バイト列を JS 値にデシリアライズする
+ * @param buf - pickle データ
+ * @returns デシリアライズ済みの値
+ */
 export function loads(buf: Uint8Array): unknown {
 	const r = new Reader(buf);
 	const op0 = r.byte();
@@ -282,23 +377,13 @@ export function loads(buf: Uint8Array): unknown {
 
 	const stack: unknown[] = [];
 	const memo: unknown[] = [];
-	const tdec = new TextDecoder();
 
-	function push(v: unknown) {
-		stack.push(v);
-	}
-	function pop() {
-		return stack.pop();
-	}
-
-	// If proto‑5 and next opcode is FRAME, consume size then continue.
 	if (proto === 5 && buf[r.pos] === Op.FRAME) {
-		r.byte(); // FRAME
-		const size = r.uint64LE(); // we ignore the size and just stream‑read.
-		void size; // silence tsclint
+		r.byte();
+		r.uint64LE(); // FRAME size - we stream-read instead
 	}
 
-	// Unique marker for stack operations (cannot be confused with user data)
+	// Symbol を使うことで MARK とユーザーデータを混同しない
 	const MARK = Symbol("pickle-mark");
 
 	while (!r.eof()) {
@@ -307,88 +392,87 @@ export function loads(buf: Uint8Array): unknown {
 			case Op.STOP:
 				return stack.pop();
 			case Op.NONE:
-				push(null);
+				stack.push(null);
 				break;
 			case Op.NEWTRUE:
-				push(true);
+				stack.push(true);
 				break;
 			case Op.NEWFALSE:
-				push(false);
+				stack.push(false);
 				break;
 
 			case Op.BININT1:
-				push(r.byte());
+				stack.push(r.byte());
 				break;
 			case Op.BININT2: {
 				const lo = r.byte(),
 					hi = r.byte();
 				const n = (hi << 8) | lo;
-				push(n);
+				stack.push(n);
 				break;
 			}
 			case Op.BININT4: {
-				push(r.int32LE());
+				stack.push(r.int32LE());
 				break;
 			}
 			case Op.BINFLOAT:
-				push(r.float64BE());
+				stack.push(r.float64BE());
 				break;
 
 			case Op.SHORT_BINUNICODE: {
 				const n = r.byte();
-				push(tdec.decode(r.take(n)));
+				stack.push(textDecoder.decode(r.take(n)));
 				break;
 			}
 			case Op.BINUNICODE: {
 				const n = r.uint32LE();
-				push(tdec.decode(r.take(n)));
+				stack.push(textDecoder.decode(r.take(n)));
 				break;
 			}
 			case Op.BINUNICODE8: {
 				const n = r.uint64LE();
-				push(tdec.decode(r.take(n)));
+				stack.push(textDecoder.decode(r.take(n)));
 				break;
 			}
 
 			case Op.SHORT_BINBYTES: {
 				const n = r.byte();
-				push(r.take(n));
+				stack.push(r.take(n));
 				break;
 			}
 			case Op.BINBYTES: {
 				const n = r.uint32LE();
-				push(r.take(n));
+				stack.push(r.take(n));
 				break;
 			}
 			case Op.BINBYTES8: {
 				const n = r.uint64LE();
-				push(r.take(n));
+				stack.push(r.take(n));
 				break;
 			}
 
 			case Op.EMPTY_LIST:
-				push([]);
+				stack.push([]);
 				break;
 			case Op.APPEND: {
-				const v = pop();
-				const lst = pop() as unknown[];
+				const v = stack.pop();
+				const lst = stack.pop() as unknown[];
 				lst.push(v);
-				push(lst);
+				stack.push(lst);
 				break;
 			}
 			case Op.EMPTY_DICT:
-				push({});
+				stack.push({});
 				break;
 			case Op.SETITEM: {
-				const v = pop(),
-					k = pop() as string,
-					d = pop() as Record<string, unknown>;
+				const v = stack.pop(),
+					k = stack.pop() as string,
+					d = stack.pop() as Record<string, unknown>;
 				d[k] = v;
-				push(d);
+				stack.push(d);
 				break;
 			}
 
-			// Memo handling ----------------------------------------
 			case Op.MEMOIZE:
 				memo.push(stack[stack.length - 1]);
 				break;
@@ -399,24 +483,21 @@ export function loads(buf: Uint8Array): unknown {
 				memo[r.uint32LE()] = stack[stack.length - 1];
 				break;
 			case Op.BINGET:
-				push(memo[r.byte()]);
+				stack.push(memo[r.byte()]);
 				break;
 			case Op.LONG_BINGET:
-				push(memo[r.uint32LE()]);
+				stack.push(memo[r.uint32LE()]);
 				break;
 
-			case Op.FRAME: {
-				const _size = r.uint64LE();
-				/* ignore */ break;
-			}
+			case Op.FRAME:
+				r.uint64LE();
+				break;
 
 			case Op.MARK:
-				push(MARK);
+				stack.push(MARK);
 				break;
 
 			case Op.APPENDS: {
-				// Pops all items after the last MARK and appends them to the list below the MARK
-				// Find the last MARK
 				const markIndex = stack.lastIndexOf(MARK);
 				if (markIndex === -1) {
 					throw new PickleError("APPENDS without MARK");
@@ -427,14 +508,12 @@ export function loads(buf: Uint8Array): unknown {
 				}
 				const items = stack.slice(markIndex + 1);
 				lst.push(...items);
-				stack.length = markIndex - 1; // Remove everything after the list
-				push(lst);
+				stack.length = markIndex - 1;
+				stack.push(lst);
 				break;
 			}
 
 			case Op.SETITEMS: {
-				// Sets multiple key-value pairs in a dict after the last MARK
-				// Find the last MARK
 				const markIndex = stack.lastIndexOf(MARK);
 				if (markIndex === -1) {
 					throw new PickleError("SETITEMS without MARK");
@@ -445,14 +524,13 @@ export function loads(buf: Uint8Array): unknown {
 				}
 				const dict = d as Record<string, unknown>;
 				const items = stack.slice(markIndex + 1);
-				// Set key-value pairs (items come in pairs: key, value, key, value, ...)
 				for (let i = 0; i < items.length; i += 2) {
 					if (i + 1 < items.length) {
 						dict[items[i] as string] = items[i + 1];
 					}
 				}
-				stack.length = markIndex - 1; // Remove everything after the dict
-				push(d);
+				stack.length = markIndex - 1;
+				stack.push(d);
 				break;
 			}
 

@@ -1,61 +1,52 @@
 /**
- * CBOR serialization utilities for Modal.
+ * @description Modal 向け CBOR シリアライゼーション
  *
- * This module encapsulates cbor-x usage with a consistent configuration
- * that ensures compatibility with the Python CBOR implementation.
+ * Python 側の CBOR 実装と互換性を保つ設定で cbor-x をラップする
  */
 
 import { Decoder, Encoder, type Options } from "cbor-x";
 
-// Extend the Options interface to include undocumented options
+/**
+ * @description cbor-x の型定義に未反映のオプションを含む拡張インターフェース
+ * @property useTag259ForMaps - Map エンコード時に CBOR tag 259 を使うか
+ */
 interface ExtendedOptions extends Options {
 	useTag259ForMaps?: boolean;
 }
 
 /**
- * Custom CBOR encoder configured for Modal's specific requirements.
- *
- * Configuration:
- * - mapsAsObjects: true - Encode Maps as Objects for compatibility
- * - useRecords: false - Disable record structures
- * - tagUint8Array: false - Don't tag Uint8Arrays (avoid tag 64)
+ * @description Python CBOR 実装と互換性を保つための共通オプション
  */
-const encoderOptions: ExtendedOptions = {
+const cborOptions: ExtendedOptions = {
 	mapsAsObjects: true,
 	useRecords: false,
 	tagUint8Array: false,
 	useTag259ForMaps: false,
 };
 
-const decoderOptions: ExtendedOptions = {
-	mapsAsObjects: true,
-	useRecords: false,
-	tagUint8Array: false,
-	useTag259ForMaps: false,
-};
-
-const encoder = new Encoder(encoderOptions);
-
 /**
- * Custom CBOR decoder configured for Modal's specific requirements.
+ * @description CBOR エンコーダのシングルトンインスタンス
  */
-const decoder = new Decoder(decoderOptions);
+const encoder = new Encoder(cborOptions);
 
 /**
- * Encode a JavaScript value to CBOR bytes.
- *
- * @param value - The JavaScript value to encode
- * @returns CBOR-encoded bytes as a Buffer
+ * @description CBOR デコーダのシングルトンインスタンス
+ */
+const decoder = new Decoder(cborOptions);
+
+/**
+ * @description JavaScript の値を CBOR バイト列にエンコードする
+ * @param value - エンコード対象
+ * @returns CBOR エンコード済みバイト列
  */
 export function cborEncode(value: unknown): Buffer {
 	return encoder.encode(value);
 }
 
 /**
- * Decode CBOR bytes to a JavaScript value.
- *
- * @param data - The CBOR-encoded bytes to decode
- * @returns The decoded JavaScript value
+ * @description CBOR バイト列を JavaScript の値にデコードする
+ * @param data - デコード対象
+ * @returns デコード済みの値
  */
 export function cborDecode(data: Buffer | Uint8Array): unknown {
 	return decoder.decode(data);

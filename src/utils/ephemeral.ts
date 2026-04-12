@@ -1,11 +1,26 @@
-export const ephemeralObjectHeartbeatSleep = 300000; // 300 seconds
+/**
+ * @description ハートビートの送信間隔(ミリ秒)
+ */
+export const ephemeralObjectHeartbeatSleep = 300000;
 
+/**
+ * @description ハートビート送信関数の型
+ */
 export type HeartbeatFunction = () => Promise<unknown>;
 
+/**
+ * @description エフェメラルオブジェクトのハートビートを定期送信するマネージャー
+ * @property heartbeatFn - ハートビート送信関数
+ * @property abortController - ハートビートループの停止制御
+ */
 export class EphemeralHeartbeatManager {
 	private readonly heartbeatFn: HeartbeatFunction;
 	private readonly abortController: AbortController;
 
+	/**
+	 * @description インスタンス生成と同時にハートビートループを開始する
+	 * @param heartbeatFn - ハートビート送信関数
+	 */
 	constructor(heartbeatFn: HeartbeatFunction) {
 		this.heartbeatFn = heartbeatFn;
 		this.abortController = new AbortController();
@@ -13,24 +28,42 @@ export class EphemeralHeartbeatManager {
 		this.start();
 	}
 
+	/**
+	 * @description ハートビートループを非同期で開始する
+	 */
 	private start(): void {
 		const signal = this.abortController.signal;
 		(async () => {
 			while (!signal.aborted) {
-				await this.heartbeatFn();
-				await Promise.race([
-					new Promise((resolve) => {
-						// unref so the heartbeat timer doesn't prevent the process from exiting
-						setTimeout(resolve, ephemeralObjectHeartbeatSleep).unref();
-					}),
-					new Promise((resolve) => {
-						signal.addEventListener("abort", resolve, { once: true });
-					}),
-				]);
+				try {
+					await this.heartbeatFn();
+				} catch {
+					// 一時的なエラーでループを停止させない
+				}
+				await new Promise<void>((resolve) => {
+					// unref: ハートビートタイマーがプロセス終了を妨げないようにする
+					const timer = setTimeout(() => {
+						signal.removeEventListener("abort", onAbort);
+						resolve();
+					}, ephemeralObjectHeartbeatSleep);
+					timer.unref();
+
+					/**
+					 * @description abort時にタイマーをキャンセルしてPromiseを解決する
+					 */
+					function onAbort(): void {
+						clearTimeout(timer);
+						resolve();
+					}
+					signal.addEventListener("abort", onAbort, { once: true });
+				});
 			}
 		})();
 	}
 
+	/**
+	 * @description ハートビートループを停止する
+	 */
 	stop(): void {
 		this.abortController.abort();
 	}

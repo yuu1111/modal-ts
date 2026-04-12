@@ -1,3 +1,5 @@
+import { InvalidError } from "@/core/errors";
+
 /**
  * @description ログの重要度レベル
  */
@@ -45,7 +47,7 @@ export function parseLogLevel(level: string): LogLevel {
 		return normalized === "warning" ? "warn" : (normalized as LogLevel);
 	}
 
-	throw new Error(
+	throw new InvalidError(
 		`Invalid log level value: "${level}" (must be debug, info, warn, or error)`,
 	);
 }

@@ -1,5 +1,11 @@
+import { InvalidError } from "@/core/errors";
+
 /**
  * @description Modal Function/Cls のリトライポリシー設定
+ * @property maxRetries - 最大リトライ回数 (0-10)
+ * @property backoffCoefficient - バックオフ係数 @defaultValue 2.0
+ * @property initialDelayMs - 初回リトライ遅延 @defaultValue 1000
+ * @property maxDelayMs - 最大リトライ遅延 @defaultValue 60000
  */
 export class Retries {
 	readonly maxRetries: number;
@@ -7,6 +13,10 @@ export class Retries {
 	readonly initialDelayMs: number;
 	readonly maxDelayMs: number;
 
+	/**
+	 * @description リトライポリシーを構築する
+	 * @param params - リトライ設定
+	 */
 	constructor(params: {
 		maxRetries: number;
 		backoffCoefficient?: number;
@@ -20,26 +30,26 @@ export class Retries {
 			maxDelayMs = 60000,
 		} = params;
 
-		if (maxRetries < 0 || maxRetries > 10) {
-			throw new Error(
-				`Invalid maxRetries: ${maxRetries}. Must be between 0 and 10.`,
+		if (!Number.isInteger(maxRetries) || maxRetries < 0 || maxRetries > 10) {
+			throw new InvalidError(
+				`Invalid maxRetries: ${maxRetries}. Must be an integer between 0 and 10.`,
 			);
 		}
 
 		if (backoffCoefficient < 1.0 || backoffCoefficient > 10.0) {
-			throw new Error(
+			throw new InvalidError(
 				`Invalid backoffCoefficient: ${backoffCoefficient}. Must be between 1.0 and 10.0`,
 			);
 		}
 
 		if (initialDelayMs < 0 || initialDelayMs > 60000) {
-			throw new Error(
+			throw new InvalidError(
 				`Invalid initialDelayMs: ${initialDelayMs}. Must be between 0 and 60000 ms.`,
 			);
 		}
 
 		if (maxDelayMs < 1000 || maxDelayMs > 60000) {
-			throw new Error(
+			throw new InvalidError(
 				`Invalid maxDelayMs: ${maxDelayMs}. Must be between 1000 and 60000 ms.`,
 			);
 		}
@@ -61,11 +71,6 @@ export function parseRetries(
 ): Retries | undefined {
 	if (retries === undefined) return undefined;
 	if (typeof retries === "number") {
-		if (!Number.isInteger(retries) || retries < 0 || retries > 10) {
-			throw new Error(
-				`Retries parameter must be an integer between 0 and 10. Found: ${retries}`,
-			);
-		}
 		return new Retries({
 			maxRetries: retries,
 			backoffCoefficient: 1.0,
@@ -73,7 +78,7 @@ export function parseRetries(
 		});
 	}
 	if (retries instanceof Retries) return retries;
-	throw new Error(
+	throw new InvalidError(
 		`Retries parameter must be an integer or instance of Retries. Found: ${typeof retries}.`,
 	);
 }
