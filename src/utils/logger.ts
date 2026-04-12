@@ -4,7 +4,7 @@
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
 /**
- * @description ログレベルの数値マッピング(小さいほど詳細)
+ * @description ログレベルの数値マッピング
  */
 const LOG_LEVELS: Record<LogLevel, number> = {
 	debug: 0,

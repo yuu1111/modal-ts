@@ -1,5 +1,5 @@
 import { execSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { build } from "esbuild";
 
@@ -11,14 +11,16 @@ const external = [
 	...Object.keys(pkg.peerDependencies ?? {}),
 ];
 
+writeFileSync(
+	join(root, "src/utils/version.ts"),
+	`export const SDK_VERSION = ${JSON.stringify(pkg.version)};\n`,
+);
+
 const shared = {
 	entryPoints: ["src/index.ts"],
 	bundle: true,
 	platform: "node" as const,
 	external,
-	define: {
-		__MODAL_SDK_VERSION__: JSON.stringify(pkg.version),
-	},
 };
 
 await Promise.all([

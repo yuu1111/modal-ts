@@ -24,7 +24,7 @@ import { SecretService } from "@/services/secret/secret";
 import { VolumeService } from "@/services/volume/volume";
 import { createLogger, type Logger, type LogLevel } from "@/utils/logger";
 import { checkForRenamedParams } from "@/utils/validation";
-import { getSDKVersion } from "@/utils/version";
+import { SDK_VERSION } from "@/utils/version";
 import { AuthTokenManager } from "./auth_token_manager";
 import { getProfile, type Profile } from "./config";
 
@@ -127,7 +127,7 @@ export class ModalClient {
 		this.logger.debug(
 			"Initializing Modal client",
 			"version",
-			getSDKVersion(),
+			SDK_VERSION,
 			"server_url",
 			this.profile.serverUrl,
 		);
@@ -197,7 +197,7 @@ export class ModalClient {
 	 * @returns バージョン文字列
 	 */
 	version(): string {
-		return getSDKVersion();
+		return SDK_VERSION;
 	}
 
 	private createClient(profile: Profile): ModalGrpcClient {
@@ -357,7 +357,7 @@ export class ModalClient {
 				String(ClientType.CLIENT_TYPE_LIBMODAL_JS),
 			);
 			options.metadata.set("x-modal-client-version", "1.0.0"); // CLIENT VERSION: Behaves like this Python SDK version
-			options.metadata.set("x-modal-ts-version", `modal-js/${getSDKVersion()}`);
+			options.metadata.set("x-modal-ts-version", `modal-js/${SDK_VERSION}`);
 			options.metadata.set("x-modal-token-id", tokenId);
 			options.metadata.set("x-modal-token-secret", tokenSecret);
 

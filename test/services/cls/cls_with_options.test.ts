@@ -45,8 +45,8 @@ test("Cls.withOptions stacking", async () => {
 	const volume = { volumeId: "vol-1" } as Volume;
 
 	const optioned = cls
-		.withOptions({ timeoutMs: 45_000, cpu: 0.25 })
-		.withOptions({ timeoutMs: 60_000, memoryMiB: 256, gpu: "T4" })
+		.withOptions({ timeoutMs: 45000, cpu: 0.25 })
+		.withOptions({ timeoutMs: 60000, memoryMiB: 256, gpu: "T4" })
 		.withOptions({ secrets: [secret], volumes: { "/mnt/test": volume } });
 
 	const instance = await optioned.instance();
@@ -75,7 +75,7 @@ test("Cls.withConcurrency/withConcurrency/withBatching chaining", async () => {
 	});
 
 	const chained = cls
-		.withOptions({ timeoutMs: 60_000 })
+		.withOptions({ timeoutMs: 60000 })
 		.withConcurrency({ maxInputs: 10 })
 		.withBatching({ maxBatchSize: 11, waitMs: 12 });
 

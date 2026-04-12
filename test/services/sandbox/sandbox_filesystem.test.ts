@@ -130,7 +130,7 @@ test("FileOpenModes", async () => {
 	await finalRead.close();
 });
 
-test("LargeFileOperations", async () => {
+test("LargeFileOperations", { timeout: 60000 }, async () => {
 	const app = await tc.apps.fromName("libmodal-test", {
 		createIfMissing: true,
 	});

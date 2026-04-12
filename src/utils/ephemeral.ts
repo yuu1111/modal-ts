@@ -1,4 +1,4 @@
-export const ephemeralObjectHeartbeatSleep = 300_000; // 300 seconds
+export const ephemeralObjectHeartbeatSleep = 300000; // 300 seconds
 
 export type HeartbeatFunction = () => Promise<unknown>;
 

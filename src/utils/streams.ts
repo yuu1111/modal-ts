@@ -69,65 +69,71 @@ const readMixin = {
 	async readText<R extends string | Uint8Array>(
 		this: ReadableStream<R>,
 	): Promise<string> {
-		const reader = this.getReader();
-		try {
-			const decoder = new TextDecoder("utf-8"); // used if binary
-			const chunks: string[] = [];
-			while (true) {
-				const { value, done } = await reader.read();
-				if (value) {
-					if (typeof value === "string") chunks.push(value);
-					else {
-						chunks.push(
-							decoder.decode(value.buffer as ArrayBuffer, { stream: true }),
-						);
-					}
-				}
-				if (done) {
-					chunks.push(decoder.decode(undefined, { stream: false })); // may be empty
-					break;
-				}
-			}
-			return chunks.join("");
-		} finally {
-			reader.releaseLock();
-		}
-	},
-
-	async readBytes<R extends string | Uint8Array>(
-		this: ReadableStream<R>,
-	): Promise<Uint8Array> {
-		const chunks: Uint8Array[] = [];
+		const decoder = new TextDecoder("utf-8");
+		const parts: string[] = [];
 		const reader = this.getReader();
 		try {
 			while (true) {
 				const { value, done } = await reader.read();
 				if (value) {
-					if (typeof value === "string") {
-						chunks.push(new TextEncoder().encode(value));
-					} else {
-						chunks.push(value);
-					}
+					if (typeof value === "string") parts.push(value);
+					else parts.push(decoder.decode(value, { stream: true }));
 				}
 				if (done) break;
 			}
 		} finally {
 			reader.releaseLock();
 		}
+		decoder.decode(); // flush
+		return parts.join("");
+	},
 
+	async readBytes<R extends string | Uint8Array>(
+		this: ReadableStream<R>,
+	): Promise<Uint8Array> {
+		const chunks: Uint8Array[] = [];
 		let totalLength = 0;
-		for (const chunk of chunks) {
-			totalLength += chunk.length;
+		const reader = this.getReader();
+		try {
+			while (true) {
+				const { value, done } = await reader.read();
+				if (value) {
+					const chunk: Uint8Array =
+						typeof value === "string" ? new TextEncoder().encode(value) : value;
+					chunks.push(chunk);
+					totalLength += chunk.byteLength;
+				}
+				if (done) break;
+			}
+		} finally {
+			reader.releaseLock();
 		}
 		const result = new Uint8Array(totalLength);
 		let offset = 0;
 		for (const chunk of chunks) {
 			result.set(chunk, offset);
-			offset += chunk.length;
+			offset += chunk.byteLength;
 		}
 		return result;
 	},
 };
+
+/**
+ * @description 呼び出しごとに writer ロックを取得・解放する単発書き込みヘルパー
+ * @param stream - 書き込み先の WritableStream
+ * @param chunk - 書き込むデータ
+ */
+async function writeChunk<R>(
+	stream: WritableStream<R>,
+	chunk: string | Uint8Array,
+): Promise<void> {
+	const writer = stream.getWriter();
+	try {
+		await writer.write(chunk as unknown as R);
+	} finally {
+		writer.releaseLock();
+	}
+}
 
 /**
  * @description ModalWriteStream に追加する書き込み用メソッド群
@@ -137,26 +143,14 @@ const writeMixin = {
 		this: WritableStream<R>,
 		text: string,
 	): Promise<void> {
-		const writer = this.getWriter();
-		try {
-			// Cast to R so TS is happy; underlying sink must accept strings
-			await writer.write(text as unknown as R);
-		} finally {
-			writer.releaseLock();
-		}
+		await writeChunk(this, text);
 	},
 
 	async writeBytes<R extends string | Uint8Array>(
 		this: WritableStream<R>,
 		bytes: Uint8Array,
 	): Promise<void> {
-		const writer = this.getWriter();
-		try {
-			// Cast to R so TS is happy; underlying sink must accept Uint8Array
-			await writer.write(bytes as unknown as R);
-		} finally {
-			writer.releaseLock();
-		}
+		await writeChunk(this, bytes);
 	},
 };
 

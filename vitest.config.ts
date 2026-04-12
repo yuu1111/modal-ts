@@ -1,8 +1,15 @@
+import { readFileSync } from "node:fs";
 import path from "node:path";
 import { defineConfig } from "vitest/config";
-import packageJson from "./package.json" with { type: "json" };
+
+const pkg = JSON.parse(
+	readFileSync(path.resolve(__dirname, "package.json"), "utf-8"),
+);
 
 export default defineConfig({
+	define: {
+		__MODAL_SDK_VERSION__: JSON.stringify(pkg.version),
+	},
 	test: {
 		maxConcurrency: 10,
 		slowTestThreshold: 5000,
@@ -14,8 +21,5 @@ export default defineConfig({
 			"@": path.resolve(__dirname, "./src"),
 			modal: path.resolve(__dirname, "./src/index.ts"),
 		},
-	},
-	define: {
-		__MODAL_SDK_VERSION__: JSON.stringify(packageJson.version),
 	},
 });

@@ -364,7 +364,7 @@ export class TaskCommandRouterClientImpl {
 				() =>
 					this.callWithAuthRetry(() =>
 						this.stub.taskExecWait(request, {
-							timeoutMs: 60_000,
+							timeoutMs: 60000,
 						} as CallOptions & TimeoutOptions),
 					),
 				1000, // Retry after 1s since total time is expected to be long.

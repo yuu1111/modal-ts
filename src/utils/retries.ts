@@ -17,7 +17,7 @@ export class Retries {
 			maxRetries,
 			backoffCoefficient = 2.0,
 			initialDelayMs = 1000,
-			maxDelayMs = 60_000,
+			maxDelayMs = 60000,
 		} = params;
 
 		if (maxRetries < 0 || maxRetries > 10) {
@@ -32,13 +32,13 @@ export class Retries {
 			);
 		}
 
-		if (initialDelayMs < 0 || initialDelayMs > 60_000) {
+		if (initialDelayMs < 0 || initialDelayMs > 60000) {
 			throw new Error(
 				`Invalid initialDelayMs: ${initialDelayMs}. Must be between 0 and 60000 ms.`,
 			);
 		}
 
-		if (maxDelayMs < 1_000 || maxDelayMs > 60_000) {
+		if (maxDelayMs < 1000 || maxDelayMs > 60000) {
 			throw new Error(
 				`Invalid maxDelayMs: ${maxDelayMs}. Must be between 1000 and 60000 ms.`,
 			);
