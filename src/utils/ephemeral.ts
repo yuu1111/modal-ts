@@ -48,9 +48,6 @@ export class EphemeralHeartbeatManager {
 					}, ephemeralObjectHeartbeatSleep);
 					timer.unref();
 
-					/**
-					 * @description abort時にタイマーをキャンセルしてPromiseを解決する
-					 */
 					function onAbort(): void {
 						clearTimeout(timer);
 						resolve();

@@ -89,7 +89,7 @@ const readMixin = {
 		try {
 			while (true) {
 				const { value, done } = await reader.read();
-				if (value) {
+				if (value !== undefined) {
 					if (typeof value === "string") parts.push(value);
 					else parts.push(decoder.decode(value, { stream: true }));
 				}

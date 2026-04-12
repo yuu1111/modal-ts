@@ -18,6 +18,13 @@ const textEncoder = new TextEncoder();
 const textDecoder = new TextDecoder();
 
 /**
+ * @description float64BE 書き込み用の再利用バッファ
+ */
+const scratchBuf = new ArrayBuffer(8);
+const scratchDv = new DataView(scratchBuf);
+const scratchBytes = new Uint8Array(scratchBuf);
+
+/**
  * @description pickle 処理固有のエラー
  */
 class PickleError extends Error {
@@ -116,9 +123,8 @@ class Writer {
 	 * @param v - 書き込む値
 	 */
 	float64BE(v: number) {
-		const dv = new DataView(new ArrayBuffer(8));
-		dv.setFloat64(0, v, false);
-		this.bytes(new Uint8Array(dv.buffer));
+		scratchDv.setFloat64(0, v, false);
+		this.bytes(scratchBytes);
 	}
 
 	/**
