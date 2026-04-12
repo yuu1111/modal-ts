@@ -1,8 +1,8 @@
 import { Function_, NotFoundError } from "modal";
 import { ClientError, Status } from "nice-grpc";
 import { expect, test, vi } from "vitest";
-import type { ModalGrpcClient } from "../../src/client";
-import { cborEncode } from "../../src/serialization";
+import type { ModalGrpcClient } from "@/core/client";
+import { cborEncode } from "@/utils/serialization";
 import { createMockModalClients, MockGrpcClient } from "../support/grpc_mock";
 
 const _mockFunctionProto = {

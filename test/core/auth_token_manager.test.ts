@@ -1,7 +1,12 @@
 import jwt from "jsonwebtoken";
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { type AuthClient, AuthTokenManager } from "@/core/auth_token_manager";
-import { newLogger } from "@/utils/logger";
+import {
+	type AuthClient,
+	AuthTokenManager,
+	REFRESH_WINDOW,
+} from "../../src/core/auth_token_manager";
+import { ModalClient, type ModalGrpcClient } from "../../src/core/client";
+import { newLogger } from "../../src/utils/logger";
 
 class mockAuthClient {
 	private authToken: string = "";
@@ -52,9 +57,11 @@ describe("AuthTokenManager", () => {
 		const token = createTestJWT(now + 3600);
 		mockClient.setAuthToken(token);
 
+		// First getToken lazily fetches
 		const firstToken = await manager.getToken();
 		expect(firstToken).toBe(token);
 
+		// Second getToken returns cached
 		const secondToken = await manager.getToken();
 		expect(secondToken).toBe(token);
 
@@ -83,18 +90,21 @@ describe("AuthTokenManager", () => {
 		manager.setToken(expiringToken, now - 60);
 		mockClient.setAuthToken(freshToken);
 
+		// getToken should see the expired token and fetch a new one
 		const token = await manager.getToken();
 		expect(token).toBe(freshToken);
 	});
 
 	test("TestAuthToken_RefreshNearExpiryToken", async () => {
 		const now = Math.floor(Date.now() / 1000);
+		// Token within REFRESH_WINDOW of expiry (60s left, window is 300s)
 		const expiringToken = createTestJWT(now + 60);
 		const freshToken = createTestJWT(now + 3600);
 
 		manager.setToken(expiringToken, now + 60);
 		mockClient.setAuthToken(freshToken);
 
+		// getToken should proactively refresh
 		const token = await manager.getToken();
 		expect(token).toBe(freshToken);
 	});
@@ -113,25 +123,105 @@ describe("AuthTokenManager", () => {
 		expect(result2).toBe(token);
 		expect(result3).toBe(token);
 
-		// authTokenGet should have been called only once (during start)
+		// Only one fetch should have happened
+		expect(mockClient.authTokenGet).toHaveBeenCalledTimes(1);
+	});
+
+	test("TestAuthToken_ConcurrentGetTokenWithExpiredToken", async () => {
+		const now = Math.floor(Date.now() / 1000);
+
+		const expiredToken = createTestJWT(now - 10);
+		manager.setToken(expiredToken, now - 10);
+
+		const freshToken = createTestJWT(now + 3600);
+		mockClient.setAuthToken(freshToken);
+
+		const [result1, result2, result3] = await Promise.all([
+			manager.getToken(),
+			manager.getToken(),
+			manager.getToken(),
+		]);
+
+		expect(result1).toBe(freshToken);
+		expect(result2).toBe(freshToken);
+		expect(result3).toBe(freshToken);
 		expect(mockClient.authTokenGet).toHaveBeenCalledTimes(1);
 	});
 
 	test("TestAuthToken_ProactiveRefreshFailureReturnsOldToken", async () => {
 		const now = Math.floor(Date.now() / 1000);
+		// Token within REFRESH_WINDOW of expiry (60s left, window is 300s)
 		const nearExpiryToken = createTestJWT(now + 60);
 		manager.setToken(nearExpiryToken, now + 60);
 
+		// Make the refresh RPC fail
 		mockClient.authTokenGet.mockRejectedValueOnce(new Error("server blip"));
 
+		// getToken should return the old valid token, not throw
 		const token = await manager.getToken();
 		expect(token).toBe(nearExpiryToken);
 		expect(mockClient.authTokenGet).toHaveBeenCalledTimes(1);
 	});
 
 	test("TestAuthToken_GetToken_EmptyResponse", async () => {
+		// authToken is "" by default, so authTokenGet returns empty
 		await expect(manager.getToken()).rejects.toThrow(
 			"did not receive auth token from server",
 		);
+	});
+
+	test("TestAuthToken_ExpiredThenRefreshed", async () => {
+		vi.useFakeTimers();
+		try {
+			const baseTime = new Date("2025-01-01T00:00:00Z");
+			vi.setSystemTime(baseTime);
+			const baseTimeSeconds = Math.floor(baseTime.getTime() / 1000);
+
+			const tokenOneExpirySeconds = baseTimeSeconds + REFRESH_WINDOW + 5;
+
+			// First getToken lazily fetches tokenOne
+			const tokenOne = createTestJWT(tokenOneExpirySeconds);
+			mockClient.setAuthToken(tokenOne);
+			await expect(manager.getToken()).resolves.toBe(tokenOne);
+			expect(mockClient.authTokenGet).toHaveBeenCalledTimes(1);
+
+			// Simulate time moving past token expiry
+			const tokenTwo = createTestJWT(tokenOneExpirySeconds + 3600);
+			mockClient.setAuthToken(tokenTwo);
+			vi.setSystemTime(new Date((tokenOneExpirySeconds + 1) * 1000));
+
+			// getToken should see tokenOne expired and fetch tokenTwo
+			await expect(manager.getToken()).resolves.toBe(tokenTwo);
+			expect(mockClient.authTokenGet).toHaveBeenCalledTimes(2);
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+});
+
+describe("ModalClient with AuthTokenManager", () => {
+	test("TestModalClient_CloseCleansUpAuthTokenManager", () => {
+		const mockCpClient = newMockAuthClient();
+		const client = new ModalClient({
+			cpClient: mockCpClient as unknown as ModalGrpcClient,
+		});
+
+		client.close();
+	});
+
+	test("TestModalClient_MultipleInstancesHaveSeparateManagers", () => {
+		const mockCpClient1 = newMockAuthClient();
+		const mockCpClient2 = newMockAuthClient();
+
+		const client1 = new ModalClient({
+			cpClient: mockCpClient1 as unknown as ModalGrpcClient,
+		});
+
+		const client2 = new ModalClient({
+			cpClient: mockCpClient2 as unknown as ModalGrpcClient,
+		});
+
+		client1.close();
+		client2.close();
 	});
 });

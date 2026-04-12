@@ -1,6 +1,6 @@
 import { Queue, QueueEmptyError } from "modal";
 import { expect, onTestFinished, test, vi } from "vitest";
-import { ephemeralObjectHeartbeatSleep } from "../../src/ephemeral";
+import { ephemeralObjectHeartbeatSleep } from "@/utils/ephemeral";
 import { createMockModalClients } from "../support/grpc_mock";
 
 test("QueueInvalidName", async () => {

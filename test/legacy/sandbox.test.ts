@@ -1,11 +1,11 @@
 import { App, Image, Sandbox, Secret, Volume } from "modal";
 import { expect, onTestFinished, test } from "vitest";
-import { parseGpuConfig } from "../../src/app";
+import { parseGpuConfig } from "@/services/deploy/app";
+import { buildSandboxCreateRequestProto } from "@/services/sandbox/sandbox";
 import {
 	GPUConfig,
 	PTYInfo_PTYType,
 } from "../../src/generated/modal_proto/api";
-import { buildSandboxCreateRequestProto } from "../../src/sandbox";
 
 test("CreateOneSandbox", async () => {
 	const app = await App.lookup("libmodal-test", { createIfMissing: true });

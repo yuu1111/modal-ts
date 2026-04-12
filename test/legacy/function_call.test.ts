@@ -1,6 +1,6 @@
 import { FunctionTimeoutError } from "modal";
 import { expect, test } from "vitest";
-import { cborEncode } from "../../src/serialization";
+import { cborEncode } from "@/utils/serialization";
 import { createMockModalClients } from "../support/grpc_mock";
 
 const _mockFunctionProto = {

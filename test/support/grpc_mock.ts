@@ -1,4 +1,4 @@
-import { ModalClient, type ModalGrpcClient } from "../../src/client";
+import { ModalClient, type ModalGrpcClient } from "../../src/core/client";
 
 export class MockGrpcClient {
 	// Map of short RPC name -> FIFO queue of handlers
