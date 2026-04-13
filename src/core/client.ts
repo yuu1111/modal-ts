@@ -29,6 +29,18 @@ import { AuthTokenManager } from "./auth_token_manager";
 import { getProfile, type Profile } from "./config";
 
 /**
+ * @description gRPCチャネルの共通設定
+ */
+export const GRPC_CHANNEL_OPTIONS = {
+	"grpc.max_receive_message_length": 100 * 1024 * 1024,
+	"grpc.max_send_message_length": 100 * 1024 * 1024,
+	"grpc-node.flow_control_window": 64 * 1024 * 1024,
+	"grpc.keepalive_time_ms": 30000,
+	"grpc.keepalive_timeout_ms": 10000,
+	"grpc.keepalive_permit_without_calls": 1,
+} as const;
+
+/**
  * @description ModalClientの初期化パラメータ
  * @property tokenId - Modal APIトークンID @optional
  * @property tokenSecret - Modal APIトークンシークレット @optional
@@ -204,14 +216,11 @@ export class ModalClient {
 	private createClient(profile: Profile): ModalGrpcClient {
 		// Channels don't do anything until you send a request on them.
 		// Ref: https://github.com/modal-labs/modal-client/blob/main/modal/_utils/grpc_utils.py
-		const channel = createChannel(profile.serverUrl, undefined, {
-			"grpc.max_receive_message_length": 100 * 1024 * 1024,
-			"grpc.max_send_message_length": 100 * 1024 * 1024,
-			"grpc-node.flow_control_window": 64 * 1024 * 1024,
-			"grpc.keepalive_time_ms": 30000,
-			"grpc.keepalive_timeout_ms": 10000,
-			"grpc.keepalive_permit_without_calls": 1,
-		});
+		const channel = createChannel(
+			profile.serverUrl,
+			undefined,
+			GRPC_CHANNEL_OPTIONS,
+		);
 		let factory = createClientFactory()
 			.use(this.authMiddleware(profile))
 			.use(this.retryMiddleware())

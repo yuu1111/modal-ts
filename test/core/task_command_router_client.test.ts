@@ -1,8 +1,8 @@
 import { ClientError, Status } from "nice-grpc";
 import { expect, test, vi } from "vitest";
+import { decodeJwtExp } from "../../src/core/auth_token_manager";
 import {
 	callWithRetriesOnTransientErrors,
-	parseJwtExpiration,
 	TaskCommandRouterClientImpl,
 } from "../../src/core/task_command_router_client";
 
@@ -21,36 +21,28 @@ function mockJwt(exp: number | string | null): string {
 	return `${header}.${payload}.${signature}`;
 }
 
-test("parseJwtExpiration with valid JWT", () => {
+test("decodeJwtExp with valid JWT", () => {
 	const exp = Math.floor(Date.now() / 1000) + 3600;
 	const jwt = mockJwt(exp);
-	const result = parseJwtExpiration(jwt, mockLogger);
-	expect(result).toBe(exp);
+	expect(decodeJwtExp(jwt)).toBe(exp);
 });
 
-test("parseJwtExpiration without exp claim", () => {
+test("decodeJwtExp without exp claim", () => {
 	const jwt = mockJwt(null);
-	const result = parseJwtExpiration(jwt, mockLogger);
-	expect(result).toBeNull();
+	expect(decodeJwtExp(jwt)).toBeNull();
 });
 
-test("parseJwtExpiration with malformed JWT (wrong number of parts)", () => {
-	const jwt = "only.two";
-	const result = parseJwtExpiration(jwt, mockLogger);
-	expect(result).toBeNull();
+test("decodeJwtExp with malformed JWT (wrong number of parts)", () => {
+	expect(decodeJwtExp("only.two")).toBeNull();
 });
 
-test("parseJwtExpiration with invalid base64", () => {
-	const jwt = "invalid.!!!invalid!!!.signature";
-	const result = parseJwtExpiration(jwt, mockLogger);
-	expect(result).toBeNull();
-	expect(mockLogger.warn).toHaveBeenCalled();
+test("decodeJwtExp with invalid base64", () => {
+	expect(decodeJwtExp("invalid.!!!invalid!!!.signature")).toBeNull();
 });
 
-test("parseJwtExpiration with non-numeric exp", () => {
+test("decodeJwtExp with non-numeric exp", () => {
 	const jwt = mockJwt("not-a-number");
-	const result = parseJwtExpiration(jwt, mockLogger);
-	expect(result).toBeNull();
+	expect(decodeJwtExp(jwt)).toBeNull();
 });
 
 test("callWithRetriesOnTransientErrors success on first attempt", async () => {
@@ -71,7 +63,7 @@ test.each([
 		.fn()
 		.mockRejectedValueOnce(new ClientError("/test", status, message))
 		.mockResolvedValue("success");
-	const result = await callWithRetriesOnTransientErrors(func, 10);
+	const result = await callWithRetriesOnTransientErrors(func, { baseDelayMs: 10 });
 	expect(result).toBe("success");
 	expect(func).toHaveBeenCalledTimes(2);
 });
@@ -79,7 +71,7 @@ test.each([
 test("callWithRetriesOnTransientErrors non-retryable error", async () => {
 	const error = new ClientError("/test", Status.INVALID_ARGUMENT, "invalid");
 	const func = vi.fn().mockRejectedValue(error);
-	await expect(callWithRetriesOnTransientErrors(func, 10)).rejects.toThrow(
+	await expect(callWithRetriesOnTransientErrors(func, { baseDelayMs: 10 })).rejects.toThrow(
 		error,
 	);
 	expect(func).toHaveBeenCalledTimes(1);
@@ -90,7 +82,7 @@ test("callWithRetriesOnTransientErrors max retries exceeded", async () => {
 	const func = vi.fn().mockRejectedValue(error);
 	const maxRetries = 3;
 	await expect(
-		callWithRetriesOnTransientErrors(func, 10, 2, maxRetries),
+		callWithRetriesOnTransientErrors(func, { baseDelayMs: 10, maxRetries }),
 	).rejects.toThrow(error);
 	expect(func).toHaveBeenCalledTimes(maxRetries + 1);
 });
@@ -100,7 +92,7 @@ test("callWithRetriesOnTransientErrors deadline exceeded", async () => {
 	const func = vi.fn().mockRejectedValue(error);
 	const deadline = Date.now() + 50;
 	await expect(
-		callWithRetriesOnTransientErrors(func, 100, 2, null, deadline),
+		callWithRetriesOnTransientErrors(func, { baseDelayMs: 100, maxRetries: null, deadlineMs: deadline }),
 	).rejects.toThrow("Deadline exceeded");
 });
 
