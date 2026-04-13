@@ -1,6 +1,6 @@
 import { ClientError, Status } from "nice-grpc";
 import type { ModalClient } from "@/core/client";
-import { InvalidError, NotFoundError } from "@/core/errors";
+import { InvalidError, rethrowNotFound, suppressNotFound } from "@/core/errors";
 import { ObjectCreationType } from "@/generated/modal_proto/api";
 
 /**
@@ -68,15 +68,7 @@ export class SecretService {
 			);
 			return new Secret(resp.secretId, name);
 		} catch (err) {
-			if (err instanceof ClientError && err.code === Status.NOT_FOUND)
-				throw new NotFoundError(err.details);
-			if (
-				err instanceof ClientError &&
-				err.code === Status.FAILED_PRECONDITION &&
-				err.details.includes("Secret is missing key")
-			)
-				throw new NotFoundError(err.details);
-			throw err;
+			rethrowNotFound(err, undefined, "Secret is missing key");
 		}
 	}
 
@@ -145,13 +137,7 @@ export class SecretService {
 				secret.secretId,
 			);
 		} catch (err) {
-			const isNotFound =
-				err instanceof NotFoundError ||
-				(err instanceof ClientError && err.code === Status.NOT_FOUND);
-			if (isNotFound && params?.allowMissing) {
-				return;
-			}
-			throw err;
+			suppressNotFound(err, params?.allowMissing);
 		}
 	}
 }

@@ -1,6 +1,5 @@
-import { ClientError, Status } from "nice-grpc";
 import type { ModalClient } from "@/core/client";
-import { NotFoundError } from "@/core/errors";
+import { NotFoundError, rethrowNotFound } from "@/core/errors";
 
 /**
  * Service for managing {@link Proxy Proxies}.
@@ -31,9 +30,7 @@ export class ProxyService {
 			}
 			return new Proxy(resp.proxy.proxyId);
 		} catch (err) {
-			if (err instanceof ClientError && err.code === Status.NOT_FOUND)
-				throw new NotFoundError(`Proxy '${name}' not found`);
-			throw err;
+			rethrowNotFound(err, `Proxy '${name}' not found`);
 		}
 	}
 }

@@ -1,6 +1,5 @@
-import { ClientError, Status } from "nice-grpc";
 import type { ModalClient } from "@/core/client";
-import { InvalidError, NotFoundError } from "@/core/errors";
+import { InvalidError, rethrowNotFound, suppressNotFound } from "@/core/errors";
 import { ObjectCreationType } from "@/generated/modal_proto/api";
 import { EphemeralHeartbeatManager } from "@/utils/ephemeral";
 
@@ -71,9 +70,7 @@ export class VolumeService {
 			);
 			return new Volume(resp.volumeId, name);
 		} catch (err) {
-			if (err instanceof ClientError && err.code === Status.NOT_FOUND)
-				throw new NotFoundError(err.details);
-			throw err;
+			rethrowNotFound(err);
 		}
 	}
 
@@ -125,13 +122,7 @@ export class VolumeService {
 				volume.volumeId,
 			);
 		} catch (err) {
-			const isNotFound =
-				err instanceof NotFoundError ||
-				(err instanceof ClientError && err.code === Status.NOT_FOUND);
-			if (isNotFound && params?.allowMissing) {
-				return;
-			}
-			throw err;
+			suppressNotFound(err, params?.allowMissing);
 		}
 	}
 }

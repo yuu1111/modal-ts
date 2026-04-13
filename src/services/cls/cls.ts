@@ -1,6 +1,5 @@
-import { ClientError, Status } from "nice-grpc";
 import type { ModalClient } from "@/core/client";
-import { NotFoundError } from "@/core/errors";
+import { NotFoundError, rethrowNotFound } from "@/core/errors";
 import {
 	ClassParameterInfo_ParameterSerializationFormat,
 	ClassParameterSet,
@@ -95,9 +94,7 @@ export class ClsService {
 				undefined,
 			);
 		} catch (err) {
-			if (err instanceof ClientError && err.code === Status.NOT_FOUND)
-				throw new NotFoundError(`Class '${appName}/${name}' not found`);
-			throw err;
+			rethrowNotFound(err, `Class '${appName}/${name}' not found`);
 		}
 	}
 }

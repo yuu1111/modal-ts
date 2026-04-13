@@ -1,6 +1,5 @@
-import { ClientError, Status } from "nice-grpc";
 import type { ModalClient } from "@/core/client";
-import { InvalidError, NotFoundError } from "@/core/errors";
+import { InvalidError, rethrowNotFound } from "@/core/errors";
 import {
 	type GenericResult,
 	GenericResult_GenericStatus,
@@ -37,15 +36,7 @@ export class ImageService {
 			const resp = await this.#client.cpClient.imageFromId({ imageId });
 			return new Image(this.#client, resp.imageId, "");
 		} catch (err) {
-			if (err instanceof ClientError && err.code === Status.NOT_FOUND)
-				throw new NotFoundError(err.details);
-			if (
-				err instanceof ClientError &&
-				err.code === Status.FAILED_PRECONDITION &&
-				err.details.includes("Could not find image with ID")
-			)
-				throw new NotFoundError(err.details);
-			throw err;
+			rethrowNotFound(err, undefined, "Could not find image with ID");
 		}
 	}
 
@@ -56,19 +47,11 @@ export class ImageService {
 	 * @returns Image インスタンス
 	 */
 	fromRegistry(tag: string, secret?: Secret): Image {
-		let imageRegistryConfig: ImageRegistryConfig | undefined;
-		if (secret) {
-			if (!(secret instanceof Secret)) {
-				throw new TypeError(
-					"secret must be a reference to an existing Secret, e.g. `await Secret.fromName('my_secret')`",
-				);
-			}
-			imageRegistryConfig = {
-				registryAuthType: RegistryAuthType.REGISTRY_AUTH_TYPE_STATIC_CREDS,
-				secretId: secret.secretId,
-			};
-		}
-		return new Image(this.#client, "", tag, imageRegistryConfig);
+		return this.#fromRegistryWith(
+			tag,
+			secret,
+			RegistryAuthType.REGISTRY_AUTH_TYPE_STATIC_CREDS,
+		);
 	}
 
 	/**
@@ -78,19 +61,11 @@ export class ImageService {
 	 * @returns Image インスタンス
 	 */
 	fromAwsEcr(tag: string, secret: Secret): Image {
-		let imageRegistryConfig: ImageRegistryConfig | undefined;
-		if (secret) {
-			if (!(secret instanceof Secret)) {
-				throw new TypeError(
-					"secret must be a reference to an existing Secret, e.g. `await Secret.fromName('my_secret')`",
-				);
-			}
-			imageRegistryConfig = {
-				registryAuthType: RegistryAuthType.REGISTRY_AUTH_TYPE_AWS,
-				secretId: secret.secretId,
-			};
-		}
-		return new Image(this.#client, "", tag, imageRegistryConfig);
+		return this.#fromRegistryWith(
+			tag,
+			secret,
+			RegistryAuthType.REGISTRY_AUTH_TYPE_AWS,
+		);
 	}
 
 	/**
@@ -100,6 +75,18 @@ export class ImageService {
 	 * @returns Image インスタンス
 	 */
 	fromGcpArtifactRegistry(tag: string, secret: Secret): Image {
+		return this.#fromRegistryWith(
+			tag,
+			secret,
+			RegistryAuthType.REGISTRY_AUTH_TYPE_GCP,
+		);
+	}
+
+	#fromRegistryWith(
+		tag: string,
+		secret: Secret | undefined,
+		authType: RegistryAuthType,
+	): Image {
 		let imageRegistryConfig: ImageRegistryConfig | undefined;
 		if (secret) {
 			if (!(secret instanceof Secret)) {
@@ -108,7 +95,7 @@ export class ImageService {
 				);
 			}
 			imageRegistryConfig = {
-				registryAuthType: RegistryAuthType.REGISTRY_AUTH_TYPE_GCP,
+				registryAuthType: authType,
 				secretId: secret.secretId,
 			};
 		}
@@ -124,15 +111,7 @@ export class ImageService {
 		try {
 			await this.#client.cpClient.imageDelete({ imageId });
 		} catch (err) {
-			if (err instanceof ClientError && err.code === Status.NOT_FOUND)
-				throw new NotFoundError(err.details);
-			if (
-				err instanceof ClientError &&
-				err.code === Status.FAILED_PRECONDITION &&
-				err.details.includes("Could not find image with ID")
-			)
-				throw new NotFoundError(err.details);
-			throw err;
+			rethrowNotFound(err, undefined, "Could not find image with ID");
 		}
 	}
 }

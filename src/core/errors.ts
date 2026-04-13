@@ -1,3 +1,45 @@
+import { ClientError, Status } from "nice-grpc";
+
+/**
+ * @description gRPC の NOT_FOUND/FAILED_PRECONDITION を NotFoundError に変換して再スローする。
+ * 該当しなければ元のエラーをそのまま再スローする
+ * @param err - catch されたエラー
+ * @param message - NotFoundError に使うメッセージ。省略時は err.details を使用
+ * @param alsoNotFoundPatterns - FAILED_PRECONDITION の details にこのパターンが含まれていれば NotFoundError として扱う
+ */
+export function rethrowNotFound(
+	err: unknown,
+	message?: string,
+	...alsoNotFoundPatterns: string[]
+): never {
+	if (err instanceof ClientError) {
+		if (err.code === Status.NOT_FOUND)
+			throw new NotFoundError(message ?? err.details);
+		if (
+			err.code === Status.FAILED_PRECONDITION &&
+			alsoNotFoundPatterns.some((p) => err.details.includes(p))
+		)
+			throw new NotFoundError(message ?? err.details);
+	}
+	throw err;
+}
+
+/**
+ * @description NOT_FOUND を allowMissing で抑制する。allowMissing でなければ再スローする
+ * @param err - catch されたエラー
+ * @param allowMissing - true なら NOT_FOUND を無視する
+ */
+export function suppressNotFound(
+	err: unknown,
+	allowMissing: boolean | undefined,
+): void {
+	const isNotFound =
+		err instanceof NotFoundError ||
+		(err instanceof ClientError && err.code === Status.NOT_FOUND);
+	if (isNotFound && allowMissing) return;
+	throw err;
+}
+
 /**
  * @description 操作が許容時間を超過した
  */

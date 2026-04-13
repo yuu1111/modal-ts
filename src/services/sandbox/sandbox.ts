@@ -10,7 +10,7 @@ import {
 	AlreadyExistsError,
 	ClientClosedError,
 	InvalidError,
-	NotFoundError,
+	rethrowNotFound,
 	SandboxTimeoutError,
 	TimeoutError,
 } from "@/core/errors";
@@ -597,9 +597,7 @@ export class SandboxService {
 				timeout: 0,
 			});
 		} catch (err) {
-			if (err instanceof ClientError && err.code === Status.NOT_FOUND)
-				throw new NotFoundError(`Sandbox with id: '${sandboxId}' not found`);
-			throw err;
+			rethrowNotFound(err, `Sandbox with id: '${sandboxId}' not found`);
 		}
 
 		return new Sandbox(this.#client, sandboxId);
@@ -626,11 +624,10 @@ export class SandboxService {
 			});
 			return new Sandbox(this.#client, resp.sandboxId);
 		} catch (err) {
-			if (err instanceof ClientError && err.code === Status.NOT_FOUND)
-				throw new NotFoundError(
-					`Sandbox with name '${name}' not found in App '${appName}'`,
-				);
-			throw err;
+			rethrowNotFound(
+				err,
+				`Sandbox with name '${name}' not found in App '${appName}'`,
+			);
 		}
 	}
 

@@ -1,9 +1,8 @@
 // Function calls and invocations, to be used with Modal Functions.
 
 import { createHash } from "node:crypto";
-import { ClientError, Status } from "nice-grpc";
 import type { ModalClient, ModalGrpcClient } from "@/core/client";
-import { InternalFailure, InvalidError, NotFoundError } from "@/core/errors";
+import { InternalFailure, InvalidError, rethrowNotFound } from "@/core/errors";
 import {
 	DataFormat,
 	FunctionCallInvocationType,
@@ -95,9 +94,7 @@ export class FunctionService {
 				resp.handleMetadata,
 			);
 		} catch (err) {
-			if (err instanceof ClientError && err.code === Status.NOT_FOUND)
-				throw new NotFoundError(`Function '${appName}/${name}' not found`);
-			throw err;
+			rethrowNotFound(err, `Function '${appName}/${name}' not found`);
 		}
 	}
 }

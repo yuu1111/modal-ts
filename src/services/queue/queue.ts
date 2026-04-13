@@ -4,9 +4,10 @@ import { ClientError, Status } from "nice-grpc";
 import type { ModalClient } from "@/core/client";
 import {
 	InvalidError,
-	NotFoundError,
 	QueueEmptyError,
 	QueueFullError,
+	rethrowNotFound,
+	suppressNotFound,
 } from "@/core/errors";
 import {
 	ObjectCreationType,
@@ -121,9 +122,7 @@ export class QueueService {
 			);
 			return new Queue(this.#client, resp.queueId, name);
 		} catch (err) {
-			if (err instanceof ClientError && err.code === Status.NOT_FOUND)
-				throw new NotFoundError(err.details);
-			throw err;
+			rethrowNotFound(err);
 		}
 	}
 
@@ -149,13 +148,7 @@ export class QueueService {
 				queue.queueId,
 			);
 		} catch (err) {
-			const isNotFound =
-				err instanceof NotFoundError ||
-				(err instanceof ClientError && err.code === Status.NOT_FOUND);
-			if (isNotFound && params.allowMissing) {
-				return;
-			}
-			throw err;
+			suppressNotFound(err, params.allowMissing);
 		}
 	}
 }
@@ -262,9 +255,11 @@ export class Queue {
 			this.#ephemeralHbManager = ephemeralHbManager;
 	}
 
+	static #textEncoder = new TextEncoder();
+
 	static #validatePartitionKey(partition: string | undefined): Uint8Array {
 		if (partition) {
-			const partitionKey = new TextEncoder().encode(partition);
+			const partitionKey = Queue.#textEncoder.encode(partition);
 			if (partitionKey.length === 0 || partitionKey.length > 64) {
 				throw new InvalidError(
 					"Queue partition key must be between 1 and 64 bytes.",

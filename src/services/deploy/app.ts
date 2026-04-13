@@ -1,6 +1,5 @@
-import { ClientError, Status } from "nice-grpc";
 import type { ModalClient } from "@/core/client";
-import { NotFoundError } from "@/core/errors";
+import { rethrowNotFound } from "@/core/errors";
 import { GPUConfig, ObjectCreationType } from "@/generated/modal_proto/api";
 
 /**
@@ -39,9 +38,7 @@ export class AppService {
 			);
 			return new App(resp.appId, name);
 		} catch (err) {
-			if (err instanceof ClientError && err.code === Status.NOT_FOUND)
-				throw new NotFoundError(`App '${name}' not found`);
-			throw err;
+			rethrowNotFound(err, `App '${name}' not found`);
 		}
 	}
 }
