@@ -7,9 +7,9 @@ import {
 	type ModalGrpcClient,
 } from "@/core/client";
 import {
-	AlreadyExistsError,
 	ClientClosedError,
 	InvalidError,
+	rethrowAlreadyExists,
 	rethrowInvalid,
 	rethrowNotFound,
 	SandboxTimeoutError,
@@ -571,12 +571,7 @@ export class SandboxService {
 		);
 		const createResp = await this.#client.cpClient
 			.sandboxCreate(createReq)
-			.catch((err) => {
-				if (err instanceof ClientError && err.code === Status.ALREADY_EXISTS) {
-					throw new AlreadyExistsError(err.details || err.message);
-				}
-				throw err;
-			});
+			.catch(rethrowAlreadyExists);
 
 		this.#client.logger.debug(
 			"Created Sandbox",

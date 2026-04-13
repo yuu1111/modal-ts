@@ -340,7 +340,7 @@ async function buildFunctionOptionsProto(
 	options?: ServiceOptions,
 ): Promise<FunctionOptions | undefined> {
 	if (!options) return undefined;
-	const o = options ?? {};
+	const o = options;
 
 	checkForRenamedParams(o, {
 		memory: "memoryMiB",

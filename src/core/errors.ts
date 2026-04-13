@@ -71,6 +71,22 @@ export function rethrowInvalid(
 }
 
 /**
+ * @description gRPC の ALREADY_EXISTS を AlreadyExistsError に変換して再スローする。
+ * 該当しなければ元のエラーをそのまま再スローする
+ * @param err - catch されたエラー
+ * @param message - AlreadyExistsError に使うメッセージ。省略時は err.details を使用
+ */
+export function rethrowAlreadyExists(err: unknown, message?: string): never {
+	rethrowGrpc(
+		err,
+		AlreadyExistsError,
+		Status.ALREADY_EXISTS,
+		message,
+		undefined,
+	);
+}
+
+/**
  * @description NOT_FOUND を allowMissing で抑制する。allowMissing でなければ再スローする
  * @param err - catch されたエラー
  * @param allowMissing - true なら NOT_FOUND を無視する
