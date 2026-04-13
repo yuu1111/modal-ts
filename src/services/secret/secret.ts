@@ -1,6 +1,10 @@
-import { ClientError, Status } from "nice-grpc";
 import type { ModalClient } from "@/core/client";
-import { InvalidError, rethrowNotFound, suppressNotFound } from "@/core/errors";
+import {
+	InvalidError,
+	rethrowInvalid,
+	rethrowNotFound,
+	suppressNotFound,
+} from "@/core/errors";
 import { ObjectCreationType } from "@/generated/modal_proto/api";
 
 /**
@@ -104,13 +108,7 @@ export class SecretService {
 			);
 			return new Secret(resp.secretId);
 		} catch (err) {
-			if (
-				err instanceof ClientError &&
-				(err.code === Status.INVALID_ARGUMENT ||
-					err.code === Status.FAILED_PRECONDITION)
-			)
-				throw new InvalidError(err.details);
-			throw err;
+			rethrowInvalid(err, true);
 		}
 	}
 

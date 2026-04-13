@@ -10,6 +10,7 @@ import {
 	AlreadyExistsError,
 	ClientClosedError,
 	InvalidError,
+	rethrowInvalid,
 	rethrowNotFound,
 	SandboxTimeoutError,
 	TimeoutError,
@@ -68,6 +69,7 @@ import {
 const SB_LOGS_INITIAL_DELAY_MS = 10;
 const SB_LOGS_DELAY_FACTOR = 2;
 const SB_LOGS_MAX_RETRIES = 10;
+const textEncoder = new TextEncoder();
 
 /**
  * Stdin is always present, but this option allow you to drop stdout or stderr
@@ -664,13 +666,7 @@ export class SandboxService {
 				}
 				beforeTimestamp = resp.sandboxes[resp.sandboxes.length - 1]?.createdAt;
 			} catch (err) {
-				if (
-					err instanceof ClientError &&
-					err.code === Status.INVALID_ARGUMENT
-				) {
-					throw new InvalidError(err.details || err.message);
-				}
-				throw err;
+				rethrowInvalid(err);
 			}
 		}
 	}
@@ -989,10 +985,7 @@ export class Sandbox {
 				tags: tagsList,
 			});
 		} catch (err) {
-			if (err instanceof ClientError && err.code === Status.INVALID_ARGUMENT) {
-				throw new InvalidError(err.details || err.message);
-			}
-			throw err;
+			rethrowInvalid(err);
 		}
 	}
 
@@ -1008,10 +1001,7 @@ export class Sandbox {
 				sandboxId: this.sandboxId,
 			});
 		} catch (err) {
-			if (err instanceof ClientError && err.code === Status.INVALID_ARGUMENT) {
-				throw new InvalidError(err.details || err.message);
-			}
-			throw err;
+			rethrowInvalid(err);
 		}
 
 		const tags: Record<string, string> = {};
@@ -1383,7 +1373,7 @@ export class Sandbox {
 			);
 		}
 
-		const pathBytes = new TextEncoder().encode(path);
+		const pathBytes = textEncoder.encode(path);
 		const imageId = image?.imageId ?? "";
 		const request = TaskMountDirectoryRequest.create({
 			taskId,
@@ -1404,7 +1394,7 @@ export class Sandbox {
 		const commandRouterClient =
 			await this.#getOrCreateCommandRouterClient(taskId);
 
-		const pathBytes = new TextEncoder().encode(path);
+		const pathBytes = textEncoder.encode(path);
 		const request = TaskUnmountDirectoryRequest.create({
 			taskId,
 			path: pathBytes,
@@ -1424,7 +1414,7 @@ export class Sandbox {
 		const commandRouterClient =
 			await this.#getOrCreateCommandRouterClient(taskId);
 
-		const pathBytes = new TextEncoder().encode(path);
+		const pathBytes = textEncoder.encode(path);
 		const request = TaskSnapshotDirectoryRequest.create({
 			taskId,
 			path: pathBytes,
@@ -1602,7 +1592,7 @@ async function* outputStreamSb(
 				delayMs = SB_LOGS_INITIAL_DELAY_MS;
 				retriesRemaining = SB_LOGS_MAX_RETRIES;
 				lastIndex = batch.entryId;
-				yield* batch.items.map((item) => new TextEncoder().encode(item.data));
+				yield* batch.items.map((item) => textEncoder.encode(item.data));
 				if (batch.eof) {
 					completed = true;
 					break;

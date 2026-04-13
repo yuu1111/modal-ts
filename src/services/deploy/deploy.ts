@@ -9,6 +9,8 @@ import {
 	type WebhookConfig,
 } from "@/generated/modal_proto/api";
 
+const textEncoder = new TextEncoder();
+
 /**
  * @description アプリのデプロイ設定
  * @property name - デプロイするアプリ名
@@ -110,13 +112,12 @@ export async function createMount(
 	appId: string,
 	files: MountFileEntry[],
 ): Promise<string> {
-	const encoder = new TextEncoder();
 	const mountFiles = [];
 
 	for (const file of files) {
 		const data =
 			typeof file.content === "string"
-				? encoder.encode(file.content)
+				? textEncoder.encode(file.content)
 				: file.content;
 		const hash = sha256(data);
 

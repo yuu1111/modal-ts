@@ -1,5 +1,6 @@
 import type { ModalClient } from "@/core/client";
 import { NotFoundError, rethrowNotFound } from "@/core/errors";
+import type { ProxyGetResponse } from "@/generated/modal_proto/api";
 
 /**
  * Service for managing {@link Proxy Proxies}.
@@ -20,18 +21,19 @@ export class ProxyService {
 	 * ```
 	 */
 	async fromName(name: string, params?: ProxyFromNameParams): Promise<Proxy> {
+		let resp: ProxyGetResponse;
 		try {
-			const resp = await this.#client.cpClient.proxyGet({
+			resp = await this.#client.cpClient.proxyGet({
 				name,
 				environmentName: this.#client.environmentName(params?.environment),
 			});
-			if (!resp.proxy?.proxyId) {
-				throw new NotFoundError(`Proxy '${name}' not found`);
-			}
-			return new Proxy(resp.proxy.proxyId);
 		} catch (err) {
 			rethrowNotFound(err, `Proxy '${name}' not found`);
 		}
+		if (!resp.proxy?.proxyId) {
+			throw new NotFoundError(`Proxy '${name}' not found`);
+		}
+		return new Proxy(resp.proxy.proxyId);
 	}
 }
 
