@@ -1,7 +1,7 @@
 import type { Secret, Volume } from "modal";
 import { Retries } from "modal";
 import { expect, test } from "vitest";
-import { createMockModalClients } from "../support/grpc_mock";
+import { createMockModalClients } from "./support/grpc_mock";
 
 const _mockFunctionProto = {
 	functionId: "fid",

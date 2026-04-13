@@ -1,4 +1,6 @@
-/** An operation exceeds the allowed time limit. */
+/**
+ * @description 操作が許容時間を超過した
+ */
 export class TimeoutError extends Error {
 	constructor(message: string = "Operation timed out") {
 		super(message);
@@ -6,7 +8,9 @@ export class TimeoutError extends Error {
 	}
 }
 
-/** Function execution exceeds the allowed time limit. */
+/**
+ * @description Function実行が許容時間を超過した
+ */
 export class FunctionTimeoutError extends Error {
 	constructor(message: string) {
 		super(message);
@@ -14,7 +18,9 @@ export class FunctionTimeoutError extends Error {
 	}
 }
 
-/** An error on the Modal server, or a Python exception. */
+/**
+ * @description Modalサーバーエラー、またはPython例外
+ */
 export class RemoteError extends Error {
 	constructor(message: string) {
 		super(message);
@@ -22,7 +28,9 @@ export class RemoteError extends Error {
 	}
 }
 
-/** A retryable internal error from Modal. */
+/**
+ * @description リトライ可能なModal内部エラー
+ */
 export class InternalFailure extends Error {
 	constructor(message: string) {
 		super(message);
@@ -30,7 +38,9 @@ export class InternalFailure extends Error {
 	}
 }
 
-/** Some resource was not found. */
+/**
+ * @description リソースが見つからない
+ */
 export class NotFoundError extends Error {
 	constructor(message: string) {
 		super(message);
@@ -38,7 +48,9 @@ export class NotFoundError extends Error {
 	}
 }
 
-/** A resource already exists. */
+/**
+ * @description リソースが既に存在する
+ */
 export class AlreadyExistsError extends Error {
 	constructor(message: string) {
 		super(message);
@@ -46,7 +58,9 @@ export class AlreadyExistsError extends Error {
 	}
 }
 
-/** A request or other operation was invalid. */
+/**
+ * @description リクエストまたは操作が不正
+ */
 export class InvalidError extends Error {
 	constructor(message: string) {
 		super(message);
@@ -54,7 +68,9 @@ export class InvalidError extends Error {
 	}
 }
 
-/** The Queue is empty. */
+/**
+ * @description Queueが空
+ */
 export class QueueEmptyError extends Error {
 	constructor(message: string) {
 		super(message);
@@ -62,7 +78,9 @@ export class QueueEmptyError extends Error {
 	}
 }
 
-/** The Queue is full. */
+/**
+ * @description Queueが満杯
+ */
 export class QueueFullError extends Error {
 	constructor(message: string) {
 		super(message);
@@ -70,7 +88,9 @@ export class QueueFullError extends Error {
 	}
 }
 
-/** Errors from invalid Sandbox FileSystem operations. */
+/**
+ * @description 不正なSandbox FileSystem操作
+ */
 export class SandboxFilesystemError extends Error {
 	constructor(message: string) {
 		super(message);
@@ -78,7 +98,9 @@ export class SandboxFilesystemError extends Error {
 	}
 }
 
-/** Sandbox operations that exceed the allowed time limit. */
+/**
+ * @description Sandbox操作が許容時間を超過した
+ */
 export class SandboxTimeoutError extends Error {
 	constructor(message: string = "Sandbox operation timed out") {
 		super(message);
@@ -86,7 +108,9 @@ export class SandboxTimeoutError extends Error {
 	}
 }
 
-/** Thrown when attempting operations on a detached Sandbox. */
+/**
+ * @description デタッチされたSandboxへの操作を試みた
+ */
 export class ClientClosedError extends Error {
 	constructor(
 		message: string = "Unable to perform operation on a detached sandbox",

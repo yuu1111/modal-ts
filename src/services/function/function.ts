@@ -2,11 +2,7 @@
 
 import { createHash } from "node:crypto";
 import { ClientError, Status } from "nice-grpc";
-import {
-	getDefaultClient,
-	type ModalClient,
-	type ModalGrpcClient,
-} from "@/core/client";
+import type { ModalClient, ModalGrpcClient } from "@/core/client";
 import { InternalFailure, InvalidError, NotFoundError } from "@/core/errors";
 import {
 	DataFormat,
@@ -152,17 +148,6 @@ export class Function_ {
 		this.#client = client;
 		if (functionHandleMetadata !== undefined)
 			this.#handleMetadata = functionHandleMetadata;
-	}
-
-	/**
-	 * @deprecated Use `client.functions.fromName()` instead.
-	 */
-	static async lookup(
-		appName: string,
-		name: string,
-		params: FunctionFromNameParams = {},
-	): Promise<Function_> {
-		return await getDefaultClient().functions.fromName(appName, name, params);
 	}
 
 	#checkNoWebUrl(fnName: string): void {

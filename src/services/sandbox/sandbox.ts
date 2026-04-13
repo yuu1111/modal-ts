@@ -2,7 +2,6 @@ import { setTimeout } from "node:timers/promises";
 import { ClientError, Status } from "nice-grpc";
 import { v4 as uuidv4 } from "uuid";
 import {
-	getDefaultClient,
 	isRetryableGrpc,
 	type ModalClient,
 	type ModalGrpcClient,
@@ -47,7 +46,6 @@ import type { CloudBucketMount } from "@/services/cloud_bucket_mount/cloud_bucke
 import type { App } from "@/services/deploy/app";
 import { parseGpuConfig } from "@/services/deploy/app";
 import { Image } from "@/services/image/image";
-// biome-ignore lint/suspicious/noShadowRestrictedNames: SDK type name
 import type { Proxy } from "@/services/proxy/proxy";
 import { mergeEnvIntoSecrets, type Secret } from "@/services/secret/secret";
 import type { Volume } from "@/services/volume/volume";
@@ -1027,26 +1025,6 @@ export class Sandbox {
 	}
 
 	/**
-	 * @deprecated Use {@link SandboxService#fromId client.sandboxes.fromId()} instead.
-	 */
-	static async fromId(sandboxId: string): Promise<Sandbox> {
-		return getDefaultClient().sandboxes.fromId(sandboxId);
-	}
-
-	/**
-	 * @deprecated Use {@link SandboxService#fromName client.sandboxes.fromName()} instead.
-	 */
-	static async fromName(
-		appName: string,
-		name: string,
-		environment?: string,
-	): Promise<Sandbox> {
-		return getDefaultClient().sandboxes.fromName(appName, name, {
-			...(environment !== undefined && { environment }),
-		});
-	}
-
-	/**
 	 * Open a file in the Sandbox filesystem.
 	 * @param path - Path to the file to open
 	 * @param mode - File open mode (r, w, a, r+, w+, a+)
@@ -1476,15 +1454,6 @@ export class Sandbox {
 		});
 
 		return Sandbox.#getReturnCode(resp.result);
-	}
-
-	/**
-	 * @deprecated Use {@link SandboxService#list client.sandboxes.list()} instead.
-	 */
-	static async *list(
-		params: SandboxListParams = {},
-	): AsyncGenerator<Sandbox, void, unknown> {
-		yield* getDefaultClient().sandboxes.list(params);
 	}
 
 	static #getReturnCode(result: GenericResult | undefined): number | null {

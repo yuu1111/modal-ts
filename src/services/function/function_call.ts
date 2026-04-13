@@ -62,13 +62,6 @@ export class FunctionCall {
 	}
 
 	/**
-	 * @deprecated Use {@link FunctionCallService#fromId client.functionCalls.fromId()} instead.
-	 */
-	static fromId(functionCallId: string): FunctionCall {
-		return new FunctionCall(undefined, functionCallId);
-	}
-
-	/**
 	 * @description FunctionCallの結果を取得する(タイムアウト付き待機可)
 	 * @param params - オプションパラメータ
 	 * @returns Function実行結果

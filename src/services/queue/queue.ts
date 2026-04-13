@@ -1,7 +1,7 @@
 // Queue object, to be used with Modal Queues.
 
 import { ClientError, Status } from "nice-grpc";
-import { getDefaultClient, type ModalClient } from "@/core/client";
+import type { ModalClient } from "@/core/client";
 import {
 	InvalidError,
 	NotFoundError,
@@ -276,13 +276,6 @@ export class Queue {
 	}
 
 	/**
-	 * @deprecated Use {@link QueueService#ephemeral client.queues.ephemeral()} instead.
-	 */
-	static async ephemeral(params: QueueEphemeralParams = {}): Promise<Queue> {
-		return getDefaultClient().queues.ephemeral(params);
-	}
-
-	/**
 	 * @description 一時的な Queue を削除する。一時的な Queue でのみ使用可能
 	 */
 	closeEphemeral(): void {
@@ -291,26 +284,6 @@ export class Queue {
 		} else {
 			throw new InvalidError("Queue is not ephemeral.");
 		}
-	}
-
-	/**
-	 * @deprecated Use {@link QueueService#fromName client.queues.fromName()} instead.
-	 */
-	static async lookup(
-		name: string,
-		options: QueueFromNameParams = {},
-	): Promise<Queue> {
-		return getDefaultClient().queues.fromName(name, options);
-	}
-
-	/**
-	 * @deprecated Use {@link QueueService#delete client.queues.delete()} instead.
-	 */
-	static async delete(
-		name: string,
-		options: QueueDeleteParams = {},
-	): Promise<void> {
-		return getDefaultClient().queues.delete(name, options);
 	}
 
 	/**

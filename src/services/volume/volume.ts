@@ -1,5 +1,5 @@
 import { ClientError, Status } from "nice-grpc";
-import { getDefaultClient, type ModalClient } from "@/core/client";
+import type { ModalClient } from "@/core/client";
 import { InvalidError, NotFoundError } from "@/core/errors";
 import { ObjectCreationType } from "@/generated/modal_proto/api";
 import { EphemeralHeartbeatManager } from "@/utils/ephemeral";
@@ -160,16 +160,6 @@ export class Volume {
 	}
 
 	/**
-	 * @deprecated Use {@link VolumeService#fromName client.volumes.fromName()} instead.
-	 */
-	static async fromName(
-		name: string,
-		options?: VolumeFromNameParams,
-	): Promise<Volume> {
-		return getDefaultClient().volumes.fromName(name, options);
-	}
-
-	/**
 	 * @description Volume を読み取り専用でマウントするよう設定する
 	 * @returns 読み取り専用に設定された新しい Volume インスタンス
 	 */
@@ -179,13 +169,6 @@ export class Volume {
 
 	get isReadOnly(): boolean {
 		return this._readOnly;
-	}
-
-	/**
-	 * @deprecated Use {@link VolumeService#ephemeral client.volumes.ephemeral()} instead.
-	 */
-	static async ephemeral(options: VolumeEphemeralParams = {}): Promise<Volume> {
-		return getDefaultClient().volumes.ephemeral(options);
 	}
 
 	/**

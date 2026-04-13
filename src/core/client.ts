@@ -422,18 +422,18 @@ export const timeoutMiddleware: ClientMiddleware<TimeoutOptions> =
 				...restOptions,
 				signal: abortController.signal,
 			});
-		} finally {
-			origSignal?.removeEventListener("abort", abortListener);
-			clearTimeout(timer);
-
+		} catch (err) {
 			if (timedOut) {
-				// biome-ignore lint/correctness/noUnsafeFinally: intentional — timeout must override the normal return
 				throw new ClientError(
 					call.method.path,
 					Status.DEADLINE_EXCEEDED,
 					`Timed out after ${timeoutMs}ms`,
 				);
 			}
+			throw err;
+		} finally {
+			origSignal?.removeEventListener("abort", abortListener);
+			clearTimeout(timer);
 		}
 	};
 
@@ -496,14 +496,9 @@ export type RetryOptions = {
 };
 
 /**
- * @description レガシーデフォルトクライアント(遅延初期化)
+ * @description デフォルトクライアント(遅延初期化)
  */
 let defaultClient: ModalClient | undefined;
-
-/**
- * @description デフォルトクライアントの初期化オプション
- */
-let defaultClientOptions: ModalClientParams | undefined;
 
 /**
  * @description デフォルトのModalClientインスタンスを取得(なければ作成)
@@ -511,51 +506,7 @@ let defaultClientOptions: ModalClientParams | undefined;
  */
 export function getDefaultClient(): ModalClient {
 	if (!defaultClient) {
-		defaultClient = new ModalClient(defaultClientOptions);
+		defaultClient = new ModalClient();
 	}
 	return defaultClient;
-}
-
-/**
- * @description レガシーgRPCクライアントProxy(後方互換用)
- * @deprecated {@link ModalClient} を使用してください
- */
-export const client = new Proxy({} as ModalGrpcClient, {
-	get(_target, prop) {
-		return getDefaultClient().cpClient[prop as keyof ModalGrpcClient];
-	},
-});
-
-/**
- * @deprecated {@link ModalClient `new ModalClient()`} を使用してください
- */
-export type ClientOptions = {
-	tokenId: string;
-	tokenSecret: string;
-	environment?: string;
-};
-
-/**
- * @deprecated {@link ModalClient `new ModalClient()`} を使用してください
- */
-export function initializeClient(options: ClientOptions) {
-	defaultClientOptions = {
-		tokenId: options.tokenId,
-		tokenSecret: options.tokenSecret,
-		...(options.environment !== undefined && {
-			environment: options.environment,
-		}),
-	};
-	defaultClient = new ModalClient(defaultClientOptions);
-}
-
-/**
- * @description 認証トークンのリフレッシュを停止する
- * @deprecated {@link ModalClient#close modalClient.close()} を使用してください
- */
-export function close() {
-	if (defaultClient) {
-		defaultClient.close();
-		defaultClient = undefined;
-	}
 }

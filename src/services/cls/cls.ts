@@ -1,5 +1,5 @@
 import { ClientError, Status } from "nice-grpc";
-import { getDefaultClient, type ModalClient } from "@/core/client";
+import type { ModalClient } from "@/core/client";
 import { NotFoundError } from "@/core/errors";
 import {
 	ClassParameterInfo_ParameterSerializationFormat,
@@ -188,17 +188,6 @@ export class Cls {
 
 	get #schema(): ClassParameterSpec[] {
 		return this.#serviceFunctionMetadata.classParameterInfo?.schema ?? [];
-	}
-
-	/**
-	 * @deprecated Use {@link ClsService#fromName client.cls.fromName()} instead.
-	 */
-	static async lookup(
-		appName: string,
-		name: string,
-		params: ClsFromNameParams = {},
-	): Promise<Cls> {
-		return getDefaultClient().cls.fromName(appName, name, params);
 	}
 
 	/**

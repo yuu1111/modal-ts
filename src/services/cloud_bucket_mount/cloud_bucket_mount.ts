@@ -1,4 +1,4 @@
-import { getDefaultClient, type ModalClient } from "@/core/client";
+import type { ModalClient } from "@/core/client";
 import {
 	CloudBucketMount_BucketType,
 	CloudBucketMount as CloudBucketMountProto,
@@ -86,20 +86,6 @@ export class CloudBucketMount {
 	readonly oidcAuthRoleArn?: string;
 	readonly #bucketType!: CloudBucketMount_BucketType;
 
-	/**
-	 * @deprecated Use {@link CloudBucketMountService#create client.cloudBucketMounts.create()} instead.
-	 */
-	constructor(
-		bucketName: string,
-		params?: {
-			secret?: Secret;
-			readOnly?: boolean;
-			requesterPays?: boolean;
-			bucketEndpointUrl?: string;
-			keyPrefix?: string;
-			oidcAuthRoleArn?: string;
-		},
-	);
 	/** @internal */
 	constructor(
 		bucketName: string,
@@ -110,51 +96,16 @@ export class CloudBucketMount {
 		keyPrefix: string | undefined,
 		oidcAuthRoleArn: string | undefined,
 		bucketType: CloudBucketMount_BucketType,
-	);
-	constructor(
-		bucketName: string,
-		secretOrParams?:
-			| Secret
-			| {
-					secret?: Secret;
-					readOnly?: boolean;
-					requesterPays?: boolean;
-					bucketEndpointUrl?: string;
-					keyPrefix?: string;
-					oidcAuthRoleArn?: string;
-			  },
-		readOnly?: boolean,
-		requesterPays?: boolean,
-		bucketEndpointUrl?: string,
-		keyPrefix?: string,
-		oidcAuthRoleArn?: string,
-		bucketType?: CloudBucketMount_BucketType,
 	) {
-		if (bucketType !== undefined) {
-			this.bucketName = bucketName;
-			if (secretOrParams !== undefined) this.secret = secretOrParams as Secret;
-			this.readOnly = readOnly ?? false;
-			this.requesterPays = requesterPays ?? false;
-			if (bucketEndpointUrl !== undefined)
-				this.bucketEndpointUrl = bucketEndpointUrl;
-			if (keyPrefix !== undefined) this.keyPrefix = keyPrefix;
-			if (oidcAuthRoleArn !== undefined) this.oidcAuthRoleArn = oidcAuthRoleArn;
-			this.#bucketType = bucketType;
-		} else {
-			const params =
-				secretOrParams === undefined
-					? {}
-					: (secretOrParams as {
-							secret?: Secret;
-							readOnly?: boolean;
-							requesterPays?: boolean;
-							bucketEndpointUrl?: string;
-							keyPrefix?: string;
-							oidcAuthRoleArn?: string;
-						});
-			// biome-ignore lint/correctness/noConstructorReturn: Legacy API compatibility
-			return getDefaultClient().cloudBucketMounts.create(bucketName, params);
-		}
+		this.bucketName = bucketName;
+		if (secret !== undefined) this.secret = secret;
+		this.readOnly = readOnly;
+		this.requesterPays = requesterPays;
+		if (bucketEndpointUrl !== undefined)
+			this.bucketEndpointUrl = bucketEndpointUrl;
+		if (keyPrefix !== undefined) this.keyPrefix = keyPrefix;
+		if (oidcAuthRoleArn !== undefined) this.oidcAuthRoleArn = oidcAuthRoleArn;
+		this.#bucketType = bucketType;
 	}
 
 	/** @internal */

@@ -117,8 +117,9 @@ test("refreshJwt recovers after transient failure", async () => {
 		}),
 	};
 
-	// biome-ignore lint/suspicious/noExplicitAny: test-only hack to set private properties on prototype stub
-	const client: any = Object.create(TaskCommandRouterClientImpl.prototype);
+	const client: Record<string, unknown> = Object.create(
+		TaskCommandRouterClientImpl.prototype,
+	);
 	client.serverClient = mockServerClient;
 	client.taskId = "test-task";
 	client.serverUrl = "https://example.com";
@@ -128,7 +129,7 @@ test("refreshJwt recovers after transient failure", async () => {
 	client.logger = mockLogger;
 	client.closed = false;
 
-	const refreshJwt = client.refreshJwt.bind(client);
+	const refreshJwt = (client.refreshJwt as () => Promise<void>).bind(client);
 
 	await expect(refreshJwt()).rejects.toThrow("Transient network error");
 	expect(callCount).toBe(1);

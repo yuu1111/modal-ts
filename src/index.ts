@@ -1,10 +1,4 @@
-export {
-	type ClientOptions,
-	close,
-	initializeClient,
-	ModalClient,
-	type ModalClientParams,
-} from "./core/client";
+export { ModalClient, type ModalClientParams } from "./core/client";
 export type { Profile } from "./core/config";
 export {
 	AlreadyExistsError,
@@ -37,9 +31,6 @@ export {
 	App,
 	type AppFromNameParams,
 	AppService,
-	type DeleteOptions,
-	type EphemeralOptions,
-	type LookupOptions,
 } from "./services/deploy/app";
 export {
 	createMount,

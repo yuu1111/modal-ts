@@ -1,5 +1,5 @@
 import { ClientError, Status } from "nice-grpc";
-import { getDefaultClient, type ModalClient } from "@/core/client";
+import type { ModalClient } from "@/core/client";
 import { InvalidError, NotFoundError } from "@/core/errors";
 import {
 	type GenericResult,
@@ -213,34 +213,6 @@ export class Image {
 		return this.#imageId;
 	}
 
-	/**
-	 * @deprecated Use {@link ImageService#fromId client.images.fromId()} instead.
-	 */
-	static async fromId(imageId: string): Promise<Image> {
-		return getDefaultClient().images.fromId(imageId);
-	}
-
-	/**
-	 * @deprecated Use {@link ImageService#fromRegistry client.images.fromRegistry()} instead.
-	 */
-	static fromRegistry(tag: string, secret?: Secret): Image {
-		return getDefaultClient().images.fromRegistry(tag, secret);
-	}
-
-	/**
-	 * @deprecated Use {@link ImageService#fromAwsEcr client.images.fromAwsEcr()} instead.
-	 */
-	static fromAwsEcr(tag: string, secret: Secret): Image {
-		return getDefaultClient().images.fromAwsEcr(tag, secret);
-	}
-
-	/**
-	 * @deprecated Use {@link ImageService#fromGcpArtifactRegistry client.images.fromGcpArtifactRegistry()} instead.
-	 */
-	static fromGcpArtifactRegistry(tag: string, secret: Secret): Image {
-		return getDefaultClient().images.fromGcpArtifactRegistry(tag, secret);
-	}
-
 	private static validateDockerfileCommands(commands: string[]): void {
 		for (const command of commands) {
 			const trimmed = command.trim().toUpperCase();
@@ -401,15 +373,5 @@ export class Image {
 		this.#imageId = baseImageId;
 		this.#client.logger.debug("Image build completed", "image_id", baseImageId);
 		return this;
-	}
-
-	/**
-	 * @deprecated Use {@link ImageService#delete client.images.delete()} instead.
-	 */
-	static async delete(
-		imageId: string,
-		_: ImageDeleteParams = {},
-	): Promise<void> {
-		return getDefaultClient().images.delete(imageId);
 	}
 }

@@ -7,15 +7,18 @@ export class MockGrpcClient {
 		Array<(req: Record<string, unknown>) => unknown | Promise<unknown>>
 	> = new Map();
 
-	constructor() {
-		// biome-ignore lint/correctness/noConstructorReturn: Proxy wrapper for dynamic gRPC method dispatch
-		return new Proxy(this, {
+	/**
+	 * @description Proxy付きインスタンスを生成する
+	 */
+	static create(): MockGrpcClient {
+		const instance = new MockGrpcClient();
+		return new Proxy(instance, {
 			get(target, propKey) {
 				if (typeof propKey === "string" && !(propKey in target)) {
 					return (actualRequest: unknown) =>
 						target.dispatch(propKey, actualRequest);
 				}
-				return (target as Record<string | symbol, unknown>)[propKey];
+				return (target as unknown as Record<string | symbol, unknown>)[propKey];
 			},
 		});
 	}
@@ -64,7 +67,7 @@ export function createMockModalClients(): {
 	mockClient: ModalClient;
 	mockCpClient: MockGrpcClient;
 } {
-	const mockCpClient = new MockGrpcClient();
+	const mockCpClient = MockGrpcClient.create();
 	const mockClient = new ModalClient({
 		cpClient: mockCpClient as unknown as ModalGrpcClient,
 		tokenId: "test-token-id",

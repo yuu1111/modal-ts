@@ -1,5 +1,5 @@
 import { ClientError, Status } from "nice-grpc";
-import { getDefaultClient, type ModalClient } from "@/core/client";
+import type { ModalClient } from "@/core/client";
 import { NotFoundError } from "@/core/errors";
 
 /**
@@ -49,22 +49,11 @@ export type ProxyFromNameParams = {
 /**
  * @description Modal コンテナに静的なアウトバウンド IP アドレスを提供するプロキシ
  */
-// biome-ignore lint/suspicious/noShadowRestrictedNames: Public API name
 export class Proxy {
 	readonly proxyId: string;
 
 	/** @internal */
 	constructor(proxyId: string) {
 		this.proxyId = proxyId;
-	}
-
-	/**
-	 * @deprecated Use {@link ProxyService#fromName client.proxies.fromName()} instead.
-	 */
-	static async fromName(
-		name: string,
-		params?: ProxyFromNameParams,
-	): Promise<Proxy> {
-		return getDefaultClient().proxies.fromName(name, params);
 	}
 }
