@@ -2,21 +2,25 @@ import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 import { parse as parseToml } from "smol-toml";
-import { getDefaultClient } from "./client";
+
+/**
+ * @description .modal.toml の1プロファイル分の生データ
+ */
+interface RawProfile {
+	server_url?: string;
+	token_id?: string;
+	token_secret?: string;
+	environment?: string;
+	imageBuilderVersion?: string;
+	loglevel?: string;
+	active?: boolean;
+}
 
 /**
  * @description .modal.toml ファイルの生データ表現
  */
 interface Config {
-	[profile: string]: {
-		server_url?: string;
-		token_id?: string;
-		token_secret?: string;
-		environment?: string;
-		imageBuilderVersion?: string;
-		loglevel?: string;
-		active?: boolean;
-	};
+	[profile: string]: RawProfile;
 }
 
 /**
@@ -59,7 +63,7 @@ export function isLocalhost(profile: Profile): boolean {
  */
 export function configFilePath(): string {
 	const configPath = process.env.MODAL_CONFIG_PATH;
-	if (configPath && configPath !== "") {
+	if (configPath) {
 		return configPath;
 	}
 	return path.join(homedir(), ".modal.toml");
@@ -84,8 +88,6 @@ function readConfigFile(): Config {
 		) {
 			return {} as Config;
 		}
-		// Ignore failure to read or parse .modal.toml
-		// throw new Error(`Failed to read or parse .modal.toml: ${err.message}`);
 		return {} as Config;
 	}
 }
@@ -116,29 +118,23 @@ export function getProfile(profileName?: string): Profile {
 			profileName = "default";
 		}
 	}
-	const profileData: Record<string, unknown> =
-		profileName && Object.hasOwn(config, profileName)
-			? (config[profileName] as Record<string, unknown>)
-			: {};
+	const profileData: RawProfile =
+		(profileName && Object.hasOwn(config, profileName)
+			? config[profileName]
+			: undefined) ?? {};
 
-	const tokenId =
-		process.env.MODAL_TOKEN_ID || (profileData.token_id as string | undefined);
+	const tokenId = process.env.MODAL_TOKEN_ID || profileData.token_id;
 	const tokenSecret =
-		process.env.MODAL_TOKEN_SECRET ||
-		(profileData.token_secret as string | undefined);
-	const environment =
-		process.env.MODAL_ENVIRONMENT ||
-		(profileData.environment as string | undefined);
+		process.env.MODAL_TOKEN_SECRET || profileData.token_secret;
+	const environment = process.env.MODAL_ENVIRONMENT || profileData.environment;
 	const imageBuilderVersion =
-		process.env.MODAL_IMAGE_BUILDER_VERSION ||
-		(profileData.imageBuilderVersion as string | undefined);
-	const logLevel =
-		process.env.MODAL_LOGLEVEL || (profileData.loglevel as string | undefined);
+		process.env.MODAL_IMAGE_BUILDER_VERSION || profileData.imageBuilderVersion;
+	const logLevel = process.env.MODAL_LOGLEVEL || profileData.loglevel;
 
 	const profile: Partial<Profile> = {
 		serverUrl:
 			process.env.MODAL_SERVER_URL ||
-			(profileData.server_url as string | undefined) ||
+			profileData.server_url ||
 			"https://api.modal.com:443",
 		...(tokenId !== undefined && { tokenId }),
 		...(tokenSecret !== undefined && { tokenSecret }),
@@ -146,19 +142,5 @@ export function getProfile(profileName?: string): Profile {
 		...(imageBuilderVersion !== undefined && { imageBuilderVersion }),
 		...(logLevel !== undefined && { logLevel }),
 	};
-	return profile as Profile; // safe to null-cast because of check above
-}
-
-/**
- * @deprecated `client.environmentName()` を使用してください。
- */
-export function environmentName(environment?: string): string {
-	return environment || getDefaultClient().profile.environment || "";
-}
-
-/**
- * @deprecated `client.imageBuilderVersion()` を使用してください。
- */
-export function imageBuilderVersion(version?: string): string {
-	return version || getDefaultClient().profile.imageBuilderVersion || "2024.10";
+	return profile as Profile;
 }

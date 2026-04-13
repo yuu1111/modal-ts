@@ -63,7 +63,9 @@ test.each([
 		.fn()
 		.mockRejectedValueOnce(new ClientError("/test", status, message))
 		.mockResolvedValue("success");
-	const result = await callWithRetriesOnTransientErrors(func, { baseDelayMs: 10 });
+	const result = await callWithRetriesOnTransientErrors(func, {
+		baseDelayMs: 10,
+	});
 	expect(result).toBe("success");
 	expect(func).toHaveBeenCalledTimes(2);
 });
@@ -71,9 +73,9 @@ test.each([
 test("callWithRetriesOnTransientErrors non-retryable error", async () => {
 	const error = new ClientError("/test", Status.INVALID_ARGUMENT, "invalid");
 	const func = vi.fn().mockRejectedValue(error);
-	await expect(callWithRetriesOnTransientErrors(func, { baseDelayMs: 10 })).rejects.toThrow(
-		error,
-	);
+	await expect(
+		callWithRetriesOnTransientErrors(func, { baseDelayMs: 10 }),
+	).rejects.toThrow(error);
 	expect(func).toHaveBeenCalledTimes(1);
 });
 
@@ -92,7 +94,11 @@ test("callWithRetriesOnTransientErrors deadline exceeded", async () => {
 	const func = vi.fn().mockRejectedValue(error);
 	const deadline = Date.now() + 50;
 	await expect(
-		callWithRetriesOnTransientErrors(func, { baseDelayMs: 100, maxRetries: null, deadlineMs: deadline }),
+		callWithRetriesOnTransientErrors(func, {
+			baseDelayMs: 100,
+			maxRetries: null,
+			deadlineMs: deadline,
+		}),
 	).rejects.toThrow("Deadline exceeded");
 });
 

@@ -60,7 +60,6 @@ const FD_MAP: Partial<Record<FileDescriptor, TaskExecStdioFileDescriptor>> = {
 		TaskExecStdioFileDescriptor.TASK_EXEC_STDIO_FILE_DESCRIPTOR_STDERR,
 };
 
-
 /**
  * @description トランジェントエラーリトライの設定
  * @property baseDelayMs - 初回リトライ待機時間 @optional @defaultValue 10

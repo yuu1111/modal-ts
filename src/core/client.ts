@@ -29,6 +29,11 @@ import { AuthTokenManager } from "./auth_token_manager";
 import { getProfile, type Profile } from "./config";
 
 /**
+ * @description AuthTokenGetメソッドのgRPCパス(認証ミドルウェアでの除外判定用)
+ */
+const AUTH_TOKEN_GET_PATH = `/${ModalClientDefinition.fullName}/${ModalClientDefinition.methods.authTokenGet.name}`;
+
+/**
  * @description gRPCチャネルの共通設定
  */
 export const GRPC_CHANNEL_OPTIONS = {
@@ -62,16 +67,16 @@ export interface ModalClientParams {
 	logger?: Logger;
 	logLevel?: LogLevel;
 	/**
-	 * Custom gRPC middleware to be applied to all API calls.
-	 * These middleware are appended after Modal's built-in middleware
-	 * (authentication, retry logic, and timeouts), allowing you to add
-	 * telemetry, tracing, or other observability features.
+	 * @description 全API呼び出しに適用されるカスタムgRPCミドルウェア
 	 *
-	 * Note that the Modal gRPC API is not considered a public API, and
-	 * can change without warning.
+	 * Modal組み込みミドルウェア(認証、リトライ、タイムアウト)の後に追加される。
+	 * テレメトリやトレーシング等のオブザーバビリティ用途を想定。
+	 * Modal gRPC APIは公開APIではなく、予告なく変更される可能性がある。
 	 */
 	grpcMiddleware?: ClientMiddleware[];
-	/** @internal */
+	/**
+	 * @internal
+	 */
 	cpClient?: ModalGrpcClient;
 }
 
@@ -84,12 +89,9 @@ export type ModalGrpcClient = Client<
 >;
 
 /**
- * The main client for interacting with Modal's cloud infrastructure.
+ * @description Modalクラウドインフラと対話するためのメインクライアント
  *
- * ModalClient provides access to all Modal services through service properties.
- * Create a client instance and use its service properties to manage {@link App}s,
- * {@link Function_ Function}s, * {@link Sandbox}es, and other Modal resources.
- *
+ * サービスプロパティを通じて全Modalサービスにアクセスする。
  * @example
  * ```typescript
  * import { ModalClient } from "modal";
@@ -114,7 +116,9 @@ export class ModalClient {
 	readonly secrets: SecretService;
 	readonly volumes: VolumeService;
 
-	/** @internal */
+	/**
+	 * @internal
+	 */
 	readonly cpClient: ModalGrpcClient;
 	readonly profile: Profile;
 	readonly logger: Logger;
@@ -175,13 +179,15 @@ export class ModalClient {
 	/**
 	 * @description イメージビルダーのバージョンを返す
 	 * @param version - 明示的なバージョン(省略時はプロファイルの値)
-	 * @returns バージョン文字列 @default "2024.10"
+	 * @returns バージョン文字列 @defaultValue "2024.10"
 	 */
 	imageBuilderVersion(version?: string): string {
 		return version || this.profile.imageBuilderVersion || "2024.10";
 	}
 
-	/** @internal */
+	/**
+	 * @internal
+	 */
 	ipClient(serverUrl: string): ModalGrpcClient {
 		const existing = this.ipClients.get(serverUrl);
 		if (existing) {
@@ -214,7 +220,7 @@ export class ModalClient {
 	}
 
 	private createClient(profile: Profile): ModalGrpcClient {
-		// Channels don't do anything until you send a request on them.
+		// チャネルはリクエスト送信まで実際の接続を行わない
 		// Ref: https://github.com/modal-labs/modal-client/blob/main/modal/_utils/grpc_utils.py
 		const channel = createChannel(
 			profile.serverUrl,
@@ -233,7 +239,9 @@ export class ModalClient {
 		return factory.create(ModalClientDefinition, channel);
 	}
 
-	/** Middleware to retry transient errors and timeouts for unary requests. */
+	/**
+	 * @description トランジェントエラーとタイムアウトに対するユナリーリクエスト用リトライミドルウェア
+	 */
 	private retryMiddleware(): ClientMiddleware<RetryOptions> {
 		const logger = this.logger;
 		return async function* retryMiddleware<Request, Response>(
@@ -251,7 +259,6 @@ export class ModalClient {
 			} = options;
 
 			if (call.requestStream || call.responseStream || !retries) {
-				// Don't retry streaming calls, or if retries are disabled.
 				return yield* call.next(call.request, restOptions);
 			}
 
@@ -260,7 +267,6 @@ export class ModalClient {
 					? retryableGrpcStatusCodes
 					: new Set([...retryableGrpcStatusCodes, ...additionalStatusCodes]);
 
-			// One idempotency key for the whole call (all attempts).
 			const idempotencyKey = uuidv4();
 
 			const startTime = Date.now();
@@ -270,7 +276,6 @@ export class ModalClient {
 			logger.debug("Sending gRPC request", "method", call.method.path);
 
 			while (true) {
-				// Clone/augment metadata for this attempt.
 				const metadata = new Metadata(restOptions.metadata ?? {});
 
 				metadata.set("x-idempotency-key", idempotencyKey);
@@ -283,14 +288,12 @@ export class ModalClient {
 				}
 
 				try {
-					// Forward the call.
 					return yield* call.next(call.request, {
 						...restOptions,
 						metadata,
 						...(signal !== undefined && { signal }),
 					});
 				} catch (err) {
-					// Immediately propagate non-retryable situations.
 					if (
 						!(err instanceof ClientError) ||
 						!retryableCodes.has(err.code) ||
@@ -330,7 +333,6 @@ export class ModalClient {
 						);
 					}
 
-					// Exponential back-off with a hard cap.
 					await sleep(delayMs, signal);
 					delayMs = Math.min(delayMs * delayFactor, maxDelay);
 					attempt += 1;
@@ -366,15 +368,15 @@ export class ModalClient {
 				"x-modal-client-type",
 				String(ClientType.CLIENT_TYPE_LIBMODAL_JS),
 			);
-			options.metadata.set("x-modal-client-version", "1.0.0"); // CLIENT VERSION: Behaves like this Python SDK version
+			// Python SDK互換のクライアントバージョン
+			options.metadata.set("x-modal-client-version", "1.0.0");
 			options.metadata.set("x-modal-ts-version", `modal-js/${SDK_VERSION}`);
 			options.metadata.set("x-modal-token-id", tokenId);
 			options.metadata.set("x-modal-token-secret", tokenSecret);
 
-			// Skip auth token for AuthTokenGet requests to prevent it from getting stuck
-			if (call.method.path !== "/modal.client.ModalClient/AuthTokenGet") {
+			// AuthTokenGet自体にauth tokenを付与すると循環するため除外
+			if (call.method.path !== AUTH_TOKEN_GET_PATH) {
 				const tokenManager = getOrCreateAuthTokenManager();
-				// getToken() will automatically wait if initial fetch is in progress
 				const token = await tokenManager.getToken();
 				if (token) {
 					options.metadata.set("x-modal-auth-token", token);
@@ -394,7 +396,9 @@ export type TimeoutOptions = {
 	timeoutMs?: number;
 };
 
-/** gRPC client middleware to set timeout and retries on a call. */
+/**
+ * @description gRPC呼び出しにタイムアウトを設定するミドルウェア
+ */
 export const timeoutMiddleware: ClientMiddleware<TimeoutOptions> =
 	async function* timeoutMiddleware(call, options) {
 		if (!options.timeoutMs || options.signal?.aborted) {
@@ -456,7 +460,11 @@ export function isRetryableGrpc(err: unknown) {
 	return false;
 }
 
-/** Sleep helper that can be cancelled via an AbortSignal. */
+/**
+ * @description AbortSignalでキャンセル可能なスリープ
+ * @param ms - 待機時間(ミリ秒)
+ * @param signal - キャンセル用シグナル @optional
+ */
 const sleep = (ms: number, signal?: AbortSignal) =>
 	new Promise<void>((resolve, reject) => {
 		if (signal?.aborted) return reject(signal.reason);
@@ -471,20 +479,19 @@ const sleep = (ms: number, signal?: AbortSignal) =>
 		);
 	});
 
-type RetryOptions = {
-	/** Number of retries to take. */
+/**
+ * @description gRPCリトライの動作設定
+ * @property retries - リトライ回数 @optional @defaultValue 3
+ * @property baseDelay - 初回遅延(ミリ秒) @optional @defaultValue 100
+ * @property maxDelay - 最大遅延(ミリ秒) @optional @defaultValue 1000
+ * @property delayFactor - 指数バックオフの乗数 @optional @defaultValue 2
+ * @property additionalStatusCodes - 追加でリトライするステータスコード @optional
+ */
+export type RetryOptions = {
 	retries?: number;
-
-	/** Base delay in milliseconds. */
 	baseDelay?: number;
-
-	/** Maximum delay in milliseconds. */
 	maxDelay?: number;
-
-	/** Exponential factor to multiply successive delays. */
 	delayFactor?: number;
-
-	/** Additional status codes to retry. */
 	additionalStatusCodes?: Status[];
 };
 
@@ -520,7 +527,7 @@ export const client = new Proxy({} as ModalGrpcClient, {
 });
 
 /**
- * @deprecated Use {@link ModalClient `new ModalClient()`} instead.
+ * @deprecated {@link ModalClient `new ModalClient()`} を使用してください
  */
 export type ClientOptions = {
 	tokenId: string;
@@ -529,7 +536,7 @@ export type ClientOptions = {
 };
 
 /**
- * @deprecated Use {@link ModalClient `new ModalClient()`} instead.
+ * @deprecated {@link ModalClient `new ModalClient()`} を使用してください
  */
 export function initializeClient(options: ClientOptions) {
 	defaultClientOptions = {
@@ -543,11 +550,12 @@ export function initializeClient(options: ClientOptions) {
 }
 
 /**
- * Stops the auth token refresh.
- * @deprecated Use {@link ModalClient#close modalClient.close()} instead.
+ * @description 認証トークンのリフレッシュを停止する
+ * @deprecated {@link ModalClient#close modalClient.close()} を使用してください
  */
 export function close() {
 	if (defaultClient) {
 		defaultClient.close();
+		defaultClient = undefined;
 	}
 }
