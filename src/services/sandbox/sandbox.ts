@@ -69,7 +69,6 @@ import {
 const SB_LOGS_INITIAL_DELAY_MS = 10;
 const SB_LOGS_DELAY_FACTOR = 2;
 const SB_LOGS_MAX_RETRIES = 10;
-const textEncoder = new TextEncoder();
 
 /**
  * Stdin is always present, but this option allow you to drop stdout or stderr
@@ -86,10 +85,9 @@ export type StdioBehavior = "pipe" | "ignore";
  */
 export type StreamMode = "text" | "binary";
 
-/** Optional parameters for {@link SandboxService#create client.sandboxes.create()}. */
 /**
  * @description Probe作成時のパラメータ
- * @property intervalMs - ヘルスチェック間隔(ミリ秒) @default 100
+ * @property intervalMs - ヘルスチェック間隔(ミリ秒) @defaultValue 100
  */
 export type ProbeParams = {
 	intervalMs: number;
@@ -349,37 +347,25 @@ export async function buildSandboxCreateRequestProto(
 		: [];
 
 	const openPorts: PortSpec[] = [];
-	if (params.encryptedPorts) {
-		openPorts.push(
-			...params.encryptedPorts.map((port) =>
+	const addPorts = (
+		ports: number[] | undefined,
+		unencrypted: boolean,
+		tunnelType?: TunnelType,
+	) => {
+		if (!ports) return;
+		for (const port of ports) {
+			openPorts.push(
 				PortSpec.create({
 					port,
-					unencrypted: false,
+					unencrypted,
+					...(tunnelType !== undefined && { tunnelType }),
 				}),
-			),
-		);
-	}
-	if (params.h2Ports) {
-		openPorts.push(
-			...params.h2Ports.map((port) =>
-				PortSpec.create({
-					port,
-					unencrypted: false,
-					tunnelType: TunnelType.TUNNEL_TYPE_H2,
-				}),
-			),
-		);
-	}
-	if (params.unencryptedPorts) {
-		openPorts.push(
-			...params.unencryptedPorts.map((port) =>
-				PortSpec.create({
-					port,
-					unencrypted: true,
-				}),
-			),
-		);
-	}
+			);
+		}
+	};
+	addPorts(params.encryptedPorts, false);
+	addPorts(params.h2Ports, false, TunnelType.TUNNEL_TYPE_H2);
+	addPorts(params.unencryptedPorts, true);
 
 	const secretIds = (params.secrets || []).map((secret) => secret.secretId);
 
@@ -1254,6 +1240,7 @@ export class Sandbox {
 		this.#attached = false;
 		this.#commandRouterClient = undefined;
 		this.#commandRouterClientPromise = undefined;
+		this.#tunnels = undefined;
 	}
 
 	/**
@@ -1368,7 +1355,7 @@ export class Sandbox {
 			);
 		}
 
-		const pathBytes = textEncoder.encode(path);
+		const pathBytes = encodeIfString(path);
 		const imageId = image?.imageId ?? "";
 		const request = TaskMountDirectoryRequest.create({
 			taskId,
@@ -1389,7 +1376,7 @@ export class Sandbox {
 		const commandRouterClient =
 			await this.#getOrCreateCommandRouterClient(taskId);
 
-		const pathBytes = textEncoder.encode(path);
+		const pathBytes = encodeIfString(path);
 		const request = TaskUnmountDirectoryRequest.create({
 			taskId,
 			path: pathBytes,
@@ -1409,7 +1396,7 @@ export class Sandbox {
 		const commandRouterClient =
 			await this.#getOrCreateCommandRouterClient(taskId);
 
-		const pathBytes = textEncoder.encode(path);
+		const pathBytes = encodeIfString(path);
 		const request = TaskSnapshotDirectoryRequest.create({
 			taskId,
 			path: pathBytes,
@@ -1587,7 +1574,7 @@ async function* outputStreamSb(
 				delayMs = SB_LOGS_INITIAL_DELAY_MS;
 				retriesRemaining = SB_LOGS_MAX_RETRIES;
 				lastIndex = batch.entryId;
-				yield* batch.items.map((item) => textEncoder.encode(item.data));
+				yield* batch.items.map((item) => encodeIfString(item.data));
 				if (batch.eof) {
 					completed = true;
 					break;

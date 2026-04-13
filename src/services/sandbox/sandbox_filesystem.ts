@@ -44,8 +44,8 @@ export class SandboxFile {
 			taskId: this.#taskId,
 		});
 		const chunks = resp.chunks;
+		if (chunks.length === 0) return new Uint8Array(0);
 
-		// Concatenate all chunks into a single Uint8Array
 		const totalLength = chunks.reduce((acc, chunk) => acc + chunk.length, 0);
 		const result = new Uint8Array(totalLength);
 		let offset = 0;
@@ -53,7 +53,6 @@ export class SandboxFile {
 			result.set(chunk, offset);
 			offset += chunk.length;
 		}
-
 		return result;
 	}
 
@@ -132,6 +131,16 @@ export async function runFilesystemExec(
 						break;
 					}
 					throw new SandboxFilesystemError(batch.error.errorMessage);
+				}
+			}
+			// gRPC stream can close before the server sends eof (transient network drop)
+			if (!completed) {
+				if (retries > 0) {
+					retries--;
+				} else {
+					throw new SandboxFilesystemError(
+						"Timed out waiting for filesystem exec completion",
+					);
 				}
 			}
 		} catch (err) {
