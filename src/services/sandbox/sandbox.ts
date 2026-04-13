@@ -65,23 +65,21 @@ import {
 	type SandboxFileMode,
 } from "./sandbox_filesystem";
 
-// Backoff configuration for SandboxGetLogs retry behavior.
+// SandboxGetLogs リトライ時のバックオフ設定
 const SB_LOGS_INITIAL_DELAY_MS = 10;
 const SB_LOGS_DELAY_FACTOR = 2;
 const SB_LOGS_MAX_RETRIES = 10;
 
 /**
- * Stdin is always present, but this option allow you to drop stdout or stderr
- * if you don't need them. The default is "pipe", matching Node.js behavior.
- *
- * If behavior is set to "ignore", the output streams will be empty.
+ * @description stdin は常に存在するが、stdout/stderr を不要なら無視できる。
+ * デフォルトは "pipe" (Node.js の挙動に準拠)。
+ * "ignore" に設定すると出力ストリームは空になる
  */
 export type StdioBehavior = "pipe" | "ignore";
 
 /**
- * Specifies the type of data that will be read from the Sandbox or container
- * process. "text" means the data will be read as UTF-8 text, while "binary"
- * means the data will be read as raw bytes (Uint8Array).
+ * @description Sandbox またはコンテナプロセスから読み取るデータの種類を指定する。
+ * "text" は UTF-8 テキスト、"binary" は生バイト列 (Uint8Array) として読み取る
  */
 export type StreamMode = "text" | "binary";
 
@@ -196,93 +194,146 @@ export class Probe {
  * @description Sandbox作成時のパラメータ
  */
 export type SandboxCreateParams = {
-	/** Reservation of physical CPU cores for the Sandbox, can be fractional. */
+	/**
+	 * @description 物理CPUコアの予約数(小数可)
+	 */
 	cpu?: number;
 
-	/** Hard limit of physical CPU cores for the Sandbox, can be fractional. */
+	/**
+	 * @description 物理CPUコアのハードリミット(小数可)
+	 */
 	cpuLimit?: number;
 
-	/** Reservation of memory in MiB. */
+	/**
+	 * @description メモリ予約量 (MiB)
+	 */
 	memoryMiB?: number;
 
-	/** Hard limit of memory in MiB. */
+	/**
+	 * @description メモリのハードリミット (MiB)
+	 */
 	memoryLimitMiB?: number;
 
-	/** GPU reservation for the Sandbox (e.g. "A100", "T4:2", "A100-80GB:4"). */
+	/**
+	 * @description GPU予約 (例: "A100", "T4:2", "A100-80GB:4")
+	 */
 	gpu?: string;
 
-	/** Maximum lifetime of the Sandbox in milliseconds. Defaults to 5 minutes. */
+	/**
+	 * @description Sandboxの最大生存時間(ミリ秒) @defaultValue 300000
+	 */
 	timeoutMs?: number;
 
-	/** The amount of time in milliseconds that a Sandbox can be idle before being terminated. */
+	/**
+	 * @description アイドル状態で終了するまでの時間(ミリ秒)
+	 */
 	idleTimeoutMs?: number;
 
-	/** Working directory of the Sandbox. */
+	/**
+	 * @description 作業ディレクトリ
+	 */
 	workdir?: string;
 
 	/**
-	 * Sequence of program arguments for the main process.
-	 * Default behavior is to sleep indefinitely until timeout or termination.
+	 * @description メインプロセスのコマンド引数。
+	 * 未指定時はタイムアウトまたは終了まで無期限スリープ
 	 */
-	command?: string[]; // default is ["sleep", "48h"]
+	command?: string[];
 
-	/** Environment variables to set in the Sandbox. */
+	/**
+	 * @description 環境変数
+	 */
 	env?: Record<string, string>;
 
-	/** {@link Secret}s to inject into the Sandbox as environment variables. */
+	/**
+	 * @description 環境変数として注入する {@link Secret} の配列
+	 */
 	secrets?: Secret[];
 
-	/** Mount points for Modal {@link Volume}s. */
+	/**
+	 * @description {@link Volume} のマウントポイント
+	 */
 	volumes?: Record<string, Volume>;
 
-	/** Mount points for {@link CloudBucketMount}s. */
+	/**
+	 * @description {@link CloudBucketMount} のマウントポイント
+	 */
 	cloudBucketMounts?: Record<string, CloudBucketMount>;
 
-	/** Enable a PTY for the Sandbox. */
+	/**
+	 * @description PTY を有効にする
+	 */
 	pty?: boolean;
 
-	/** List of ports to tunnel into the Sandbox. Encrypted ports are tunneled with TLS. */
+	/**
+	 * @description TLS で暗号化されたトンネルポートの一覧
+	 */
 	encryptedPorts?: number[];
 
-	/** List of encrypted ports to tunnel into the Sandbox, using HTTP/2. */
+	/**
+	 * @description HTTP/2 で暗号化されたトンネルポートの一覧
+	 */
 	h2Ports?: number[];
 
-	/** List of ports to tunnel into the Sandbox without encryption. */
+	/**
+	 * @description 暗号化なしのトンネルポートの一覧
+	 */
 	unencryptedPorts?: number[];
 
-	/** Whether to block all network access from the Sandbox. */
+	/**
+	 * @description 全ネットワークアクセスをブロックする
+	 */
 	blockNetwork?: boolean;
 
-	/** List of CIDRs the Sandbox is allowed to access. If None, all CIDRs are allowed. Cannot be used with blockNetwork. */
+	/**
+	 * @description アクセスを許可する CIDR の一覧。未指定なら全 CIDR 許可。blockNetwork とは併用不可
+	 */
 	cidrAllowlist?: string[];
 
-	/** Cloud provider to run the Sandbox on. */
+	/**
+	 * @description 使用するクラウドプロバイダー
+	 */
 	cloud?: string;
 
-	/** Region(s) to run the Sandbox on. */
+	/**
+	 * @description 実行するリージョン
+	 */
 	regions?: string[];
 
-	/** Enable verbose logging. */
+	/**
+	 * @description 詳細ログを有効にする
+	 */
 	verbose?: boolean;
 
-	/** Reference to a Modal {@link Proxy} to use in front of this Sandbox. */
+	/**
+	 * @description Sandbox の前段に配置する {@link Proxy}
+	 */
 	proxy?: Proxy;
 
-	/** Optional name for the Sandbox. Unique within an App. */
+	/**
+	 * @description Sandbox の名前(App 内で一意)
+	 */
 	name?: string;
 
-	/** Optional experimental options. */
+	/**
+	 * @description 実験的オプション
+	 */
 	experimentalOptions?: Record<string, unknown>;
 
-	/** If set, connections to this Sandbox will be subdomains of this domain rather than the default.
-	 * This requires prior manual setup by Modal and is only available for Enterprise customers.
+	/**
+	 * @description 接続先をデフォルトの代わりにこのドメインのサブドメインにする。
+	 * Modal による事前設定が必要(Enterprise 限定)
 	 */
 	customDomain?: string;
 
-	/** A {@link Probe} that determines when the Sandbox is ready to accept connections. */
+	/**
+	 * @description 接続受付可能かを判定する {@link Probe}
+	 */
 	readinessProbe?: Probe;
 
-	/** If true, an OIDC identity token will be included in the Sandbox environment. */
+	/**
+	 * @description Sandbox 環境に OIDC ID トークンを含める
+	 */
 	includeOidcIdentityToken?: boolean;
 };
 
@@ -307,7 +358,7 @@ export async function buildSandboxCreateRequestProto(
 
 	const gpuConfig = parseGpuConfig(params.gpu);
 
-	// The gRPC API only accepts a whole number of seconds.
+	// gRPC API は秒単位の整数値のみ受け付ける
 	if (params.timeoutMs !== undefined && params.timeoutMs <= 0) {
 		throw new Error(`timeoutMs must be positive, got ${params.timeoutMs}`);
 	}
@@ -448,9 +499,8 @@ export async function buildSandboxCreateRequestProto(
 		}
 	}
 
-	// The public interface uses Record<string, any> so that we can add support for any experimental
-	// option type in the future. Currently, the proto only supports Record<string, boolean> so we validate
-	// the input here.
+	// 公開インターフェースは将来の拡張のため Record<string, any> だが、
+	// 現在の proto は Record<string, boolean> のみサポートするためここで検証する
 	const protoExperimentalOptions: Record<string, boolean> =
 		params.experimentalOptions
 			? Object.entries(params.experimentalOptions).reduce(
@@ -511,9 +561,9 @@ export async function buildSandboxCreateRequestProto(
 }
 
 /**
- * Service for managing {@link Sandbox}es.
+ * @description {@link Sandbox} を管理するサービス
  *
- * Normally only ever accessed via the client as:
+ * 通常はクライアント経由でのみアクセスする:
  * ```typescript
  * const modal = new ModalClient();
  * const sb = await modal.sandboxes.create(app, image);
@@ -657,11 +707,17 @@ export class SandboxService {
  * @description client.sandboxes.list()のオプションパラメータ
  */
 export type SandboxListParams = {
-	/** Filter Sandboxes for a specific {@link App}. */
+	/**
+	 * @description 特定の {@link App} で絞り込む
+	 */
 	appId?: string;
-	/** Only return Sandboxes that include all specified tags. */
+	/**
+	 * @description 指定したタグを全て含む Sandbox のみ返す
+	 */
 	tags?: Record<string, string>;
-	/** Override environment for the request; defaults to current profile. */
+	/**
+	 * @description リクエストの環境名。未指定なら現在のプロファイルを使用
+	 */
 	environment?: string;
 };
 
@@ -677,21 +733,37 @@ export type SandboxFromNameParams = {
  * @description Sandbox.exec()のオプションパラメータ
  */
 export type SandboxExecParams = {
-	/** Specifies text or binary encoding for input and output streams. */
+	/**
+	 * @description 入出力ストリームのテキスト/バイナリエンコーディング
+	 */
 	mode?: StreamMode;
-	/** Whether to pipe or ignore standard output. */
+	/**
+	 * @description 標準出力のパイプ/無視
+	 */
 	stdout?: StdioBehavior;
-	/** Whether to pipe or ignore standard error. */
+	/**
+	 * @description 標準エラーのパイプ/無視
+	 */
 	stderr?: StdioBehavior;
-	/** Working directory to run the command in. */
+	/**
+	 * @description コマンド実行時の作業ディレクトリ
+	 */
 	workdir?: string;
-	/** Timeout for the process in milliseconds. Defaults to 0 (no timeout). */
+	/**
+	 * @description プロセスのタイムアウト(ミリ秒) @defaultValue 0 (タイムアウトなし)
+	 */
 	timeoutMs?: number;
-	/** Environment variables to set for the command. */
+	/**
+	 * @description コマンド実行時の環境変数
+	 */
 	env?: Record<string, string>;
-	/** {@link Secret}s to inject as environment variables for the commmand.*/
+	/**
+	 * @description 環境変数として注入する {@link Secret} の配列
+	 */
 	secrets?: Secret[];
-	/** Enable a PTY for the command. */
+	/**
+	 * @description PTY を有効にする
+	 */
 	pty?: boolean;
 };
 
@@ -699,7 +771,9 @@ export type SandboxExecParams = {
  * @description Sandbox.terminate()のオプションパラメータ
  */
 export type SandboxTerminateParams = {
-	/** If true, wait for the Sandbox to finish and return the exit code. */
+	/**
+	 * @description true なら Sandbox の終了を待ち exit code を返す
+	 */
 	wait?: boolean;
 };
 
@@ -707,7 +781,9 @@ export type SandboxTerminateParams = {
  * @description Sandbox.createConnectToken()のオプションパラメータ
  */
 export type SandboxCreateConnectTokenParams = {
-	/** Optional user-provided metadata string that will be added to the headers by the proxy when forwarding requests to the Sandbox. */
+	/**
+	 * @description プロキシが Sandbox へリクエスト転送時にヘッダーに追加するユーザー定義メタデータ
+	 */
 	userMetadata?: string;
 };
 
@@ -721,7 +797,9 @@ export type SandboxCreateConnectCredentials = {
 	token: string;
 };
 
-/** A port forwarded from within a running Modal {@link Sandbox}. */
+/**
+ * @description 実行中の {@link Sandbox} からフォワードされたポート
+ */
 export class Tunnel {
 	/** @internal */
 	constructor(
@@ -731,7 +809,9 @@ export class Tunnel {
 		public unencryptedPort?: number,
 	) {}
 
-	/** Get the public HTTPS URL of the forwarded port. */
+	/**
+	 * @description フォワードされたポートの公開 HTTPS URL を取得する
+	 */
 	get url(): string {
 		let value = `https://${this.host}`;
 		if (this.port !== 443) {
@@ -740,12 +820,16 @@ export class Tunnel {
 		return value;
 	}
 
-	/** Get the public TLS socket as a [host, port] tuple. */
+	/**
+	 * @description 公開 TLS ソケットを [host, port] タプルで取得する
+	 */
 	get tlsSocket(): [string, number] {
 		return [this.host, this.port];
 	}
 
-	/** Get the public TCP socket as a [host, port] tuple. */
+	/**
+	 * @description 公開 TCP ソケットを [host, port] タプルで取得する
+	 */
 	get tcpSocket(): [string, number] {
 		if (!this.unencryptedHost || this.unencryptedPort === undefined) {
 			throw new InvalidError(
@@ -773,13 +857,11 @@ export function defaultSandboxPTYInfo(): PTYInfo {
 	});
 }
 
-// The maximum number of bytes that can be passed to an exec on Linux.
-// Though this is technically a 'server side' limit, it is unlikely to change.
-// getconf ARG_MAX will show this value on a host.
+// Linux の exec に渡せる引数の最大バイト数。
+// サーバー側の制限だが変更される可能性は低い(getconf ARG_MAX で確認可能)。
 //
-// By probing in production, the limit is 131072 bytes (2**17).
-// We need some bytes of overhead for the rest of the command line besides the args,
-// e.g. 'runsc exec ...'. So we use 2**16 as the limit.
+// 本番環境での検証では制限は 131072 バイト (2**17)。
+// 引数以外のコマンドラインオーバーヘッド('runsc exec ...' 等)を考慮し 2**16 を使用。
 /**
  * @description execの引数がLinuxのARG_MAX制限を超えないか検証する
  * @param args - コマンド引数の配列
@@ -788,7 +870,7 @@ export function defaultSandboxPTYInfo(): PTYInfo {
 export function validateExecArgs(args: string[]): void {
 	const ARG_MAX_BYTES = 2 ** 16;
 
-	// Avoid "[Errno 7] Argument list too long" errors.
+	// "[Errno 7] Argument list too long" エラーを防止
 	const totalArgLen = args.reduce((sum, arg) => sum + arg.length, 0);
 	if (totalArgLen > ARG_MAX_BYTES) {
 		throw new InvalidError(
@@ -993,10 +1075,10 @@ export class Sandbox {
 	}
 
 	/**
-	 * Open a file in the Sandbox filesystem.
-	 * @param path - Path to the file to open
-	 * @param mode - File open mode (r, w, a, r+, w+, a+)
-	 * @returns Promise that resolves to a {@link SandboxFile}
+	 * @description Sandbox ファイルシステム内のファイルを開く
+	 * @param path - 開くファイルのパス
+	 * @param mode - ファイルオープンモード (r, w, a, r+, w+, a+)
+	 * @returns {@link SandboxFile}
 	 */
 	async open(path: string, mode: SandboxFileMode = "r"): Promise<SandboxFile> {
 		this.#ensureAttached();
@@ -1008,7 +1090,7 @@ export class Sandbox {
 			},
 			taskId,
 		});
-		// For Open request, the file descriptor is always set
+		// Open リクエストでは file descriptor は必ず設定される
 		const fileDescriptor = resp.response.fileDescriptor as string;
 		return new SandboxFile(this.#client, fileDescriptor, taskId);
 	}
@@ -1152,7 +1234,7 @@ export class Sandbox {
 		try {
 			return await promise;
 		} catch (err) {
-			// clear the Promise so subsequent calls can retry
+			// 後続の呼び出しでリトライできるよう Promise をクリア
 			if (this.#commandRouterClientPromise === promise) {
 				this.#commandRouterClientPromise = undefined;
 			}
@@ -1161,7 +1243,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * Create a token for making HTTP connections to the Sandbox.
+	 * @description Sandbox への HTTP 接続用トークンを作成する
 	 */
 	async createConnectToken(
 		params?: SandboxCreateConnectTokenParams,
@@ -1308,12 +1390,10 @@ export class Sandbox {
 	}
 
 	/**
-	 * Snapshot the filesystem of the Sandbox.
-	 *
-	 * Returns an {@link Image} object which can be used to spawn a new Sandbox with the same filesystem.
-	 *
-	 * @param timeoutMs - Timeout for the snapshot operation in milliseconds
-	 * @returns Promise that resolves to an {@link Image}
+	 * @description Sandbox のファイルシステムをスナップショットする。
+	 * 返された {@link Image} で同じファイルシステムの新しい Sandbox を起動できる
+	 * @param timeoutMs - スナップショット操作のタイムアウト(ミリ秒)
+	 * @returns {@link Image}
 	 */
 	async snapshotFilesystem(timeoutMs = 55000): Promise<Image> {
 		this.#ensureAttached();
@@ -1338,10 +1418,9 @@ export class Sandbox {
 	}
 
 	/**
-	 * Mount an {@link Image} at a path in the Sandbox filesystem.
-	 *
-	 * @param path - The path where the directory should be mounted
-	 * @param image - Optional {@link Image} to mount. If undefined, mounts an empty directory.
+	 * @description Sandbox ファイルシステムのパスに {@link Image} をマウントする
+	 * @param path - マウント先のパス
+	 * @param image - マウントする {@link Image}。未指定なら空ディレクトリをマウント
 	 */
 	async mountImage(path: string, image?: Image): Promise<void> {
 		this.#ensureAttached();
@@ -1366,9 +1445,8 @@ export class Sandbox {
 	}
 
 	/**
-	 * Unmount a previously mounted image at a path in the Sandbox filesystem.
-	 *
-	 * @param path - The path where the directory was mounted
+	 * @description Sandbox ファイルシステムのパスにマウントされた Image をアンマウントする
+	 * @param path - マウントされていたパス
 	 */
 	async unmountImage(path: string): Promise<void> {
 		this.#ensureAttached();
@@ -1385,10 +1463,9 @@ export class Sandbox {
 	}
 
 	/**
-	 * Snapshots and creates a new {@link Image} from a directory in the running sandbox.
-	 *
-	 * @param path - The path of the directory to snapshot
-	 * @returns Promise that resolves to an {@link Image}
+	 * @description 実行中の Sandbox 内のディレクトリをスナップショットし新しい {@link Image} を作成する
+	 * @param path - スナップショット対象のディレクトリパス
+	 * @returns {@link Image}
 	 */
 	async snapshotDirectory(path: string): Promise<Image> {
 		this.#ensureAttached();
@@ -1411,9 +1488,8 @@ export class Sandbox {
 	}
 
 	/**
-	 * Check if the Sandbox has finished running.
-	 *
-	 * Returns `null` if the Sandbox is still running, else returns the exit code.
+	 * @description Sandbox が終了したかを確認する。
+	 * 実行中なら `null`、終了済みなら exit code を返す
 	 */
 	async poll(): Promise<number | null> {
 		this.#ensureAttached();
@@ -1433,7 +1509,7 @@ export class Sandbox {
 			return null;
 		}
 
-		// Statuses are converted to exitcodes so we can conform to subprocess API.
+		// subprocess API に合わせてステータスを exit code に変換
 		if (result.status === GenericResult_GenericStatus.GENERIC_STATUS_TIMEOUT) {
 			return 124;
 		} else if (
@@ -1545,7 +1621,7 @@ export class ContainerProcess<
 	}
 }
 
-// Like _StreamReader with object_type == "sandbox".
+// Python SDK の _StreamReader (object_type == "sandbox") に相当
 async function* outputStreamSb(
 	cpClient: ModalGrpcClient,
 	sandboxId: string,
@@ -1570,7 +1646,7 @@ async function* outputStreamSb(
 				},
 			);
 			for await (const batch of outputIterator) {
-				// Successful read - reset backoff counters.
+				// 読み取り成功 — バックオフカウンタをリセット
 				delayMs = SB_LOGS_INITIAL_DELAY_MS;
 				retriesRemaining = SB_LOGS_MAX_RETRIES;
 				lastIndex = batch.entryId;
@@ -1584,16 +1660,16 @@ async function* outputStreamSb(
 				}
 			}
 		} catch (err) {
-			// If cancelled, exit cleanly regardless of error type.
+			// キャンセル済みならエラー種別を問わず正常終了
 			if (signal?.aborted) {
 				return;
 			}
 			if (isRetryableGrpc(err) && retriesRemaining > 0) {
-				// Short exponential backoff to avoid tight retry loops.
+				// 連続リトライを避けるため短い指数バックオフ
 				try {
 					await setTimeout(delayMs, undefined, { signal });
 				} catch {
-					// Abort during sleep - exit cleanly.
+					// スリープ中のキャンセル — 正常終了
 					return;
 				}
 				delayMs *= SB_LOGS_DELAY_FACTOR;

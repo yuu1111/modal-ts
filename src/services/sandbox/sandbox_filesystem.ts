@@ -133,7 +133,7 @@ export async function runFilesystemExec(
 					throw new SandboxFilesystemError(batch.error.errorMessage);
 				}
 			}
-			// gRPC stream can close before the server sends eof (transient network drop)
+			// gRPC ストリームが eof 送信前に切断されることがある(一時的なネットワーク断)
 			if (!completed) {
 				if (retries > 0) {
 					retries--;
