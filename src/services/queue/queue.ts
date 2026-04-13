@@ -1,5 +1,4 @@
-// Queue object, to be used with Modal Queues.
-
+import { setTimeout } from "node:timers/promises";
 import { ClientError, Status } from "nice-grpc";
 import type { ModalClient } from "@/core/client";
 import {
@@ -15,6 +14,7 @@ import {
 } from "@/generated/modal_proto/api";
 import { EphemeralHeartbeatManager } from "@/utils/ephemeral";
 import { loads as pickleDecode, dumps as pickleEncode } from "@/utils/pickle";
+import { encodeIfString } from "@/utils/streams";
 import { checkForRenamedParams } from "@/utils/validation";
 
 /**
@@ -56,9 +56,9 @@ export type QueueEphemeralParams = {
 };
 
 /**
- * Service for managing {@link Queue}s.
+ * @description {@link Queue} を管理するサービス
  *
- * Normally only ever accessed via the client as:
+ * 通常はクライアント経由でのみアクセスする:
  * ```typescript
  * const modal = new ModalClient();
  * const queue = await modal.queues.fromName("my-queue");
@@ -159,10 +159,14 @@ export class QueueService {
  * @property all - すべてのパーティションをクリアするかどうか
  */
 export type QueueClearParams = {
-	/** Partition to clear, uses default partition if not set. */
+	/**
+	 * @description クリアするパーティション。未設定ならデフォルトパーティションを使用
+	 */
 	partition?: string;
 
-	/** Set to clear all Queue partitions. */
+	/**
+	 * @description すべてのパーティションをクリアする
+	 */
 	all?: boolean;
 };
 
@@ -172,10 +176,14 @@ export type QueueClearParams = {
  * @property partition - 値を取得するパーティション。未設定の場合はデフォルトパーティションを使用
  */
 export type QueueGetParams = {
-	/** How long to wait if the Queue is empty in milliseconds (default: indefinite). */
+	/**
+	 * @description Queue が空の場合の待機時間(ミリ秒)。デフォルトは無期限
+	 */
 	timeoutMs?: number;
 
-	/** Partition to fetch values from, uses default partition if not set. */
+	/**
+	 * @description 値を取得するパーティション。未設定ならデフォルトパーティションを使用
+	 */
 	partition?: string;
 };
 
@@ -188,16 +196,22 @@ export type QueueGetManyParams = QueueGetParams;
  * @description {@link Queue#put Queue.put()} のオプションパラメータ
  * @property timeoutMs - Queue が満杯の場合の待機時間(ミリ秒)。デフォルトは無期限
  * @property partition - アイテムを追加するパーティション。未設定の場合はデフォルトパーティションを使用
- * @property partitionTtlMs - パーティションの TTL(ミリ秒) @default 86400000
+ * @property partitionTtlMs - パーティションの TTL(ミリ秒) @defaultValue 86400000
  */
 export type QueuePutParams = {
-	/** How long to wait if the Queue is full in milliseconds (default: indefinite). */
+	/**
+	 * @description Queue が満杯の場合の待機時間(ミリ秒)。デフォルトは無期限
+	 */
 	timeoutMs?: number;
 
-	/** Partition to add items to, uses default partition if not set. */
+	/**
+	 * @description アイテムを追加するパーティション。未設定ならデフォルトパーティションを使用
+	 */
 	partition?: string;
 
-	/** TTL for the partition in milliseconds (default: 1 day). */
+	/**
+	 * @description パーティションの TTL(ミリ秒) @defaultValue 86400000
+	 */
 	partitionTtlMs?: number;
 };
 
@@ -212,28 +226,36 @@ export type QueuePutManyParams = QueuePutParams;
  * @property total - すべてのパーティションの合計長を返すかどうか
  */
 export type QueueLenParams = {
-	/** Partition to compute length, uses default partition if not set. */
+	/**
+	 * @description 長さを計算するパーティション。未設定ならデフォルトパーティションを使用
+	 */
 	partition?: string;
 
-	/** Return the total length across all partitions. */
+	/**
+	 * @description すべてのパーティションの合計長を返す
+	 */
 	total?: boolean;
 };
 
 /**
  * @description {@link Queue#iterate Queue.iterate()} のオプションパラメータ
- * @property itemPollTimeoutMs - 次のアイテムまでの待機時間(ミリ秒)。超過するとイテレーション終了 @default 0
+ * @property itemPollTimeoutMs - 次のアイテムまでの待機時間(ミリ秒)。超過するとイテレーション終了 @defaultValue 0
  * @property partition - イテレートするパーティション。未設定の場合はデフォルトパーティションを使用
  */
 export type QueueIterateParams = {
-	/** How long to wait between successive items before exiting iteration in milliseconds (default: 0). */
+	/**
+	 * @description 次のアイテムまでの待機時間(ミリ秒)。超過するとイテレーション終了 @defaultValue 0
+	 */
 	itemPollTimeoutMs?: number;
 
-	/** Partition to iterate, uses default partition if not set. */
+	/**
+	 * @description イテレートするパーティション。未設定ならデフォルトパーティションを使用
+	 */
 	partition?: string;
 };
 
 /**
- * Distributed, FIFO queue for data flow in Modal {@link App Apps}.
+ * @description Modal {@link App} 内のデータフロー用分散 FIFO キュー
  */
 export class Queue {
 	readonly #client: ModalClient;
@@ -241,7 +263,9 @@ export class Queue {
 	readonly name?: string;
 	readonly #ephemeralHbManager?: EphemeralHeartbeatManager;
 
-	/** @internal */
+	/**
+	 * @internal
+	 */
 	constructor(
 		client: ModalClient,
 		queueId: string,
@@ -255,11 +279,9 @@ export class Queue {
 			this.#ephemeralHbManager = ephemeralHbManager;
 	}
 
-	static #textEncoder = new TextEncoder();
-
 	static #validatePartitionKey(partition: string | undefined): Uint8Array {
 		if (partition) {
-			const partitionKey = Queue.#textEncoder.encode(partition);
+			const partitionKey = encodeIfString(partition);
 			if (partitionKey.length === 0 || partitionKey.length > 64) {
 				throw new InvalidError(
 					"Queue partition key must be between 1 and 64 bytes.",
@@ -342,7 +364,7 @@ export class Queue {
 		checkForRenamedParams(params, { timeout: "timeoutMs" });
 
 		const values = await this.#get(1, params.partition, params.timeoutMs);
-		return values[0]; // Must have length >= 1 if returned.
+		return values[0];
 	}
 
 	/**
@@ -384,7 +406,7 @@ export class Queue {
 				break;
 			} catch (e) {
 				if (e instanceof ClientError && e.code === Status.RESOURCE_EXHAUSTED) {
-					// Queue is full, retry with exponential backoff up to the deadline.
+					// Queue が満杯。デッドラインまで指数バックオフでリトライ
 					delay = Math.min(delay * 2, 30_000);
 					if (deadline !== undefined) {
 						const remaining = deadline - Date.now();
@@ -392,7 +414,7 @@ export class Queue {
 							throw new QueueFullError(`Put failed on ${this.queueId}.`);
 						delay = Math.min(delay, remaining);
 					}
-					await new Promise((resolve) => setTimeout(resolve, delay));
+					await setTimeout(delay);
 				} else {
 					throw e;
 				}
@@ -487,7 +509,7 @@ export class Queue {
 				queueId: this.queueId,
 				partitionKey: validatedPartitionKey,
 				itemPollTimeout: pollDurationMs / 1000,
-				lastEntryId: lastEntryId || "",
+				lastEntryId: lastEntryId ?? "",
 			};
 
 			const response = await this.#client.cpClient.queueNextItems(request);
