@@ -1,14 +1,11 @@
-// Manage existing Function Calls (look-ups, polling for output, cancellation).
-
 import { getDefaultClient, type ModalClient } from "@/core/client";
 import { checkForRenamedParams } from "@/utils/validation";
 import { ControlPlaneInvocation } from "./invocation";
 
 /**
- * Service for managing {@link FunctionCall}s.
+ * @description {@link FunctionCall} を管理するサービス
  *
- * Normally only ever accessed via the client as:
- *
+ * 通常はクライアント経由でのみアクセスする:
  * ```typescript
  * const modal = new ModalClient();
  * const functionCall = await modal.functionCalls.fromId("123");
@@ -47,15 +44,16 @@ export type FunctionCallCancelParams = {
 };
 
 /**
- * Represents a Modal FunctionCall. FunctionCalls are {@link Function_ Function} invocations with
- * a given input. They can be consumed asynchronously (see {@link FunctionCall#get FunctionCall.get()}) or cancelled
- * (see {@link FunctionCall#cancel FunctionCall.cancel()}).
+ * @description Modal FunctionCall を表す。指定された入力での {@link Function_} 呼び出しであり、
+ * 非同期に結果を取得({@link FunctionCall#get})またはキャンセル({@link FunctionCall#cancel})できる
  */
 export class FunctionCall {
 	readonly functionCallId: string;
 	#client?: ModalClient;
 
-	/** @internal */
+	/**
+	 * @internal
+	 */
 	constructor(client: ModalClient | undefined, functionCallId: string) {
 		if (client !== undefined) this.#client = client;
 		this.functionCallId = functionCallId;

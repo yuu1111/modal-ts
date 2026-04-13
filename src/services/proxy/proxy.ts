@@ -3,7 +3,7 @@ import { NotFoundError, rethrowNotFound } from "@/core/errors";
 import type { ProxyGetResponse } from "@/generated/modal_proto/api";
 
 /**
- * Service for managing {@link Proxy Proxies}.
+ * @description {@link Proxy} を管理するサービス
  */
 export class ProxyService {
 	readonly #client: ModalClient;
@@ -12,13 +12,11 @@ export class ProxyService {
 	}
 
 	/**
-	 * Reference a {@link Proxy} by its name.
-	 *
-	 * Normally only ever accessed via the client as:
-	 * ```typescript
-	 * const modal = new ModalClient();
-	 * const proxy = await modal.proxies.fromName("my-proxy");
-	 * ```
+	 * @description 名前で {@link Proxy} を参照する
+	 * @param name - Proxy の名前
+	 * @param params - オプションパラメータ
+	 * @returns Proxy インスタンス
+	 * @throws NotFoundError 指定された Proxy が存在しない場合
 	 */
 	async fromName(name: string, params?: ProxyFromNameParams): Promise<Proxy> {
 		let resp: ProxyGetResponse;
@@ -51,7 +49,9 @@ export type ProxyFromNameParams = {
 export class Proxy {
 	readonly proxyId: string;
 
-	/** @internal */
+	/**
+	 * @internal
+	 */
 	constructor(proxyId: string) {
 		this.proxyId = proxyId;
 	}

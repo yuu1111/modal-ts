@@ -36,9 +36,9 @@ export type SecretDeleteParams = {
 };
 
 /**
- * Service for managing {@link Secret Secrets}.
+ * @description {@link Secret} を管理するサービス
  *
- * Normally only ever accessed via the client as:
+ * 通常はクライアント経由でのみアクセスする:
  * ```typescript
  * const modal = new ModalClient();
  * const secret = await modal.secrets.fromName("my-secret");
@@ -86,7 +86,7 @@ export class SecretService {
 		entries: Record<string, string>,
 		params?: SecretFromObjectParams,
 	): Promise<Secret> {
-		for (const [, value] of Object.entries(entries)) {
+		for (const value of Object.values(entries)) {
 			if (value == null || typeof value !== "string") {
 				throw new InvalidError(
 					"entries must be an object mapping string keys to string values, but got:\n" +
@@ -98,7 +98,7 @@ export class SecretService {
 		try {
 			const resp = await this.#client.cpClient.secretGetOrCreate({
 				objectCreationType: ObjectCreationType.OBJECT_CREATION_TYPE_EPHEMERAL,
-				envDict: entries as Record<string, string>,
+				envDict: entries,
 				environmentName: this.#client.environmentName(params?.environment),
 			});
 			this.#client.logger.debug(
@@ -147,7 +147,9 @@ export class Secret {
 	readonly secretId: string;
 	readonly name?: string;
 
-	/** @internal */
+	/**
+	 * @internal
+	 */
 	constructor(secretId: string, name?: string) {
 		this.secretId = secretId;
 		if (name !== undefined) this.name = name;

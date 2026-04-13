@@ -1,5 +1,3 @@
-// Function calls and invocations, to be used with Modal Functions.
-
 import { createHash } from "node:crypto";
 import type { ModalClient, ModalGrpcClient } from "@/core/client";
 import { InternalFailure, InvalidError, rethrowNotFound } from "@/core/errors";
@@ -39,12 +37,12 @@ export type FunctionFromNameParams = {
 };
 
 /**
- * Service for managing {@link Function_ Function}s.
+ * @description {@link Function_} を管理するサービス
  *
- * Normally only ever accessed via the client as:
+ * 通常はクライアント経由でのみアクセスする:
  * ```typescript
  * const modal = new ModalClient();
- * const function = await modal.functions.fromName("my-app", "my-function");
+ * const fn = await modal.functions.fromName("my-app", "my-function");
  * ```
  */
 export class FunctionService {
@@ -132,7 +130,9 @@ export class Function_ {
 	#client: ModalClient;
 	#handleMetadata?: FunctionHandleMetadata;
 
-	/** @internal */
+	/**
+	 * @internal
+	 */
 	constructor(
 		client: ModalClient,
 		functionId: string,
@@ -173,7 +173,7 @@ export class Function_ {
 		this.#checkNoWebUrl("remote");
 		const input = await this.#createInput(args, kwargs);
 		const invocation = await this.#createRemoteInvocation(input);
-		// TODO(ryan): Add tests for retries.
+		// TODO(ryan): リトライのテストを追加
 		let retryCount = 0;
 		while (true) {
 			try {
@@ -293,8 +293,8 @@ export class Function_ {
 	}
 
 	/**
-	 * URL of a Function running as a web endpoint.
-	 * @returns The web URL if this Function is a web endpoint, otherwise undefined
+	 * @description Web エンドポイントとして実行されている Function の URL
+	 * @returns Web エンドポイントの URL。Web エンドポイントでなければ undefined
 	 */
 	async getWebUrl(): Promise<string | undefined> {
 		return this.#handleMetadata?.webUrl || undefined;
@@ -309,8 +309,7 @@ export class Function_ {
 			? this.#handleMetadata.supportedInputFormats
 			: [DataFormat.DATA_FORMAT_PICKLE];
 		if (!supported_input_formats.includes(DataFormat.DATA_FORMAT_CBOR)) {
-			// the remote function isn't cbor compatible for inputs
-			// so we can error early
+			// リモート Function が CBOR 入力に非対応なため早期エラー
 			throw new InvalidError(
 				"cannot call Modal Function from JS SDK since it was deployed with an incompatible Python SDK version. Redeploy with Modal Python SDK >= 1.2",
 			);
@@ -322,13 +321,13 @@ export class Function_ {
 			argsBlobId = await blobUpload(this.#client.cpClient, payload);
 		}
 
-		// Single input sync invocation
 		return {
 			args: argsBlobId ? undefined : payload,
 			argsBlobId,
 			dataFormat: DataFormat.DATA_FORMAT_CBOR,
 			methodName: this.methodName,
-			finalInput: false, // This field isn't specified in the Python client, so it defaults to false.
+			// Python SDK では未指定(デフォルト false)
+			finalInput: false,
 		};
 	}
 }
@@ -366,7 +365,7 @@ async function blobUpload(
 		if (uploadResp.status < 200 || uploadResp.status >= 300) {
 			throw new Error(`Failed blob upload: ${uploadResp.statusText}`);
 		}
-		// Skip client-side ETag header validation for now (MD5 checksum).
+		// クライアント側の ETag ヘッダー検証(MD5 チェックサム)は現在省略
 		return resp.blobId;
 	} else {
 		throw new Error("Missing upload URL in BlobCreate response");

@@ -18,14 +18,13 @@ import {
 } from "@/generated/modal_proto/api";
 import { cborDecode } from "@/utils/serialization";
 
-// From: modal-client/modal/_utils/function_utils.py
+// Python SDK の modal/_utils/function_utils.py に由来
 const outputsTimeoutMs = 55 * 1000;
 
 /**
- * This abstraction exists so that we can easily send inputs to either the control plane or the input plane.
- * For the control plane, we call the FunctionMap, FunctionRetryInputs, and FunctionGetOutputs RPCs.
- * For the input plane, we call the AttemptStart, AttemptRetry, and AttemptAwait RPCs.
- * For now, we support just the control plane, and will add support for the input plane soon.
+ * @description コントロールプレーンまたはインプットプレーンへの入力送信を抽象化する。
+ * コントロールプレーン: FunctionMap, FunctionRetryInputs, FunctionGetOutputs RPC を使用。
+ * インプットプレーン: AttemptStart, AttemptRetry, AttemptAwait RPC を使用
  */
 export interface Invocation {
 	awaitOutput(timeoutMs?: number): Promise<unknown>;
@@ -33,7 +32,7 @@ export interface Invocation {
 }
 
 /**
- * Implementation of Invocation which sends inputs to the control plane.
+ * @description コントロールプレーン経由の Invocation 実装
  */
 export class ControlPlaneInvocation implements Invocation {
 	private readonly cpClient: ModalGrpcClient;
@@ -110,7 +109,7 @@ export class ControlPlaneInvocation implements Invocation {
 	}
 
 	async retry(retryCount: number): Promise<void> {
-		// we do not expect this to happen
+		// 通常到達しないパス
 		if (!this.input) {
 			throw new Error("Cannot retry Function invocation - input missing");
 		}
@@ -142,7 +141,7 @@ export class ControlPlaneInvocation implements Invocation {
 }
 
 /**
- * Implementation of Invocation which sends inputs to the input plane.
+ * @description インプットプレーン経由の Invocation 実装
  */
 export class InputPlaneInvocation implements Invocation {
 	private readonly cpClient: ModalGrpcClient;
@@ -176,7 +175,7 @@ export class InputPlaneInvocation implements Invocation {
 			input,
 		});
 		const ipClient = client.ipClient(inputPlaneUrl);
-		// Single input sync invocation
+		// 単一入力の同期呼び出し
 		const attemptStartResponse = await ipClient.attemptStart({
 			functionId,
 			input: functionPutInputsItem,
@@ -224,17 +223,16 @@ function timeNowSeconds() {
 }
 
 /**
- * Signature of a function that fetches a single output using the given timeout. Used by `pollForOutputs` to fetch
- * from either the control plane or the input plane, depending on the implementation.
+ * @description 指定タイムアウトで出力を1件取得する関数のシグネチャ。
+ * `pollFunctionOutput` がコントロールプレーンまたはインプットプレーンから取得する際に使用
  */
 type GetOutput = (
 	timeoutMs: number,
 ) => Promise<FunctionGetOutputsItem | undefined>;
 
-/***
- * Repeatedly tries to fetch an output using the provided `getOutput` function, and the specified timeout value.
- * We use a timeout value of 55 seconds if the caller does not specify a timeout value, or if the specified timeout
- * value is greater than 55 seconds.
+/**
+ * @description `getOutput` で出力をポーリングする。
+ * タイムアウト未指定または55秒超の場合は55秒で区切って繰り返す
  */
 async function pollFunctionOutput(
 	cpClient: ModalGrpcClient,
@@ -289,10 +287,9 @@ async function processResult(
 		case GenericResult_GenericStatus.GENERIC_STATUS_INTERNAL_FAILURE:
 			throw new InternalFailure(`Internal failure: ${result.exception}`);
 		case GenericResult_GenericStatus.GENERIC_STATUS_SUCCESS:
-			// Proceed to deserialize the data.
+			// データのデシリアライズに進む
 			break;
 		default:
-			// Handle other statuses, e.g., remote error.
 			throw new RemoteError(`Remote error: ${result.exception}`);
 	}
 
@@ -317,7 +314,7 @@ function deserializeDataFormat(
 	dataFormat: DataFormat,
 ): unknown {
 	if (!data) {
-		return null; // No data to deserialize.
+		return null;
 	}
 
 	switch (dataFormat) {

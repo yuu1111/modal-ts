@@ -12,9 +12,9 @@ import { type App, parseGpuConfig } from "@/services/deploy/app";
 import { mergeEnvIntoSecrets, Secret } from "@/services/secret/secret";
 
 /**
- * Service for managing {@link Image}s.
+ * @description {@link Image} を管理するサービス
  *
- * Normally only ever accessed via the client as:
+ * 通常はクライアント経由でのみアクセスする:
  * ```typescript
  * const modal = new ModalClient();
  * const image = await modal.images.fromRegistry("alpine");
@@ -129,16 +129,24 @@ export type ImageDeleteParams = Record<never, never>;
  * @property forceBuild - キャッシュを無視してビルドするかどうか
  */
 export type ImageDockerfileCommandsParams = {
-	/** Environment variables to set in the build environment. */
+	/**
+	 * @description ビルド環境に設定する環境変数
+	 */
 	env?: Record<string, string>;
 
-	/** {@link Secret}s that will be made available as environment variables to this layer's build environment. */
+	/**
+	 * @description ビルド環境で環境変数として利用可能にする {@link Secret} の配列
+	 */
 	secrets?: Secret[];
 
-	/** GPU reservation for this layer's build environment (e.g. "A100", "T4:2", "A100-80GB:4"). */
+	/**
+	 * @description ビルド環境の GPU 予約 (例: "A100", "T4:2", "A100-80GB:4")
+	 */
 	gpu?: string;
 
-	/** Ignore cached builds for this layer, similar to 'docker build --no-cache'. */
+	/**
+	 * @description キャッシュを無視してビルドする ('docker build --no-cache' に相当)
+	 */
 	forceBuild?: boolean;
 };
 
@@ -168,7 +176,9 @@ export class Image {
 	#imageRegistryConfig?: ImageRegistryConfig;
 	#layers: Layer[];
 
-	/** @internal */
+	/**
+	 * @internal
+	 */
 	constructor(
 		client: ModalClient,
 		imageId: string,
@@ -244,7 +254,7 @@ export class Image {
 	 */
 	async build(app: App): Promise<Image> {
 		if (this.imageId !== "") {
-			// Image is already built with an Image ID
+			// Image ID で既にビルド済み
 			return this;
 		}
 
@@ -295,10 +305,10 @@ export class Image {
 			let result: GenericResult;
 
 			if (resp.result?.status) {
-				// Image has already been built
+				// ビルド済み
 				result = resp.result;
 			} else {
-				// Not built or in the process of building - wait for build
+				// 未ビルドまたはビルド中 — 完了を待機
 				let lastEntryId = "";
 				let resultJoined: GenericResult | undefined;
 				while (!resultJoined) {
@@ -312,7 +322,7 @@ export class Image {
 							resultJoined = item.result;
 							break;
 						}
-						// Ignore all log lines and progress updates.
+						// ログ行と進捗更新は無視
 					}
 				}
 				result = resultJoined;
@@ -344,7 +354,7 @@ export class Image {
 				);
 			}
 
-			// the new image is the base for the next layer
+			// 次のレイヤーのベースイメージとして使用
 			baseImageId = resp.imageId;
 		}
 		if (!baseImageId)
