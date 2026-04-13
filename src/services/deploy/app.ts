@@ -3,9 +3,9 @@ import { rethrowNotFound } from "@/core/errors";
 import { GPUConfig, ObjectCreationType } from "@/generated/modal_proto/api";
 
 /**
- * Service for managing {@link App}s.
+ * @description {@link App} を管理するサービス
  *
- * Normally only ever accessed via the client as:
+ * 通常はクライアント経由でのみアクセスする:
  * ```typescript
  * const modal = new ModalClient();
  * const app = await modal.apps.fromName("my-app");
@@ -18,7 +18,11 @@ export class AppService {
 	}
 
 	/**
-	 * Reference a deployed {@link App} by name, or create if it does not exist.
+	 * @description 名前でデプロイ済み {@link App} を参照する。存在しなければ作成も可能
+	 * @param name - App の名前
+	 * @param params - オプションパラメータ
+	 * @returns App インスタンス
+	 * @throws NotFoundError 指定された App が存在しない場合
 	 */
 	async fromName(name: string, params: AppFromNameParams = {}): Promise<App> {
 		try {
@@ -43,16 +47,18 @@ export class AppService {
 	}
 }
 
-/** Optional parameters for {@link AppService#fromName client.apps.fromName()}. */
+/**
+ * @description {@link AppService#fromName client.apps.fromName()} のオプションパラメータ
+ */
 export type AppFromNameParams = {
 	environment?: string;
 	createIfMissing?: boolean;
 };
 
 /**
- * Parse a GPU configuration string into a GPUConfig object.
- * @param gpu - GPU string in format "type" or "type:count" (e.g. "T4", "A100:2")
- * @returns GPUConfig object (empty config if no GPU specified)
+ * @description GPU 設定文字列を GPUConfig オブジェクトにパースする
+ * @param gpu - "type" または "type:count" 形式の GPU 文字列 (例: "T4", "A100:2")
+ * @returns GPUConfig オブジェクト。GPU 未指定なら空の設定
  */
 export function parseGpuConfig(gpu: string | undefined): GPUConfig {
 	if (!gpu) {
@@ -79,12 +85,16 @@ export function parseGpuConfig(gpu: string | undefined): GPUConfig {
 	});
 }
 
-/** Represents a deployed Modal App. */
+/**
+ * @description デプロイ済み Modal App を表す
+ */
 export class App {
 	readonly appId: string;
 	readonly name?: string;
 
-	/** @internal */
+	/**
+	 * @internal
+	 */
 	constructor(appId: string, name?: string) {
 		this.appId = appId;
 		if (name !== undefined) this.name = name;
