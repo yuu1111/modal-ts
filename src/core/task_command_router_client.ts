@@ -36,14 +36,14 @@ import type { Logger } from "@/utils/logger";
 import { decodeJwtExp } from "./auth_token_manager";
 import type { ModalGrpcClient } from "./client";
 import { GRPC_CHANNEL_OPTIONS } from "./client";
+import type { Profile } from "./config";
+import { isLocalhost } from "./config";
+import { ClientClosedError } from "./errors";
 import {
 	isRetryableGrpc,
 	type TimeoutOptions,
 	timeoutMiddleware,
 } from "./grpc_utils";
-import type { Profile } from "./config";
-import { isLocalhost } from "./config";
-import { ClientClosedError } from "./errors";
 
 /**
  * @description TaskCommandRouterサービスのgRPCクライアント型
@@ -141,6 +141,13 @@ export class TaskCommandRouterClientImpl {
 	private logger: Logger;
 	private closed: boolean = false;
 
+	/**
+	 * @description callWithRetriesOnTransientErrors に渡す閉鎖判定コールバック
+	 */
+	private readonly retryOptions: Pick<TransientRetryOptions, "isClosed"> = {
+		isClosed: () => this.closed,
+	};
+
 	static async tryInit(
 		serverClient: ModalGrpcClient,
 		taskId: string,
@@ -230,8 +237,7 @@ export class TaskCommandRouterClientImpl {
 		this.logger = logger;
 		this.channel = channel;
 
-		// Capture 'this' so the auth middleware can access the current JWT after refreshes.
-		// We need to alias 'this' because generator functions cannot be arrow functions.
+		// ジェネレータ関数はアロー関数にできないため、thisをキャプチャしてJWTリフレッシュ後のアクセスに使用
 		const self = this;
 
 		const factory = createClientFactory()
@@ -259,7 +265,7 @@ export class TaskCommandRouterClientImpl {
 	): Promise<TaskExecStartResponse> {
 		return await callWithRetriesOnTransientErrors(
 			() => this.callWithAuthRetry(() => this.stub.taskExecStart(request)),
-			{ isClosed: () => this.closed },
+			this.retryOptions,
 		);
 	}
 
@@ -293,7 +299,7 @@ export class TaskCommandRouterClientImpl {
 		});
 		return await callWithRetriesOnTransientErrors(
 			() => this.callWithAuthRetry(() => this.stub.taskExecStdinWrite(request)),
-			{ isClosed: () => this.closed },
+			this.retryOptions,
 		);
 	}
 
@@ -303,24 +309,13 @@ export class TaskCommandRouterClientImpl {
 		deadline: number | null = null,
 	): Promise<TaskExecPollResponse> {
 		const request = TaskExecPollRequest.create({ taskId, execId });
-
-		// The timeout here is really a backstop in the event of a hang contacting
-		// the command router. Poll should usually be instantaneous.
-		if (deadline && deadline <= Date.now()) {
-			throw new Error(`Deadline exceeded while polling for exec ${execId}`);
-		}
-
-		try {
-			return await callWithRetriesOnTransientErrors(
-				() => this.callWithAuthRetry(() => this.stub.taskExecPoll(request)),
-				{ deadlineMs: deadline, isClosed: () => this.closed },
-			);
-		} catch (err) {
-			if (err instanceof ClientError && err.code === Status.DEADLINE_EXCEEDED) {
-				throw new Error(`Deadline exceeded while polling for exec ${execId}`);
-			}
-			throw err;
-		}
+		// タイムアウトはコマンドルーターとの通信がハングした場合のバックストップ。
+		// poll自体は通常即座に完了する
+		return await this.callWithDeadline(
+			() => this.callWithAuthRetry(() => this.stub.taskExecPoll(request)),
+			`polling for exec ${execId}`,
+			deadline,
+		);
 	}
 
 	async execWait(
@@ -329,40 +324,28 @@ export class TaskCommandRouterClientImpl {
 		deadline: number | null = null,
 	): Promise<TaskExecWaitResponse> {
 		const request = TaskExecWaitRequest.create({ taskId, execId });
-
-		if (deadline && deadline <= Date.now()) {
-			throw new Error(`Deadline exceeded while waiting for exec ${execId}`);
-		}
-
-		try {
-			return await callWithRetriesOnTransientErrors(
-				() =>
-					this.callWithAuthRetry(() =>
-						this.stub.taskExecWait(request, {
-							timeoutMs: 60000,
-						} as CallOptions & TimeoutOptions),
-					),
-				{
-					// Retry after 1s since total time is expected to be long.
-					baseDelayMs: 1000,
-					delayFactor: 1,
-					maxRetries: null,
-					deadlineMs: deadline,
-					isClosed: () => this.closed,
-				},
-			);
-		} catch (err) {
-			if (err instanceof ClientError && err.code === Status.DEADLINE_EXCEEDED) {
-				throw new Error(`Deadline exceeded while waiting for exec ${execId}`);
-			}
-			throw err;
-		}
+		return await this.callWithDeadline(
+			() =>
+				this.callWithAuthRetry(() =>
+					this.stub.taskExecWait(request, {
+						timeoutMs: 60000,
+					} as CallOptions & TimeoutOptions),
+				),
+			`waiting for exec ${execId}`,
+			deadline,
+			{
+				// 完了まで長時間かかるため1秒間隔でリトライ
+				baseDelayMs: 1000,
+				delayFactor: 1,
+				maxRetries: null,
+			},
+		);
 	}
 
 	async mountDirectory(request: TaskMountDirectoryRequest): Promise<void> {
 		await callWithRetriesOnTransientErrors(
 			() => this.callWithAuthRetry(() => this.stub.taskMountDirectory(request)),
-			{ isClosed: () => this.closed },
+			this.retryOptions,
 		);
 	}
 
@@ -370,7 +353,7 @@ export class TaskCommandRouterClientImpl {
 		await callWithRetriesOnTransientErrors(
 			() =>
 				this.callWithAuthRetry(() => this.stub.taskUnmountDirectory(request)),
-			{ isClosed: () => this.closed },
+			this.retryOptions,
 		);
 	}
 
@@ -380,7 +363,7 @@ export class TaskCommandRouterClientImpl {
 		return await callWithRetriesOnTransientErrors(
 			() =>
 				this.callWithAuthRetry(() => this.stub.taskSnapshotDirectory(request)),
-			{ isClosed: () => this.closed },
+			this.retryOptions,
 		);
 	}
 
@@ -393,9 +376,8 @@ export class TaskCommandRouterClientImpl {
 			return;
 		}
 
-		// If the current JWT expiration is already far enough in the future, don't refresh.
-		// This can happen if multiple concurrent requests get UNAUTHENTICATED errors and
-		// all try to refresh at the same time.
+		// 現在のJWT有効期限が十分先なら再取得をスキップ。
+		// 複数の並行リクエストが同時にUNAUTHENTICATEDを受けた場合に発生しうる
 		if (this.jwtExp !== null && this.jwtExp - Date.now() / 1000 > 30) {
 			this.logger.debug(
 				"Skipping JWT refresh because expiration is far enough in the future",
@@ -425,6 +407,9 @@ export class TaskCommandRouterClientImpl {
 		this.jwtExp = decodeJwtExp(resp.jwt);
 	}
 
+	/**
+	 * @description UNAUTHENTICATED エラー時にJWTをリフレッシュして1回リトライする
+	 */
 	private async callWithAuthRetry<T>(func: () => Promise<T>): Promise<T> {
 		try {
 			return await func();
@@ -432,6 +417,37 @@ export class TaskCommandRouterClientImpl {
 			if (err instanceof ClientError && err.code === Status.UNAUTHENTICATED) {
 				await this.refreshJwt();
 				return await func();
+			}
+			throw err;
+		}
+	}
+
+	/**
+	 * @description デッドライン付きでリトライを実行する。デッドライン超過時は統一メッセージでスロー
+	 * @param func - リトライ対象の非同期関数
+	 * @param operationLabel - エラーメッセージに使う操作名(例: "polling for exec abc")
+	 * @param deadline - デッドライン(エポックミリ秒、nullなら無制限) @optional
+	 * @param extraOptions - 追加のリトライ設定 @optional
+	 */
+	private async callWithDeadline<T>(
+		func: () => Promise<T>,
+		operationLabel: string,
+		deadline: number | null,
+		extraOptions?: Omit<TransientRetryOptions, "deadlineMs" | "isClosed">,
+	): Promise<T> {
+		if (deadline !== null && deadline <= Date.now()) {
+			throw new Error(`Deadline exceeded while ${operationLabel}`);
+		}
+
+		try {
+			return await callWithRetriesOnTransientErrors(func, {
+				...extraOptions,
+				deadlineMs: deadline,
+				...this.retryOptions,
+			});
+		} catch (err) {
+			if (err instanceof ClientError && err.code === Status.DEADLINE_EXCEEDED) {
+				throw new Error(`Deadline exceeded while ${operationLabel}`);
 			}
 			throw err;
 		}
@@ -447,8 +463,7 @@ export class TaskCommandRouterClientImpl {
 		let delayMs = 10;
 		const delayFactor = 2;
 		let numRetriesRemaining = 10;
-		// Flag to prevent infinite auth retries in the event that the JWT
-		// refresh yields an invalid JWT somehow or that the JWT is otherwise invalid.
+		// JWTリフレッシュ後も無効なJWTが返された場合の無限リトライを防止するフラグ
 		let didAuthRetry = false;
 
 		while (true) {

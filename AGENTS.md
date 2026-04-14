@@ -32,6 +32,8 @@ MODAL_TOKEN_SECRET=as-...
 
 Tests: max 10 concurrent, 20s timeout.
 
+**Important:** Do not run integration tests for routine change verification. Use `bun run typecheck` + relevant unit tests only. Integration tests are slow, require credentials, and may fail for reasons unrelated to your changes. Only run them when explicitly asked.
+
 # Architecture
 
 - **Client** (`src/client.ts`) — Central entry point managing auth, gRPC connection, and service access
