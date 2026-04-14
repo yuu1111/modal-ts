@@ -1,5 +1,5 @@
 import type { ModalClient } from "@/core/client";
-import { rethrowNotFound } from "@/core/errors";
+import { rethrowNotFound } from "@/core/grpc_errors";
 import { GPUConfig, ObjectCreationType } from "@/generated/modal_proto/api";
 
 /**

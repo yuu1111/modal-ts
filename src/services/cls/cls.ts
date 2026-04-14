@@ -1,5 +1,6 @@
 import type { ModalClient } from "@/core/client";
-import { NotFoundError, rethrowNotFound } from "@/core/errors";
+import { NotFoundError } from "@/core/errors";
+import { rethrowNotFound } from "@/core/grpc_errors";
 import {
 	ClassParameterInfo_ParameterSerializationFormat,
 	ClassParameterSet,

@@ -1,20 +1,19 @@
 import { setTimeout } from "node:timers/promises";
 import { ClientError, Status } from "nice-grpc";
 import { v4 as uuidv4 } from "uuid";
-import {
-	isRetryableGrpc,
-	type ModalClient,
-	type ModalGrpcClient,
-} from "@/core/client";
+import type { ModalClient, ModalGrpcClient } from "@/core/client";
+import { isRetryableGrpc } from "@/core/grpc_utils";
 import {
 	ClientClosedError,
 	InvalidError,
-	rethrowAlreadyExists,
-	rethrowInvalid,
-	rethrowNotFound,
 	SandboxTimeoutError,
 	TimeoutError,
 } from "@/core/errors";
+import {
+	rethrowAlreadyExists,
+	rethrowInvalid,
+	rethrowNotFound,
+} from "@/core/grpc_errors";
 import { TaskCommandRouterClientImpl } from "@/core/task_command_router_client";
 import {
 	type CloudBucketMount as CloudBucketMountProto,

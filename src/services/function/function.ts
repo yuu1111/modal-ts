@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import type { ModalClient, ModalGrpcClient } from "@/core/client";
-import { InternalFailure, InvalidError, rethrowNotFound } from "@/core/errors";
+import { InternalFailure, InvalidError } from "@/core/errors";
+import { rethrowNotFound } from "@/core/grpc_errors";
 import {
 	DataFormat,
 	FunctionCallInvocationType,

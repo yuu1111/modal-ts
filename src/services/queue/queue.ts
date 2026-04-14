@@ -1,13 +1,8 @@
 import { setTimeout } from "node:timers/promises";
 import { ClientError, Status } from "nice-grpc";
 import type { ModalClient } from "@/core/client";
-import {
-	InvalidError,
-	QueueEmptyError,
-	QueueFullError,
-	rethrowNotFound,
-	suppressNotFound,
-} from "@/core/errors";
+import { InvalidError, QueueEmptyError, QueueFullError } from "@/core/errors";
+import { rethrowNotFound, suppressNotFound } from "@/core/grpc_errors";
 import {
 	ObjectCreationType,
 	type QueueNextItemsRequest,

@@ -1,225 +1,81 @@
-import { ClientError, Status } from "nice-grpc";
-
 /**
- * @description gRPC ステータスコードをドメインエラーに変換して再スローする。
- * 該当しなければ元のエラーをそのまま再スローする
- * @param err - catch されたエラー
- * @param ErrorClass - スローするエラークラス
- * @param primaryStatus - 主に判定する gRPC ステータスコード
- * @param message - エラーメッセージ。省略時は err.details || err.message を使用
- * @param precondition - FAILED_PRECONDITION も変換する条件。空配列なら無条件、文字列配列なら details にパターンが含まれる場合のみ
+ * @description Modal SDK エラーの基底クラス。サブクラスの名前を自動設定する
  */
-function rethrowGrpc(
-	err: unknown,
-	ErrorClass: new (message: string) => Error,
-	primaryStatus: Status,
-	message: string | undefined,
-	precondition: string[] | undefined,
-): never {
-	if (err instanceof ClientError) {
-		const msg = message ?? (err.details || err.message);
-		if (err.code === primaryStatus) throw new ErrorClass(msg);
-		if (
-			err.code === Status.FAILED_PRECONDITION &&
-			precondition &&
-			(precondition.length === 0 ||
-				precondition.some((p) => err.details.includes(p)))
-		)
-			throw new ErrorClass(msg);
+class ModalError extends Error {
+	constructor(message: string) {
+		super(message);
+		this.name = new.target.name;
 	}
-	throw err;
-}
-
-/**
- * @description gRPC の NOT_FOUND を NotFoundError に変換して再スローする。
- * 該当しなければ元のエラーをそのまま再スローする
- * @param err - catch されたエラー
- * @param message - NotFoundError に使うメッセージ。省略時は err.details を使用
- * @param alsoNotFoundPatterns - FAILED_PRECONDITION の details にこのパターンが含まれていれば NotFoundError として扱う
- */
-export function rethrowNotFound(
-	err: unknown,
-	message?: string,
-	...alsoNotFoundPatterns: string[]
-): never {
-	rethrowGrpc(
-		err,
-		NotFoundError,
-		Status.NOT_FOUND,
-		message,
-		alsoNotFoundPatterns.length > 0 ? alsoNotFoundPatterns : undefined,
-	);
-}
-
-/**
- * @description gRPC の INVALID_ARGUMENT を InvalidError に変換して再スローする。
- * 該当しなければ元のエラーをそのまま再スローする
- * @param err - catch されたエラー
- * @param includePrecondition - true なら FAILED_PRECONDITION も InvalidError として扱う
- */
-export function rethrowInvalid(
-	err: unknown,
-	includePrecondition = false,
-): never {
-	rethrowGrpc(
-		err,
-		InvalidError,
-		Status.INVALID_ARGUMENT,
-		undefined,
-		includePrecondition ? [] : undefined,
-	);
-}
-
-/**
- * @description gRPC の ALREADY_EXISTS を AlreadyExistsError に変換して再スローする。
- * 該当しなければ元のエラーをそのまま再スローする
- * @param err - catch されたエラー
- * @param message - AlreadyExistsError に使うメッセージ。省略時は err.details を使用
- */
-export function rethrowAlreadyExists(err: unknown, message?: string): never {
-	rethrowGrpc(
-		err,
-		AlreadyExistsError,
-		Status.ALREADY_EXISTS,
-		message,
-		undefined,
-	);
-}
-
-/**
- * @description NOT_FOUND を allowMissing で抑制する。allowMissing でなければ再スローする
- * @param err - catch されたエラー
- * @param allowMissing - true なら NOT_FOUND を無視する
- */
-export function suppressNotFound(
-	err: unknown,
-	allowMissing: boolean | undefined,
-): void {
-	const isNotFound =
-		err instanceof NotFoundError ||
-		(err instanceof ClientError && err.code === Status.NOT_FOUND);
-	if (isNotFound && allowMissing) return;
-	throw err;
 }
 
 /**
  * @description 操作が許容時間を超過した
  */
-export class TimeoutError extends Error {
-	constructor(message: string = "Operation timed out") {
+export class TimeoutError extends ModalError {
+	constructor(message = "Operation timed out") {
 		super(message);
-		this.name = "TimeoutError";
 	}
 }
 
 /**
  * @description Function実行が許容時間を超過した
  */
-export class FunctionTimeoutError extends Error {
-	constructor(message: string) {
-		super(message);
-		this.name = "FunctionTimeoutError";
-	}
-}
+export class FunctionTimeoutError extends ModalError {}
 
 /**
  * @description Modalサーバーエラー、またはPython例外
  */
-export class RemoteError extends Error {
-	constructor(message: string) {
-		super(message);
-		this.name = "RemoteError";
-	}
-}
+export class RemoteError extends ModalError {}
 
 /**
  * @description リトライ可能なModal内部エラー
  */
-export class InternalFailure extends Error {
-	constructor(message: string) {
-		super(message);
-		this.name = "InternalFailure";
-	}
-}
+export class InternalFailure extends ModalError {}
 
 /**
  * @description リソースが見つからない
  */
-export class NotFoundError extends Error {
-	constructor(message: string) {
-		super(message);
-		this.name = "NotFoundError";
-	}
-}
+export class NotFoundError extends ModalError {}
 
 /**
  * @description リソースが既に存在する
  */
-export class AlreadyExistsError extends Error {
-	constructor(message: string) {
-		super(message);
-		this.name = "AlreadyExistsError";
-	}
-}
+export class AlreadyExistsError extends ModalError {}
 
 /**
  * @description リクエストまたは操作が不正
  */
-export class InvalidError extends Error {
-	constructor(message: string) {
-		super(message);
-		this.name = "InvalidError";
-	}
-}
+export class InvalidError extends ModalError {}
 
 /**
  * @description Queueが空
  */
-export class QueueEmptyError extends Error {
-	constructor(message: string) {
-		super(message);
-		this.name = "QueueEmptyError";
-	}
-}
+export class QueueEmptyError extends ModalError {}
 
 /**
  * @description Queueが満杯
  */
-export class QueueFullError extends Error {
-	constructor(message: string) {
-		super(message);
-		this.name = "QueueFullError";
-	}
-}
+export class QueueFullError extends ModalError {}
 
 /**
  * @description 不正なSandbox FileSystem操作
  */
-export class SandboxFilesystemError extends Error {
-	constructor(message: string) {
-		super(message);
-		this.name = "SandboxFilesystemError";
-	}
-}
+export class SandboxFilesystemError extends ModalError {}
 
 /**
  * @description Sandbox操作が許容時間を超過した
  */
-export class SandboxTimeoutError extends Error {
-	constructor(message: string = "Sandbox operation timed out") {
+export class SandboxTimeoutError extends ModalError {
+	constructor(message = "Sandbox operation timed out") {
 		super(message);
-		this.name = "SandboxTimeoutError";
 	}
 }
 
 /**
  * @description デタッチされたSandboxへの操作を試みた
  */
-export class ClientClosedError extends Error {
-	constructor(
-		message: string = "Unable to perform operation on a detached sandbox",
-	) {
+export class ClientClosedError extends ModalError {
+	constructor(message = "Unable to perform operation on a detached sandbox") {
 		super(message);
-		this.name = "ClientClosedError";
 	}
 }

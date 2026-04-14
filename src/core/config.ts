@@ -80,14 +80,7 @@ function readConfigFile(): Config {
 			encoding: "utf-8",
 		});
 		return parseToml(configContent) as Config;
-	} catch (err: unknown) {
-		if (
-			err instanceof Error &&
-			"code" in err &&
-			(err as NodeJS.ErrnoException).code === "ENOENT"
-		) {
-			return {} as Config;
-		}
+	} catch {
 		return {} as Config;
 	}
 }
@@ -113,34 +106,30 @@ export function getProfile(profileName?: string): Profile {
 				break;
 			}
 		}
-		// Fall back to "default" profile if no active profile found
+		// アクティブなプロファイルがなければ "default" にフォールバック
 		if (!profileName && Object.hasOwn(config, "default")) {
 			profileName = "default";
 		}
 	}
-	const profileData: RawProfile =
-		(profileName && Object.hasOwn(config, profileName)
-			? config[profileName]
-			: undefined) ?? {};
+	const rawProfile: RawProfile =
+		(profileName ? config[profileName] : undefined) ?? {};
 
-	const tokenId = process.env.MODAL_TOKEN_ID || profileData.token_id;
-	const tokenSecret =
-		process.env.MODAL_TOKEN_SECRET || profileData.token_secret;
-	const environment = process.env.MODAL_ENVIRONMENT || profileData.environment;
+	const tokenId = process.env.MODAL_TOKEN_ID || rawProfile.token_id;
+	const tokenSecret = process.env.MODAL_TOKEN_SECRET || rawProfile.token_secret;
+	const environment = process.env.MODAL_ENVIRONMENT || rawProfile.environment;
 	const imageBuilderVersion =
-		process.env.MODAL_IMAGE_BUILDER_VERSION || profileData.imageBuilderVersion;
-	const logLevel = process.env.MODAL_LOGLEVEL || profileData.loglevel;
+		process.env.MODAL_IMAGE_BUILDER_VERSION || rawProfile.imageBuilderVersion;
+	const logLevel = process.env.MODAL_LOGLEVEL || rawProfile.loglevel;
 
-	const profile: Partial<Profile> = {
+	return {
 		serverUrl:
 			process.env.MODAL_SERVER_URL ||
-			profileData.server_url ||
+			rawProfile.server_url ||
 			"https://api.modal.com:443",
-		...(tokenId !== undefined && { tokenId }),
-		...(tokenSecret !== undefined && { tokenSecret }),
-		...(environment !== undefined && { environment }),
-		...(imageBuilderVersion !== undefined && { imageBuilderVersion }),
-		...(logLevel !== undefined && { logLevel }),
+		...(tokenId && { tokenId }),
+		...(tokenSecret && { tokenSecret }),
+		...(environment && { environment }),
+		...(imageBuilderVersion && { imageBuilderVersion }),
+		...(logLevel && { logLevel }),
 	};
-	return profile as Profile;
 }

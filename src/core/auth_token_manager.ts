@@ -8,6 +8,13 @@ export interface AuthClient {
 }
 
 /**
+ * @description 現在時刻をUNIX秒で返す
+ */
+function nowSeconds(): number {
+	return Math.floor(Date.now() / 1000);
+}
+
+/**
  * @description JWTトークンからexpクレーム(UNIX秒)を抽出する
  * @param token - JWTトークン文字列
  * @returns expクレームの値、取得できない場合はnull
@@ -122,16 +129,16 @@ export class AuthTokenManager {
 
 		this.currentToken = token;
 
-		const exp = this.decodeJWT(token);
-		if (exp > 0) {
+		const exp = decodeJwtExp(token);
+		if (exp != null) {
 			this.tokenExpiry = exp;
 		} else {
 			this.logger.warn("x-modal-auth-token does not contain exp field");
 			// expクレームがない場合はデフォルトの有効期間を設定して続行
-			this.tokenExpiry = Math.floor(Date.now() / 1000) + DEFAULT_EXPIRY_OFFSET;
+			this.tokenExpiry = nowSeconds() + DEFAULT_EXPIRY_OFFSET;
 		}
 
-		const now = Math.floor(Date.now() / 1000);
+		const now = nowSeconds();
 		const expiresIn = this.tokenExpiry - now;
 		const refreshIn = this.tokenExpiry - now - REFRESH_WINDOW;
 		this.logger.debug(
@@ -144,19 +151,11 @@ export class AuthTokenManager {
 	}
 
 	/**
-	 * @description JWTのexpクレームを取得する(失敗時は0)
-	 */
-	private decodeJWT(token: string): number {
-		return decodeJwtExp(token) ?? 0;
-	}
-
-	/**
 	 * @description トークンが有効期限切れかどうかを判定する
 	 * @returns 期限切れならtrue
 	 */
 	isExpired(): boolean {
-		const now = Math.floor(Date.now() / 1000);
-		return now >= this.tokenExpiry;
+		return nowSeconds() >= this.tokenExpiry;
 	}
 
 	/**
@@ -164,8 +163,7 @@ export class AuthTokenManager {
 	 * @returns リフレッシュが必要ならtrue
 	 */
 	private needsRefresh(): boolean {
-		const now = Math.floor(Date.now() / 1000);
-		return now >= this.tokenExpiry - REFRESH_WINDOW;
+		return nowSeconds() >= this.tokenExpiry - REFRESH_WINDOW;
 	}
 
 	/**

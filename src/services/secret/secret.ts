@@ -1,10 +1,10 @@
 import type { ModalClient } from "@/core/client";
+import { InvalidError } from "@/core/errors";
 import {
-	InvalidError,
 	rethrowInvalid,
 	rethrowNotFound,
 	suppressNotFound,
-} from "@/core/errors";
+} from "@/core/grpc_errors";
 import { ObjectCreationType } from "@/generated/modal_proto/api";
 
 /**

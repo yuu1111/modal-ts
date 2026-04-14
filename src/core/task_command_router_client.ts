@@ -35,12 +35,12 @@ import {
 import type { Logger } from "@/utils/logger";
 import { decodeJwtExp } from "./auth_token_manager";
 import type { ModalGrpcClient } from "./client";
+import { GRPC_CHANNEL_OPTIONS } from "./client";
 import {
-	GRPC_CHANNEL_OPTIONS,
 	isRetryableGrpc,
 	type TimeoutOptions,
 	timeoutMiddleware,
-} from "./client";
+} from "./grpc_utils";
 import type { Profile } from "./config";
 import { isLocalhost } from "./config";
 import { ClientClosedError } from "./errors";

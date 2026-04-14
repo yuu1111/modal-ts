@@ -1,5 +1,6 @@
 import type { ModalClient } from "@/core/client";
-import { InvalidError, rethrowNotFound, suppressNotFound } from "@/core/errors";
+import { InvalidError } from "@/core/errors";
+import { rethrowNotFound, suppressNotFound } from "@/core/grpc_errors";
 import { ObjectCreationType } from "@/generated/modal_proto/api";
 import { EphemeralHeartbeatManager } from "@/utils/ephemeral";
 
