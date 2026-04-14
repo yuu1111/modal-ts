@@ -79,10 +79,8 @@ export {
 	type QueuePutParams,
 	QueueService,
 } from "./services/queue/queue";
+export { Sandbox, SandboxService } from "./services/sandbox/sandbox";
 export type {
-	ProbeParams,
-	SandboxCreateConnectCredentials,
-	SandboxCreateConnectTokenParams,
 	SandboxCreateParams,
 	SandboxExecParams,
 	SandboxFromNameParams,
@@ -90,18 +88,18 @@ export type {
 	SandboxTerminateParams,
 	StdioBehavior,
 	StreamMode,
-	Tunnel,
-} from "./services/sandbox/sandbox";
-export {
-	ContainerProcess,
-	Probe,
-	Sandbox,
-	SandboxService,
-} from "./services/sandbox/sandbox";
+} from "./services/sandbox/sandbox_config";
 export {
 	SandboxFile,
 	type SandboxFileMode,
 } from "./services/sandbox/sandbox_filesystem";
+export { Probe, type ProbeParams } from "./services/sandbox/sandbox_probe";
+export { ContainerProcess } from "./services/sandbox/sandbox_process";
+export {
+	type SandboxCreateConnectCredentials,
+	type SandboxCreateConnectTokenParams,
+	Tunnel,
+} from "./services/sandbox/sandbox_tunnel";
 export {
 	Secret,
 	type SecretDeleteParams,

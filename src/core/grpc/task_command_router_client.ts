@@ -33,17 +33,16 @@ import {
 	type TaskUnmountDirectoryRequest,
 } from "@/generated/modal_proto/task_command_router";
 import type { Logger } from "@/utils/logger";
-import { decodeJwtExp } from "./auth_token_manager";
-import type { ModalGrpcClient } from "./client";
-import { GRPC_CHANNEL_OPTIONS } from "./client";
-import type { Profile } from "./config";
-import { isLocalhost } from "./config";
-import { ClientClosedError } from "./errors";
+import { decodeJwtExp } from "../auth_token_manager";
+import { GRPC_CHANNEL_OPTIONS, type ModalGrpcClient } from "../client";
+import type { Profile } from "../config";
+import { isLocalhost } from "../config";
+import { ClientClosedError } from "../errors";
 import {
 	isRetryableGrpc,
 	type TimeoutOptions,
 	timeoutMiddleware,
-} from "./grpc_utils";
+} from "./utils";
 
 /**
  * @description TaskCommandRouterサービスのgRPCクライアント型

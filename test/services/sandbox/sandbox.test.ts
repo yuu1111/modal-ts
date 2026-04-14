@@ -13,7 +13,7 @@ import {
 	buildSandboxCreateRequestProto,
 	buildTaskExecStartRequestProto,
 	validateExecArgs,
-} from "../../../src/services/sandbox/sandbox";
+} from "../../../src/services/sandbox/sandbox_config";
 import { createMockModalClients } from "../../support/grpc_mock";
 import { tc } from "../../support/test-client";
 

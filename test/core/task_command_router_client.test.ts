@@ -4,7 +4,7 @@ import { decodeJwtExp } from "../../src/core/auth_token_manager";
 import {
 	callWithRetriesOnTransientErrors,
 	TaskCommandRouterClientImpl,
-} from "../../src/core/task_command_router_client";
+} from "../../src/core/grpc/task_command_router_client";
 
 const mockLogger = {
 	debug: vi.fn(),

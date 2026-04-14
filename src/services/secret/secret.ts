@@ -4,7 +4,7 @@ import {
 	rethrowInvalid,
 	rethrowNotFound,
 	suppressNotFound,
-} from "@/core/grpc_errors";
+} from "@/core/grpc/errors";
 import { ObjectCreationType } from "@/generated/modal_proto/api";
 
 /**

@@ -1,6 +1,6 @@
 import type { ModalClient } from "@/core/client";
 import { InvalidError } from "@/core/errors";
-import { rethrowNotFound } from "@/core/grpc_errors";
+import { rethrowNotFound } from "@/core/grpc/errors";
 import {
 	type GenericResult,
 	GenericResult_GenericStatus,

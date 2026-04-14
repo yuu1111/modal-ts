@@ -1,6 +1,6 @@
 import type { ModalClient, ModalGrpcClient } from "@/core/client";
 import { SandboxFilesystemError } from "@/core/errors";
-import { isRetryableGrpc } from "@/core/grpc_utils";
+import { isRetryableGrpc } from "@/core/grpc/utils";
 import type {
 	ContainerFilesystemExecRequest,
 	ContainerFilesystemExecResponse,

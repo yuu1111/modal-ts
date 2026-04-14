@@ -15,7 +15,7 @@ import {
 	sleep,
 	type TimeoutOptions,
 	timeoutMiddleware,
-} from "@/core/grpc_utils";
+} from "@/core/grpc/utils";
 import { ClientType, ModalClientDefinition } from "@/generated/modal_proto/api";
 import { CloudBucketMountService } from "@/services/cloud_bucket_mount/cloud_bucket_mount";
 import { ClsService } from "@/services/cls/cls";
@@ -395,13 +395,6 @@ export class ModalClient {
 		};
 	}
 }
-
-export {
-	isRetryableGrpc,
-	type RetryOptions,
-	type TimeoutOptions,
-	timeoutMiddleware,
-} from "@/core/grpc_utils";
 
 /**
  * @description デフォルトクライアント(遅延初期化)
