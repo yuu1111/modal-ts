@@ -1,7 +1,6 @@
-import { setTimeout } from "node:timers/promises";
 import type { ModalGrpcClient } from "@/core/client";
 import type { TaskCommandRouterClientImpl } from "@/core/grpc/task_command_router_client";
-import { isRetryableGrpc } from "@/core/grpc/utils";
+import { isRetryableGrpc, sleep } from "@/core/grpc/utils";
 import type { FileDescriptor } from "@/generated/modal_proto/api";
 import { encodeIfString } from "@/utils/streams";
 
@@ -63,7 +62,7 @@ export async function* outputStreamSb(
 			if (isRetryableGrpc(err) && retriesRemaining > 0) {
 				// 連続リトライを避けるため短い指数バックオフ
 				try {
-					await setTimeout(delayMs, undefined, { signal });
+					await sleep(delayMs, signal);
 				} catch {
 					// スリープ中のキャンセル — 正常終了
 					return;

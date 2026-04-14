@@ -82,15 +82,12 @@ export class Probe {
 				intervalMs: this.#intervalMs,
 			};
 		}
-		if (this.#execArgv !== undefined) {
-			return {
-				execCommand: { argv: this.#execArgv },
-				intervalMs: this.#intervalMs,
-			};
-		}
-		throw new InvalidError(
-			"Probe must be created with Probe.withTcp(...) or Probe.withExec(...)",
-		);
+		// コンストラクタで tcpPort か execArgv のどちらかが必ず設定される
+		const argv = this.#execArgv as string[];
+		return {
+			execCommand: { argv },
+			intervalMs: this.#intervalMs,
+		};
 	}
 
 	static #validateIntervalMs(methodName: string, intervalMs: number) {
