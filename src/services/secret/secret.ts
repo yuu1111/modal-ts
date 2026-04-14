@@ -72,7 +72,7 @@ export class SecretService {
 			);
 			return new Secret(resp.secretId, name);
 		} catch (err) {
-			rethrowNotFound(err, undefined, "Secret is missing key");
+			rethrowNotFound(err, { preconditionPatterns: ["Secret is missing key"] });
 		}
 	}
 
@@ -108,7 +108,7 @@ export class SecretService {
 			);
 			return new Secret(resp.secretId);
 		} catch (err) {
-			rethrowInvalid(err, true);
+			rethrowInvalid(err, { preconditionPatterns: [] });
 		}
 	}
 

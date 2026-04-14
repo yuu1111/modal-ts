@@ -1,7 +1,7 @@
 /**
  * @description Modal SDK エラーの基底クラス。サブクラスの名前を自動設定する
  */
-class ModalError extends Error {
+export class ModalError extends Error {
 	constructor(message: string) {
 		super(message);
 		this.name = new.target.name;

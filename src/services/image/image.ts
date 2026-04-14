@@ -37,7 +37,7 @@ export class ImageService {
 			const resp = await this.#client.cpClient.imageFromId({ imageId });
 			return new Image(this.#client, resp.imageId, "");
 		} catch (err) {
-			rethrowNotFound(err, undefined, "Could not find image with ID");
+			rethrowNotFound(err, { preconditionPatterns: ["Could not find image with ID"] });
 		}
 	}
 
@@ -112,7 +112,7 @@ export class ImageService {
 		try {
 			await this.#client.cpClient.imageDelete({ imageId });
 		} catch (err) {
-			rethrowNotFound(err, undefined, "Could not find image with ID");
+			rethrowNotFound(err, { preconditionPatterns: ["Could not find image with ID"] });
 		}
 	}
 }

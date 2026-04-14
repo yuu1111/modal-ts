@@ -6,6 +6,7 @@ export {
 	FunctionTimeoutError,
 	InternalFailure,
 	InvalidError,
+	ModalError,
 	NotFoundError,
 	QueueEmptyError,
 	QueueFullError,
