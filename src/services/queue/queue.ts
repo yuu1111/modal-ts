@@ -1,6 +1,6 @@
 import { setTimeout } from "node:timers/promises";
 import { ClientError, Status } from "nice-grpc";
-import type { ModalClient } from "@/core/client";
+import { getDefaultClient, type ModalClient } from "@/core/client";
 import { InvalidError, QueueEmptyError, QueueFullError } from "@/core/errors";
 import { rethrowNotFound, suppressNotFound } from "@/core/grpc/errors";
 import {
@@ -146,6 +146,10 @@ export class QueueService {
 		}
 	}
 
+	async from_id(queueId: string): Promise<Queue> {
+		return await this.fromId(queueId);
+	}
+
 	/**
 	 * @description 名前で {@link Queue} を参照する
 	 * @param name - Queue の名前
@@ -176,6 +180,13 @@ export class QueueService {
 		} catch (err) {
 			rethrowNotFound(err);
 		}
+	}
+
+	async from_name(
+		name: string,
+		params: QueueFromNameParams = {},
+	): Promise<Queue> {
+		return await this.fromName(name, params);
 	}
 
 	/**
@@ -390,6 +401,25 @@ export class Queue {
 			this.#ephemeralHbManager = ephemeralHbManager;
 	}
 
+	static get objects(): QueueService {
+		return getDefaultClient().queues;
+	}
+
+	static validate_partition_key(partition: string | undefined): Uint8Array {
+		return Queue.#validatePartitionKey(partition);
+	}
+
+	static async from_name(
+		name: string,
+		params: QueueFromNameParams = {},
+	): Promise<Queue> {
+		return await getDefaultClient().queues.fromName(name, params);
+	}
+
+	static async from_id(queueId: string): Promise<Queue> {
+		return await getDefaultClient().queues.fromId(queueId);
+	}
+
 	static #validatePartitionKey(partition: string | undefined): Uint8Array {
 		if (partition) {
 			const partitionKey = encodeIfString(partition);
@@ -501,6 +531,13 @@ export class Queue {
 		return await this.#get(n, params.partition, params.timeoutMs);
 	}
 
+	async get_many(
+		n: number,
+		params: QueueGetManyParams = {},
+	): Promise<unknown[]> {
+		return await this.getMany(n, params);
+	}
+
 	async #put(
 		values: unknown[],
 		timeoutMs?: number,
@@ -581,6 +618,13 @@ export class Queue {
 			params.partition,
 			params.partitionTtlMs,
 		);
+	}
+
+	async put_many(
+		values: unknown[],
+		params: QueuePutManyParams = {},
+	): Promise<void> {
+		await this.putMany(values, params);
 	}
 
 	/**

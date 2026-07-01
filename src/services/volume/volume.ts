@@ -1,4 +1,6 @@
-import type { ModalClient } from "@/core/client";
+import { readdir, readFile } from "node:fs/promises";
+import path from "node:path";
+import { getDefaultClient, type ModalClient } from "@/core/client";
 import { InvalidError } from "@/core/errors";
 import { rethrowNotFound, suppressNotFound } from "@/core/grpc/errors";
 import {
@@ -129,6 +131,13 @@ export class VolumeService {
 		}
 	}
 
+	async from_name(
+		name: string,
+		params?: VolumeFromNameParams,
+	): Promise<Volume> {
+		return await this.fromName(name, params);
+	}
+
 	async create(name: string, params: VolumeCreateParams = {}): Promise<void> {
 		await this.#client.cpClient.volumeGetOrCreate({
 			deploymentName: name,
@@ -153,6 +162,10 @@ export class VolumeService {
 		} catch (err) {
 			rethrowNotFound(err, `Volume with id: '${volumeId}' not found`);
 		}
+	}
+
+	async from_id(volumeId: string): Promise<Volume> {
+		return await this.fromId(volumeId);
 	}
 
 	async list(params: VolumeListParams = {}): Promise<Volume[]> {
@@ -330,12 +343,31 @@ export class Volume {
 			this.#ephemeralHbManager = ephemeralHbManager;
 	}
 
+	static get objects(): VolumeService {
+		return getDefaultClient().volumes;
+	}
+
+	static async from_name(
+		name: string,
+		params?: VolumeFromNameParams,
+	): Promise<Volume> {
+		return await getDefaultClient().volumes.fromName(name, params);
+	}
+
+	static async from_id(volumeId: string): Promise<Volume> {
+		return await getDefaultClient().volumes.fromId(volumeId);
+	}
+
 	/**
 	 * @description Volume を読み取り専用でマウントするよう設定する
 	 * @returns 読み取り専用に設定された新しい Volume インスタンス
 	 */
 	readOnly(): Volume {
 		return this.withMountOptions({ readOnly: true });
+	}
+
+	read_only(): Volume {
+		return this.readOnly();
 	}
 
 	/**
@@ -363,6 +395,10 @@ export class Volume {
 					this.#info,
 				)
 			: new Volume(this.volumeId, this.name, nextOptions);
+	}
+
+	with_mount_options(params: VolumeMountOptions = {}): Volume {
+		return this.withMountOptions(params);
 	}
 
 	get isReadOnly(): boolean {
@@ -408,6 +444,14 @@ export class Volume {
 		});
 	}
 
+	async copy_files(
+		srcPaths: string[],
+		dstPath: string,
+		params: { recursive?: boolean } = {},
+	): Promise<void> {
+		await this.copyFiles(srcPaths, dstPath, params);
+	}
+
 	async removeFile(
 		path: string,
 		params: { recursive?: boolean } = {},
@@ -418,6 +462,13 @@ export class Volume {
 			path,
 			recursive: params.recursive ?? false,
 		});
+	}
+
+	async remove_file(
+		path: string,
+		params: { recursive?: boolean } = {},
+	): Promise<void> {
+		await this.removeFile(path, params);
 	}
 
 	async *iterdir(
@@ -466,6 +517,23 @@ export class Volume {
 			chunks.push(new Uint8Array(await httpResp.arrayBuffer()));
 		}
 		return concatBytes(chunks);
+	}
+
+	async read_file(
+		path: string,
+		params: { start?: number; length?: number } = {},
+	): Promise<Uint8Array> {
+		return await this.readFile(path, params);
+	}
+
+	async read_file_into_fileobj(
+		path: string,
+		fileobj: { write(chunk: Uint8Array): unknown },
+		params: { start?: number; length?: number } = {},
+	): Promise<number> {
+		const data = await this.readFile(path, params);
+		await fileobj.write(data);
+		return data.length;
 	}
 
 	async writeBytes(
@@ -529,6 +597,14 @@ export class Volume {
 		await this.writeBytes(path, new TextEncoder().encode(data), params);
 	}
 
+	batchUpload(params: { force?: boolean } = {}): VolumeBatchUpload {
+		return new VolumeBatchUpload(this, params.force ?? false);
+	}
+
+	batch_upload(params: { force?: boolean } = {}): VolumeBatchUpload {
+		return this.batchUpload(params);
+	}
+
 	#requireClient(): ModalClient {
 		if (!this.#client) {
 			throw new InvalidError(
@@ -536,6 +612,96 @@ export class Volume {
 			);
 		}
 		return this.#client;
+	}
+}
+
+/**
+ * @description Volume batch upload helper
+ */
+export class VolumeBatchUpload {
+	readonly #volume: Volume;
+	readonly #force: boolean;
+	#tasks: Array<Promise<void>> = [];
+
+	constructor(volume: Volume, force: boolean) {
+		this.#volume = volume;
+		this.#force = force;
+	}
+
+	putFile(
+		localPath: string,
+		remotePath: string,
+		params: { mode?: number } = {},
+	): void {
+		this.#tasks.push(
+			readFile(localPath).then((data) =>
+				this.#volume.writeBytes(remotePath, data, {
+					...params,
+					overwrite: this.#force,
+				}),
+			),
+		);
+	}
+
+	put_file(
+		localPath: string,
+		remotePath: string,
+		params: { mode?: number } = {},
+	): void {
+		this.putFile(localPath, remotePath, params);
+	}
+
+	putBytes(
+		data: Uint8Array,
+		remotePath: string,
+		params: { mode?: number } = {},
+	): void {
+		this.#tasks.push(
+			this.#volume.writeBytes(remotePath, data, {
+				...params,
+				overwrite: this.#force,
+			}),
+		);
+	}
+
+	put_bytes(
+		data: Uint8Array,
+		remotePath: string,
+		params: { mode?: number } = {},
+	): void {
+		this.putBytes(data, remotePath, params);
+	}
+
+	async putDirectory(
+		localPath: string,
+		remotePath: string,
+		params: { recursive?: boolean; mode?: number } = {},
+	): Promise<void> {
+		const recursive = params.recursive ?? true;
+		for (const entry of await readdir(localPath, { withFileTypes: true })) {
+			const localEntry = path.join(localPath, entry.name);
+			const remoteEntry = posixJoin(remotePath, entry.name);
+			if (entry.isDirectory()) {
+				if (recursive) {
+					await this.putDirectory(localEntry, remoteEntry, params);
+				}
+			} else if (entry.isFile()) {
+				this.putFile(localEntry, remoteEntry, params);
+			}
+		}
+	}
+
+	async put_directory(
+		localPath: string,
+		remotePath: string,
+		params: { recursive?: boolean; mode?: number } = {},
+	): Promise<void> {
+		await this.putDirectory(localPath, remotePath, params);
+	}
+
+	async done(): Promise<void> {
+		await Promise.all(this.#tasks);
+		this.#tasks = [];
 	}
 }
 
@@ -614,4 +780,13 @@ function concatBytes(chunks: Uint8Array[]): Uint8Array {
 		offset += chunk.length;
 	}
 	return out;
+}
+
+function posixJoin(...parts: string[]): string {
+	return `/${parts
+		.join("/")
+		.replaceAll("\\", "/")
+		.split("/")
+		.filter((part) => part.length > 0)
+		.join("/")}`;
 }

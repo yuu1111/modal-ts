@@ -1,4 +1,4 @@
-import type { ModalClient } from "@/core/client";
+import { getDefaultClient, type ModalClient } from "@/core/client";
 import { NotFoundError } from "@/core/errors";
 import { rethrowNotFound } from "@/core/grpc/errors";
 import type { ProxyGetResponse } from "@/generated/modal_proto/api";
@@ -34,6 +34,10 @@ export class ProxyService {
 		}
 		return new Proxy(resp.proxy.proxyId);
 	}
+
+	async from_name(name: string, params?: ProxyFromNameParams): Promise<Proxy> {
+		return await this.fromName(name, params);
+	}
 }
 
 /**
@@ -55,5 +59,12 @@ export class Proxy {
 	 */
 	constructor(proxyId: string) {
 		this.proxyId = proxyId;
+	}
+
+	static async from_name(
+		name: string,
+		params?: ProxyFromNameParams,
+	): Promise<Proxy> {
+		return await getDefaultClient().proxies.fromName(name, params);
 	}
 }

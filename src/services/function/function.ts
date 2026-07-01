@@ -1,5 +1,9 @@
 import { createHash } from "node:crypto";
-import type { ModalClient, ModalGrpcClient } from "@/core/client";
+import {
+	getDefaultClient,
+	type ModalClient,
+	type ModalGrpcClient,
+} from "@/core/client";
 import { InternalFailure, InvalidError } from "@/core/errors";
 import { rethrowNotFound } from "@/core/grpc/errors";
 import {
@@ -485,6 +489,80 @@ export class Function_ {
 		if (options !== undefined) this.#options = options;
 	}
 
+	/**
+	 * @description Python 互換の local construction marker
+	 */
+	static from_local(): never {
+		throw new InvalidError(
+			"Function.from_local requires a local Python function; use deploy helpers to create JavaScript functions.",
+		);
+	}
+
+	/**
+	 * @description deployed Function を名前で取得する Python 互換 helper
+	 */
+	static async from_name(
+		appName: string,
+		name: string,
+		params: FunctionFromNameParams = {},
+	): Promise<Function_> {
+		return await getDefaultClient().functions.fromName(appName, name, params);
+	}
+
+	/**
+	 * @description Function のタグ名
+	 */
+	get tag(): string | undefined {
+		return this.#handleMetadata?.functionName;
+	}
+
+	/**
+	 * @description Python の古い `stub` alias 互換
+	 */
+	get stub(): undefined {
+		return undefined;
+	}
+
+	/**
+	 * @description Function handle のメタデータを返す
+	 */
+	info(): Record<string, unknown> {
+		return {
+			functionId: this.functionId,
+			methodName: this.methodName,
+			webUrl: this.#handleMetadata?.webUrl,
+			functionName: this.#handleMetadata?.functionName,
+		};
+	}
+
+	/**
+	 * @description Function spec 相当の軽量情報を返す
+	 */
+	spec(): Record<string, unknown> {
+		return this.info();
+	}
+
+	/**
+	 * @description build definition はTS handleでは保持しないため undefined を返す
+	 */
+	get_build_def(): undefined {
+		return undefined;
+	}
+
+	/**
+	 * @description generator Function かどうか
+	 */
+	is_generator(): boolean {
+		return false;
+	}
+
+	/**
+	 * @description raw local function はTS handleでは保持しないため undefined を返す
+	 */
+	get_raw_f(): undefined {
+		return undefined;
+	}
+
 	#checkNoWebUrl(fnName: string): void {
 		if (this.#handleMetadata?.webUrl) {
 			throw new InvalidError(
@@ -508,6 +586,10 @@ export class Function_ {
 		);
 	}
 
+	with_options(options: FunctionWithOptionsParams): Function_ {
+		return this.withOptions(options);
+	}
+
 	/**
 	 * @description 同時実行設定を有効化または上書きした Function を返す
 	 * @param params - 同時実行パラメータ
@@ -528,6 +610,10 @@ export class Function_ {
 		);
 	}
 
+	with_concurrency(params: FunctionWithConcurrencyParams): Function_ {
+		return this.withConcurrency(params);
+	}
+
 	/**
 	 * @description ダイナミックバッチングを有効化または上書きした Function を返す
 	 * @param params - バッチングパラメータ
@@ -544,6 +630,10 @@ export class Function_ {
 				batchWaitMs: params.waitMs,
 			}),
 		);
+	}
+
+	with_batching(params: FunctionWithBatchingParams): Function_ {
+		return this.withBatching(params);
 	}
 
 	/**
@@ -614,6 +704,31 @@ export class Function_ {
 				}
 			}
 		}
+	}
+
+	/**
+	 * @description generator API 互換。結果が iterable なら順に yield する
+	 */
+	async *remote_gen(
+		args: unknown[] = [],
+		kwargs: Record<string, unknown> = {},
+	): AsyncGenerator<unknown, void, unknown> {
+		const result = await this.remote(args, kwargs);
+		if (result && typeof result === "object" && Symbol.iterator in result) {
+			yield* result as Iterable<unknown>;
+		} else {
+			yield result;
+		}
+	}
+
+	/**
+	 * @description local 実行互換。TS handleでは remote と同じ経路を使う
+	 */
+	async local(
+		args: unknown[] = [],
+		kwargs: Record<string, unknown> = {},
+	): Promise<unknown> {
+		return await this.remote(args, kwargs);
 	}
 
 	async #createRemoteInvocation(input: FunctionInput): Promise<Invocation> {
@@ -719,6 +834,10 @@ export class Function_ {
 		};
 	}
 
+	async get_current_stats(): Promise<FunctionStats> {
+		return await this.getCurrentStats();
+	}
+
 	/**
 	 * @description Functionのオートスケーラー設定を更新する
 	 * @param params - オートスケーラー設定
@@ -748,12 +867,22 @@ export class Function_ {
 		});
 	}
 
+	async update_autoscaler(
+		params: FunctionUpdateAutoscalerParams,
+	): Promise<void> {
+		await this.updateAutoscaler(params);
+	}
+
 	/**
 	 * @description Web エンドポイントとして実行されている Function の URL
 	 * @returns Web エンドポイントの URL。Web エンドポイントでなければ undefined
 	 */
 	async getWebUrl(): Promise<string | undefined> {
 		return this.#handleMetadata?.webUrl || undefined;
+	}
+
+	async get_web_url(): Promise<string | undefined> {
+		return await this.getWebUrl();
 	}
 
 	async #createInput(
@@ -805,25 +934,132 @@ async function blobUpload(
 		contentSha256Base64: contentSha256,
 		contentLength: data.length,
 	});
-	if (resp.multipart) {
-		throw new Error(
-			"Function input size exceeds multipart upload threshold, unsupported by this SDK version",
+	if (resp.multiparts?.items.length) {
+		const blobIds =
+			(resp.blobIds?.length ?? 0) > 0 ? resp.blobIds : [resp.blobId];
+		return await uploadWithFallback(resp.multiparts.items, blobIds, (item) =>
+			performMultipartUpload(data, item),
 		);
-	} else if (resp.uploadUrl) {
-		const uploadResp = await fetch(resp.uploadUrl, {
-			method: "PUT",
-			headers: {
-				"Content-Type": "application/octet-stream",
-				"Content-MD5": contentMd5,
-			},
-			body: data,
-		});
-		if (uploadResp.status < 200 || uploadResp.status >= 300) {
-			throw new Error(`Failed blob upload: ${uploadResp.statusText}`);
-		}
-		// クライアント側の ETag ヘッダー検証(MD5 チェックサム)は現在省略
-		return resp.blobId;
-	} else {
-		throw new Error("Missing upload URL in BlobCreate response");
 	}
+	if (resp.multipart) {
+		await performMultipartUpload(data, resp.multipart);
+		return resp.blobId;
+	}
+	const uploadUrls =
+		resp.uploadUrls?.items ?? (resp.uploadUrl ? [resp.uploadUrl] : []);
+	if (uploadUrls.length > 0) {
+		const blobIds =
+			(resp.blobIds?.length ?? 0) > 0 ? resp.blobIds : [resp.blobId];
+		return await uploadWithFallback(uploadUrls, blobIds, (url) =>
+			uploadSingleBlobPart(url, data, contentMd5),
+		);
+	}
+	throw new Error("Missing upload URL in BlobCreate response");
+}
+
+async function uploadWithFallback<T>(
+	items: T[],
+	blobIds: string[],
+	callback: (item: T) => Promise<void>,
+): Promise<string> {
+	let lastError: unknown;
+	for (let index = 0; index < items.length; index++) {
+		const item = items[index];
+		if (item === undefined) continue;
+		try {
+			await callback(item);
+			return blobIds[index] ?? blobIds[0] ?? "";
+		} catch (err) {
+			lastError = err;
+		}
+	}
+	throw lastError instanceof Error
+		? lastError
+		: new Error("Failed blob upload");
+}
+
+async function uploadSingleBlobPart(
+	url: string,
+	data: Uint8Array,
+	contentMd5: string,
+): Promise<void> {
+	const uploadResp = await fetch(url, {
+		method: "PUT",
+		headers: {
+			"Content-Type": "application/octet-stream",
+			"Content-MD5": contentMd5,
+		},
+		body: data,
+	});
+	if (uploadResp.status < 200 || uploadResp.status >= 300) {
+		throw new Error(`Failed blob upload: ${uploadResp.statusText}`);
+	}
+}
+
+async function performMultipartUpload(
+	data: Uint8Array,
+	multipart: {
+		partLength: number;
+		uploadUrls: string[];
+		completionUrl: string;
+	},
+): Promise<void> {
+	const partEtags = await Promise.all(
+		multipart.uploadUrls.map(async (url, index) => {
+			const start = index * multipart.partLength;
+			const part = data.subarray(
+				start,
+				Math.min(start + multipart.partLength, data.length),
+			);
+			return await uploadMultipartPart(url, part);
+		}),
+	);
+	const completionBody = [
+		"<CompleteMultipartUpload>",
+		...partEtags.map(
+			(etag, index) =>
+				`<Part>\n<PartNumber>${index + 1}</PartNumber>\n<ETag>"${etag}"</ETag>\n</Part>`,
+		),
+		"</CompleteMultipartUpload>",
+	].join("\n");
+	const expectedEtag = `${createHash("md5")
+		.update(Buffer.concat(partEtags.map((etag) => Buffer.from(etag, "hex"))))
+		.digest("hex")}-${partEtags.length}`;
+	const completionResp = await fetch(multipart.completionUrl, {
+		method: "POST",
+		body: completionBody,
+	});
+	if (!completionResp.ok) {
+		throw new Error(
+			`Failed completing multipart blob upload: ${completionResp.status}`,
+		);
+	}
+	const body = await completionResp.text();
+	if (!body.includes(expectedEtag)) {
+		throw new Error(`Multipart blob upload checksum mismatch: ${expectedEtag}`);
+	}
+}
+
+async function uploadMultipartPart(
+	url: string,
+	data: Uint8Array,
+): Promise<string> {
+	const uploadResp = await fetch(url, {
+		method: "PUT",
+		body: data,
+	});
+	if (!uploadResp.ok) {
+		throw new Error(`Failed multipart blob upload: ${uploadResp.statusText}`);
+	}
+	const etag = uploadResp.headers
+		.get("ETag")
+		?.trim()
+		.replace(/^W\//i, "")
+		.replace(/^"|"$/g, "");
+	if (!etag) throw new Error("Multipart blob upload response missing ETag");
+	const localMd5 = createHash("md5").update(data).digest("hex");
+	if (etag !== localMd5) {
+		throw new Error(`Multipart blob upload checksum mismatch: ${localMd5}`);
+	}
+	return etag;
 }

@@ -1,3 +1,6 @@
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { expect, onTestFinished, test } from "vitest";
 import { App } from "../../../src/services/deploy/app";
 import { Secret } from "../../../src/services/secret/secret";
@@ -205,7 +208,195 @@ test("DockerfileCommandsChaining", async () => {
 	expect(stdout).toBe("unset\nhello\nunset\n");
 });
 
-test("DockerfileCommandsCopyCommandValidation", () => {
+test("DockerfileCommands allows COPY when context files are supplied", async () => {
+	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
+	const dir = mkdtempSync(path.join(tmpdir(), "modal-image-"));
+	const file = path.join(dir, "file.txt");
+	writeFileSync(file, "hello");
+
+	mock.handleUnary("/ImageGetOrCreate", () => ({
+		imageId: "im-base",
+		result: { status: 1 },
+	}));
+	mock.handleUnary("/ImageGetOrCreate", (req) => {
+		expect(req).toMatchObject({
+			appId: "ap-test",
+			image: {
+				dockerfileCommands: ["FROM base", "COPY /file.txt /root/file.txt"],
+				contextFiles: [{ filename: "/file.txt" }],
+			},
+		});
+		const contextFile = (
+			req.image as { contextFiles: Array<{ data: Uint8Array }> }
+		).contextFiles[0];
+		expect(contextFile).toBeDefined();
+		if (!contextFile) throw new Error("Expected context file");
+		expect(new TextDecoder().decode(contextFile.data)).toBe("hello");
+		return { imageId: "im-copy", result: { status: 1 } };
+	});
+
+	try {
+		const image = await mc.images
+			.fromRegistry("alpine:3.21")
+			.dockerfileCommands(["COPY /file.txt /root/file.txt"], {
+				contextFiles: { "/file.txt": file },
+			})
+			.build(new App("ap-test", "libmodal-test"));
+
+		expect(image.imageId).toBe("im-copy");
+		mock.assertExhausted();
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
+test("Image local context helpers", async () => {
+	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
+	const dir = mkdtempSync(path.join(tmpdir(), "modal-image-dir-"));
+	writeFileSync(path.join(dir, "a.txt"), "a");
+	mkdirSync(path.join(dir, "nested"));
+	writeFileSync(path.join(dir, "nested", "b.txt"), "bb");
+
+	mock.handleUnary("/ImageGetOrCreate", () => ({
+		imageId: "im-base",
+		result: { status: 1 },
+	}));
+	mock.handleUnary("/ImageGetOrCreate", (req) => {
+		expect(req).toMatchObject({
+			image: {
+				dockerfileCommands: ["FROM base", "COPY /.modal_context/app/ /app/"],
+				contextFiles: [
+					{ filename: "/.modal_context/app/a.txt" },
+					{ filename: "/.modal_context/app/nested/b.txt" },
+				],
+			},
+		});
+		return { imageId: "im-dir", result: { status: 1 } };
+	});
+
+	try {
+		const image = await mc.images
+			.fromRegistry("alpine:3.21")
+			.addLocalDir(dir, "/app")
+			.build(new App("ap-test", "libmodal-test"));
+		expect(image.imageId).toBe("im-dir");
+		mock.assertExhausted();
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
+test("Image package manager helpers produce expected dockerfile", async () => {
+	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
+	const dir = mkdtempSync(path.join(tmpdir(), "modal-image-req-"));
+	const requirements = path.join(dir, "requirements.txt");
+	writeFileSync(requirements, "requests==2.0.0\n");
+
+	mock.handleUnary("/ImageGetOrCreate", () => ({
+		imageId: "im-base",
+		result: { status: 1 },
+	}));
+	mock.handleUnary("/ImageGetOrCreate", (req) => {
+		expect(req).toMatchObject({
+			image: {
+				dockerfileCommands: [
+					"FROM base",
+					"COPY /.requirements.txt /.requirements.txt",
+					"RUN python -m pip install -r /.requirements.txt",
+				],
+				contextFiles: [{ filename: "/.requirements.txt" }],
+			},
+		});
+		return { imageId: "im-req", result: { status: 1 } };
+	});
+
+	try {
+		const image = await mc.images
+			.fromRegistry("alpine:3.21")
+			.pipInstallFromRequirements(requirements)
+			.build(new App("ap-test", "libmodal-test"));
+		expect(image.imageId).toBe("im-req");
+		mock.assertExhausted();
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
+test("ImageService.fromDockerfile includes context directory", async () => {
+	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
+	const dir = mkdtempSync(path.join(tmpdir(), "modal-dockerfile-"));
+	writeFileSync(
+		path.join(dir, "Dockerfile"),
+		"FROM alpine:3.21\nCOPY app /app\n",
+	);
+	mkdirSync(path.join(dir, "app"));
+	writeFileSync(path.join(dir, "app", "main.txt"), "hello");
+
+	mock.handleUnary("/ImageGetOrCreate", (req) => {
+		expect(req).toMatchObject({
+			image: {
+				dockerfileCommands: ["FROM alpine:3.21", "COPY app /app"],
+			},
+		});
+		const filenames = (
+			req.image as { contextFiles: Array<{ filename: string }> }
+		).contextFiles
+			.map((file) => file.filename)
+			.sort();
+		expect(filenames).toEqual(["/Dockerfile", "/app/main.txt"]);
+		return { imageId: "im-dockerfile", result: { status: 1 } };
+	});
+
+	try {
+		const image = await mc.images
+			.fromDockerfile(path.join(dir, "Dockerfile"))
+			.build(new App("ap-test", "libmodal-test"));
+		expect(image.imageId).toBe("im-dockerfile");
+		mock.assertExhausted();
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
+test("Image.addLocalPythonSource adds package under root", async () => {
+	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
+	const dir = mkdtempSync(path.join(tmpdir(), "modal-python-source-"));
+	const cwd = process.cwd();
+	try {
+		process.chdir(dir);
+		mkdirSync(path.join(dir, "pkg"));
+		writeFileSync(path.join(dir, "pkg", "__init__.py"), "");
+
+		mock.handleUnary("/ImageGetOrCreate", () => ({
+			imageId: "im-base",
+			result: { status: 1 },
+		}));
+		mock.handleUnary("/ImageGetOrCreate", (req) => {
+			expect(req).toMatchObject({
+				image: {
+					dockerfileCommands: [
+						"FROM base",
+						"COPY /.modal_context/root/pkg/ /root/pkg/",
+					],
+					contextFiles: [{ filename: "/.modal_context/root/pkg/__init__.py" }],
+				},
+			});
+			return { imageId: "im-python-source", result: { status: 1 } };
+		});
+
+		const image = await mc.images
+			.fromRegistry("alpine:3.21")
+			.addLocalPythonSource(["pkg"])
+			.build(new App("ap-test", "libmodal-test"));
+		expect(image.imageId).toBe("im-python-source");
+		mock.assertExhausted();
+	} finally {
+		process.chdir(cwd);
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
+test("DockerfileCommands accepts COPY commands", () => {
 	expect(() => {
 		tc.images
 			.fromRegistry("alpine:3.21")
@@ -218,9 +409,7 @@ test("DockerfileCommandsCopyCommandValidation", () => {
 		tc.images
 			.fromRegistry("alpine:3.21")
 			.dockerfileCommands(["COPY ./file.txt /root/"]);
-	}).toThrow(
-		"COPY commands that copy from local context are not yet supported",
-	);
+	}).not.toThrow();
 
 	expect(() => {
 		tc.images
@@ -236,9 +425,7 @@ test("DockerfileCommandsCopyCommandValidation", () => {
 				"copy ./file.txt /root/",
 				"RUN echo hey",
 			]);
-	}).toThrow(
-		"COPY commands that copy from local context are not yet supported",
-	);
+	}).not.toThrow();
 });
 
 test("DockerfileCommandsWithOptions", async () => {

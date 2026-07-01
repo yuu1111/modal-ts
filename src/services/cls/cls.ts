@@ -1,4 +1,4 @@
-import type { ModalClient } from "@/core/client";
+import { getDefaultClient, type ModalClient } from "@/core/client";
 import { NotFoundError } from "@/core/errors";
 import { rethrowNotFound } from "@/core/grpc/errors";
 import {
@@ -99,6 +99,14 @@ export class ClsService {
 			rethrowNotFound(err, `Class '${appName}/${name}' not found`);
 		}
 	}
+
+	async from_name(
+		appName: string,
+		name: string,
+		params: ClsFromNameParams = {},
+	): Promise<Cls> {
+		return await this.fromName(appName, name, params);
+	}
 }
 
 /**
@@ -187,6 +195,22 @@ export class Cls {
 		if (options !== undefined) this.#serviceOptions = options;
 	}
 
+	static validate_construction_mechanism(): void {}
+
+	static from_local(): never {
+		throw new Error(
+			"Cls.from_local requires a local Python class; deploy or look up a class by name.",
+		);
+	}
+
+	static async from_name(
+		appName: string,
+		name: string,
+		params: ClsFromNameParams = {},
+	): Promise<Cls> {
+		return await getDefaultClient().cls.fromName(appName, name, params);
+	}
+
 	get #schema(): ClassParameterSpec[] {
 		return this.#serviceFunctionMetadata.classParameterInfo?.schema ?? [];
 	}
@@ -233,6 +257,10 @@ export class Cls {
 		);
 	}
 
+	with_options(options: ClsWithOptionsParams): Cls {
+		return this.withOptions(options);
+	}
+
 	/**
 	 * @description 同時実行設定を有効化または上書きした Cls を返す
 	 * @param params - 同時実行パラメータ
@@ -253,6 +281,10 @@ export class Cls {
 		);
 	}
 
+	with_concurrency(params: ClsWithConcurrencyParams): Cls {
+		return this.withConcurrency(params);
+	}
+
 	/**
 	 * @description ダイナミックバッチングを有効化または上書きした Cls を返す
 	 * @param params - バッチングパラメータ
@@ -269,6 +301,10 @@ export class Cls {
 			this.#serviceFunctionMetadata,
 			merged,
 		);
+	}
+
+	with_batching(params: ClsWithBatchingParams): Cls {
+		return this.withBatching(params);
 	}
 
 	/**
@@ -549,5 +585,13 @@ export class ClsInstance {
 			throw new NotFoundError(`Method '${name}' not found on class`);
 		}
 		return method;
+	}
+
+	async update_autoscaler(
+		params: Parameters<Function_["updateAutoscaler"]>[0],
+	): Promise<void> {
+		for (const fn of this.#methods.values()) {
+			await fn.updateAutoscaler(params);
+		}
 	}
 }

@@ -1,4 +1,4 @@
-import type { ModalClient } from "@/core/client";
+import { getDefaultClient, type ModalClient } from "@/core/client";
 import { InvalidError } from "@/core/errors";
 import {
 	type EnvironmentListItem,
@@ -111,6 +111,10 @@ export class EnvironmentService {
 		return await this.fromName(this.#client.environmentName());
 	}
 
+	async from_context(): Promise<Environment> {
+		return await this.fromContext();
+	}
+
 	/**
 	 * @description 名前で Environment を取得する
 	 */
@@ -130,6 +134,13 @@ export class EnvironmentService {
 			resp.environmentId,
 			environmentInfoFromMetadata(resp.metadata, name),
 		);
+	}
+
+	async from_name(
+		name: string,
+		params: EnvironmentFromNameParams = {},
+	): Promise<Environment> {
+		return await this.fromName(name, params);
 	}
 
 	/**
@@ -198,6 +209,21 @@ export class Environment {
 			this.#client,
 			this.environmentId,
 		);
+	}
+
+	static get objects(): EnvironmentService {
+		return getDefaultClient().environments;
+	}
+
+	static async from_context(): Promise<Environment> {
+		return await getDefaultClient().environments.fromContext();
+	}
+
+	static async from_name(
+		name: string,
+		params: EnvironmentFromNameParams = {},
+	): Promise<Environment> {
+		return await getDefaultClient().environments.fromName(name, params);
 	}
 
 	/**

@@ -1,6 +1,6 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
-import type { ModalClient } from "@/core/client";
+import { getDefaultClient, type ModalClient } from "@/core/client";
 import { InvalidError } from "@/core/errors";
 import { rethrowNotFound, suppressNotFound } from "@/core/grpc/errors";
 import {
@@ -135,6 +135,20 @@ export class NetworkFileSystemService {
 		}
 	}
 
+	async from_name(
+		name: string,
+		params: NetworkFileSystemFromNameParams = {},
+	): Promise<NetworkFileSystem> {
+		return await this.fromName(name, params);
+	}
+
+	async create_deployed(
+		name: string,
+		params: NetworkFileSystemCreateParams = {},
+	): Promise<void> {
+		await this.create(name, params);
+	}
+
 	/**
 	 * @description 名前付き NetworkFileSystem の一覧を取得する
 	 */
@@ -199,6 +213,13 @@ export class NetworkFileSystem {
 			this.#ephemeralHbManager = ephemeralHbManager;
 	}
 
+	static async from_name(
+		name: string,
+		params: NetworkFileSystemFromNameParams = {},
+	): Promise<NetworkFileSystem> {
+		return await getDefaultClient().networkFileSystems.fromName(name, params);
+	}
+
 	/**
 	 * @description 一時的な NetworkFileSystem の heartbeat を停止する
 	 */
@@ -229,12 +250,23 @@ export class NetworkFileSystem {
 		return data.length;
 	}
 
+	async write_file(remotePath: string, data: Uint8Array): Promise<number> {
+		return await this.writeFile(remotePath, data);
+	}
+
 	/**
 	 * @description local file を NetworkFileSystem に追加する
 	 */
 	async addLocalFile(localPath: string, remotePath?: string): Promise<number> {
 		const data = await readFile(localPath);
 		return await this.writeFile(remotePath ?? `/${basename(localPath)}`, data);
+	}
+
+	async add_local_file(
+		localPath: string,
+		remotePath?: string,
+	): Promise<number> {
+		return await this.addLocalFile(localPath, remotePath);
 	}
 
 	/**
@@ -253,6 +285,10 @@ export class NetworkFileSystem {
 			);
 		}
 		return totalBytes;
+	}
+
+	async add_local_dir(localPath: string, remotePath?: string): Promise<number> {
+		return await this.addLocalDir(localPath, remotePath);
 	}
 
 	/**
@@ -277,6 +313,10 @@ export class NetworkFileSystem {
 			return new Uint8Array(await httpResp.arrayBuffer());
 		}
 		return new Uint8Array();
+	}
+
+	async read_file(path: string): Promise<Uint8Array> {
+		return await this.readFile(path);
 	}
 
 	/**
@@ -318,6 +358,13 @@ export class NetworkFileSystem {
 			path,
 			recursive: params.recursive ?? false,
 		});
+	}
+
+	async remove_file(
+		path: string,
+		params: { recursive?: boolean } = {},
+	): Promise<void> {
+		await this.removeFile(path, params);
 	}
 }
 

@@ -227,6 +227,10 @@ export class SandboxService {
 		return new Sandbox(this.#client, sandboxId);
 	}
 
+	async from_id(sandboxId: string): Promise<Sandbox> {
+		return await this.fromId(sandboxId);
+	}
+
 	/**
 	 * @description デプロイ済みApp内の名前付きSandboxを取得する
 	 * @param appName - アプリ名
@@ -253,6 +257,14 @@ export class SandboxService {
 				`Sandbox with name '${name}' not found in App '${appName}'`,
 			);
 		}
+	}
+
+	async from_name(
+		appName: string,
+		name: string,
+		params?: SandboxFromNameParams,
+	): Promise<Sandbox> {
+		return await this.fromName(appName, name, params);
 	}
 
 	/**
@@ -489,6 +501,10 @@ export class Sandbox {
 		}
 	}
 
+	async set_tags(tags: Record<string, string>): Promise<void> {
+		await this.setTags(tags);
+	}
+
 	/**
 	 * @description Sandboxに設定されているタグを取得する
 	 * @returns タグのキーバリューマッピング
@@ -509,6 +525,10 @@ export class Sandbox {
 			tags[tag.tagName] = tag.tagValue;
 		}
 		return tags;
+	}
+
+	async get_tags(): Promise<Record<string, string>> {
+		return await this.getTags();
 	}
 
 	/**
@@ -670,9 +690,7 @@ export class Sandbox {
 				this.#isV2,
 			);
 			if (!client) {
-				throw new Error(
-					"Command router access is not available for this sandbox",
-				);
+				throw new Error("Command router access requires a running sandbox");
 			}
 			if (!this.#attached) {
 				client.close();
@@ -708,6 +726,12 @@ export class Sandbox {
 			}),
 		});
 		return { url: resp.url, token: resp.token };
+	}
+
+	async create_connect_token(
+		params: SandboxCreateConnectTokenParams = {},
+	): Promise<SandboxCreateConnectCredentials> {
+		return await this.createConnectToken(params);
 	}
 
 	/**
@@ -748,6 +772,10 @@ export class Sandbox {
 				throw err;
 			}
 		}
+	}
+
+	async wait_until_ready(timeoutMs = 300_000): Promise<void> {
+		await this.waitUntilReady(timeoutMs);
 	}
 
 	/**
@@ -810,6 +838,10 @@ export class Sandbox {
 				return returnCode;
 			}
 		}
+	}
+
+	get returncode(): Promise<number | null> {
+		return this.poll();
 	}
 
 	/**
@@ -902,6 +934,12 @@ export class Sandbox {
 		return new Image(this.#client, resp.imageId, "");
 	}
 
+	async snapshot_filesystem(
+		params: SandboxSnapshotFilesystemParams = {},
+	): Promise<Image> {
+		return await this.snapshotFilesystem(params);
+	}
+
 	/**
 	 * @description Sandbox ファイルシステムのパスに {@link Image} をマウントする
 	 * @param path - マウント先のパス
@@ -934,6 +972,14 @@ export class Sandbox {
 		await commandRouterClient.mountDirectory(request);
 	}
 
+	async mount_image(
+		image: Image,
+		path: string,
+		params: SandboxMountImageParams = {},
+	): Promise<void> {
+		await this.mountImage(path, image, params);
+	}
+
 	/**
 	 * @description Sandbox ファイルシステムのパスにマウントされた Image をアンマウントする
 	 * @param path - マウントされていたパス
@@ -950,6 +996,10 @@ export class Sandbox {
 			path: pathBytes,
 		});
 		await commandRouterClient.unmountDirectory(request);
+	}
+
+	async unmount_image(path: string): Promise<void> {
+		await this.unmountImage(path);
 	}
 
 	/**
@@ -982,6 +1032,13 @@ export class Sandbox {
 		}
 
 		return new Image(this.#client, response.imageId, "");
+	}
+
+	async snapshot_directory(
+		path: string,
+		params: SandboxSnapshotDirectoryParams = {},
+	): Promise<Image> {
+		return await this.snapshotDirectory(path, params);
 	}
 
 	/**
@@ -1026,6 +1083,40 @@ export class Sandbox {
 		await commandRouterClient.reloadVolumes(
 			TaskReloadVolumesRequest.create({ taskId }),
 		);
+	}
+
+	async reload_volumes(): Promise<void> {
+		await this.reloadVolumes();
+	}
+
+	async ls(path: string): Promise<unknown[]> {
+		return await this.filesystem.listFiles(path);
+	}
+
+	async mkdir(
+		path: string,
+		params: { parents?: boolean; createParents?: boolean } = {},
+	): Promise<void> {
+		const createParents = params.createParents ?? params.parents;
+		await this.filesystem.makeDirectory(
+			path,
+			createParents === undefined ? undefined : { createParents },
+		);
+	}
+
+	async rm(path: string, params: { recursive?: boolean } = {}): Promise<void> {
+		await this.filesystem.remove(path, params);
+	}
+
+	async *watch(
+		path: string,
+		params: { intervalMs?: number } = {},
+	): AsyncGenerator<unknown[], void, unknown> {
+		const intervalMs = params.intervalMs ?? 1000;
+		while (true) {
+			yield await this.filesystem.listFiles(path);
+			await setTimeout(intervalMs);
+		}
 	}
 
 	/**

@@ -1,4 +1,4 @@
-import type { ModalClient } from "@/core/client";
+import { getDefaultClient, type ModalClient } from "@/core/client";
 import {
 	MemberRole,
 	type WorkspaceBillingReportItem as WorkspaceBillingReportItemProto,
@@ -77,6 +77,10 @@ export class WorkspaceService {
 			resp.username || resp.workspaceName || "",
 		);
 	}
+
+	async from_context(): Promise<Workspace> {
+		return await this.fromContext();
+	}
 }
 
 /**
@@ -98,6 +102,14 @@ export class Workspace {
 		this.billing = new WorkspaceBillingManager(client);
 		this.members = new WorkspaceMembersManager(client);
 		this.proxyTokens = new WorkspaceProxyTokenManager(client);
+	}
+
+	static async from_context(): Promise<Workspace> {
+		return await getDefaultClient().workspaces.fromContext();
+	}
+
+	get proxy_tokens(): WorkspaceProxyTokenManager {
+		return this.proxyTokens;
 	}
 
 	/**

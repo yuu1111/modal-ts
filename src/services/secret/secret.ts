@@ -1,5 +1,5 @@
 import { readFile } from "node:fs/promises";
-import type { ModalClient } from "@/core/client";
+import { getDefaultClient, type ModalClient } from "@/core/client";
 import { InvalidError } from "@/core/errors";
 import {
 	rethrowInvalid,
@@ -126,6 +126,13 @@ export class SecretService {
 		}
 	}
 
+	async from_name(
+		name: string,
+		params?: SecretFromNameParams,
+	): Promise<Secret> {
+		return await this.fromName(name, params);
+	}
+
 	/**
 	 * @description キーと値のペアから {@link Secret} を作成する
 	 * @param entries - 文字列のキーと値のオブジェクト
@@ -162,6 +169,13 @@ export class SecretService {
 		}
 	}
 
+	async from_dict(
+		entries: Record<string, string>,
+		params?: SecretFromObjectParams,
+	): Promise<Secret> {
+		return await this.fromObject(entries, params);
+	}
+
 	/**
 	 * @description .env ファイルから一時的な {@link Secret} を作成する
 	 * @param path - .env ファイルのパス
@@ -173,6 +187,13 @@ export class SecretService {
 	): Promise<Secret> {
 		const contents = await readFile(path, "utf8");
 		return await this.fromObject(parseDotenv(contents), params);
+	}
+
+	async from_dotenv(
+		path?: string,
+		params?: SecretFromDotenvParams,
+	): Promise<Secret> {
+		return await this.fromDotenv(path, params);
 	}
 
 	/**
@@ -193,6 +214,13 @@ export class SecretService {
 			entries[key] = value;
 		}
 		return await this.fromObject(entries, params);
+	}
+
+	async from_local_environ(
+		keys?: string[],
+		params?: SecretFromLocalEnvironParams,
+	): Promise<Secret> {
+		return await this.fromLocalEnviron(keys, params);
 	}
 
 	/**
@@ -328,6 +356,38 @@ export class Secret {
 		this.secretId = secretId;
 		if (name !== undefined) this.name = name;
 		if (info !== undefined) this.#info = info;
+	}
+
+	static get objects(): SecretService {
+		return getDefaultClient().secrets;
+	}
+
+	static async from_name(
+		name: string,
+		params?: SecretFromNameParams,
+	): Promise<Secret> {
+		return await getDefaultClient().secrets.fromName(name, params);
+	}
+
+	static async from_dict(
+		entries: Record<string, string>,
+		params?: SecretFromObjectParams,
+	): Promise<Secret> {
+		return await getDefaultClient().secrets.fromObject(entries, params);
+	}
+
+	static async from_dotenv(
+		path?: string,
+		params?: SecretFromDotenvParams,
+	): Promise<Secret> {
+		return await getDefaultClient().secrets.fromDotenv(path, params);
+	}
+
+	static async from_local_environ(
+		keys?: string[],
+		params?: SecretFromLocalEnvironParams,
+	): Promise<Secret> {
+		return await getDefaultClient().secrets.fromLocalEnviron(keys, params);
 	}
 
 	/**

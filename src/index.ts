@@ -251,6 +251,7 @@ export {
 export { type ForwardParams, forward } from "./services/tunnel/forward";
 export {
 	Volume,
+	VolumeBatchUpload,
 	type VolumeCreateParams,
 	type VolumeDeleteParams,
 	type VolumeEphemeralParams,

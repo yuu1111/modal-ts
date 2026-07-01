@@ -1,3 +1,7 @@
+import { existsSync, readFileSync } from "node:fs";
+import { readdir, readFile, stat } from "node:fs/promises";
+import path from "node:path";
+import { parse as parseToml } from "smol-toml";
 import type { ModalClient } from "@/core/client";
 import { InvalidError } from "@/core/errors";
 import { rethrowNotFound } from "@/core/grpc/errors";
@@ -54,6 +58,74 @@ function jsonArrayCommand(values: string[]): string {
 	return `[${values.map((v) => JSON.stringify(v)).join(", ")}]`;
 }
 
+function asArray(value: string | string[]): string[] {
+	return Array.isArray(value) ? value : [value];
+}
+
+function normalizeContainerPath(value: string): string {
+	return value.replaceAll("\\", "/");
+}
+
+function basename(value: string): string {
+	return value.replaceAll("\\", "/").split("/").filter(Boolean).pop() ?? "file";
+}
+
+function posixJoin(...parts: string[]): string {
+	return `/${parts
+		.join("/")
+		.replaceAll("\\", "/")
+		.split("/")
+		.filter((part) => part.length > 0)
+		.join("/")}`;
+}
+
+function ensureAbsoluteRemotePath(remotePath: string, method: string): void {
+	if (!remotePath.startsWith("/")) {
+		throw new InvalidError(
+			`${method} currently only supports absolute remotePath values`,
+		);
+	}
+}
+
+async function* walkLocalFiles(
+	dir: string,
+): AsyncGenerator<string, void, unknown> {
+	for (const entry of await readdir(dir, { withFileTypes: true })) {
+		const entryPath = path.join(dir, entry.name);
+		if (entry.isDirectory()) {
+			yield* walkLocalFiles(entryPath);
+		} else if (entry.isFile()) {
+			yield entryPath;
+		}
+	}
+}
+
+async function buildContextFiles(
+	contextFiles: Record<string, string>,
+): Promise<Array<{ filename: string; data: Uint8Array }>> {
+	const files: Array<{ filename: string; data: Uint8Array }> = [];
+	for (const [containerPath, localPath] of Object.entries(contextFiles)) {
+		const localStat = await stat(localPath);
+		if (localStat.isDirectory()) {
+			for await (const filePath of walkLocalFiles(localPath)) {
+				const relativePath = path
+					.relative(localPath, filePath)
+					.replaceAll("\\", "/");
+				files.push({
+					filename: posixJoin(containerPath, relativePath),
+					data: await readFile(filePath),
+				});
+			}
+		} else {
+			files.push({
+				filename: normalizeContainerPath(containerPath),
+				data: await readFile(localPath),
+			});
+		}
+	}
+	return files;
+}
+
 /**
  * @description {@link Image} を管理するサービス
  *
@@ -86,6 +158,13 @@ export class ImageService {
 	}
 
 	/**
+	 * @description {@link ImageService#fromId} の Python 互換 alias
+	 */
+	async from_id(imageId: string): Promise<Image> {
+		return await this.fromId(imageId);
+	}
+
+	/**
 	 * @description publish 済みの名前付き Image を参照する
 	 * @param name - Image 名。`name:tag` 形式も指定可能。タグ未指定時は `latest`
 	 * @param params - オプションパラメータ
@@ -108,6 +187,16 @@ export class ImageService {
 	}
 
 	/**
+	 * @description {@link ImageService#fromName} の Python 互換 alias
+	 */
+	async from_name(
+		name: string,
+		params: ImageFromNameParams = {},
+	): Promise<Image> {
+		return await this.fromName(name, params);
+	}
+
+	/**
 	 * @description レジストリタグから {@link Image} を作成する。認証用に {@link Secret} を指定可能
 	 * @param tag - Image のレジストリタグ
 	 * @param secret - レジストリ認証用の Secret
@@ -119,6 +208,13 @@ export class ImageService {
 			secret,
 			RegistryAuthType.REGISTRY_AUTH_TYPE_STATIC_CREDS,
 		);
+	}
+
+	/**
+	 * @description {@link ImageService#fromRegistry} の Python 互換 alias
+	 */
+	from_registry(tag: string, secret?: Secret): Image {
+		return this.fromRegistry(tag, secret);
 	}
 
 	/**
@@ -136,6 +232,13 @@ export class ImageService {
 	}
 
 	/**
+	 * @description {@link ImageService#fromAwsEcr} の Python 互換 alias
+	 */
+	from_aws_ecr(tag: string, secret: Secret): Image {
+		return this.fromAwsEcr(tag, secret);
+	}
+
+	/**
 	 * @description GCP Artifact Registry のレジストリタグから {@link Image} を作成する
 	 * @param tag - Image のレジストリタグ
 	 * @param secret - GCP 認証用の Secret
@@ -150,6 +253,13 @@ export class ImageService {
 	}
 
 	/**
+	 * @description {@link ImageService#fromGcpArtifactRegistry} の Python 互換 alias
+	 */
+	from_gcp_artifact_registry(tag: string, secret: Secret): Image {
+		return this.fromGcpArtifactRegistry(tag, secret);
+	}
+
+	/**
 	 * @description 空の scratch image を作成する
 	 * @param params - オプションパラメータ
 	 */
@@ -157,6 +267,13 @@ export class ImageService {
 		const layer: Layer = { commands: [] };
 		if (params.forceBuild !== undefined) layer.forceBuild = params.forceBuild;
 		return new Image(this.#client, "", "scratch", undefined, [layer]);
+	}
+
+	/**
+	 * @description {@link ImageService#fromScratch} の Python 互換 alias
+	 */
+	from_scratch(params: { forceBuild?: boolean } = {}): Image {
+		return this.fromScratch(params);
 	}
 
 	/**
@@ -179,6 +296,83 @@ export class ImageService {
 				"RUN pip install --upgrade pip setuptools wheel",
 				"RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections",
 				'CMD ["sleep", "172800"]',
+			],
+			params.forceBuild === undefined
+				? undefined
+				: { forceBuild: params.forceBuild },
+		);
+	}
+
+	/**
+	 * @description {@link ImageService#debianSlim} の Python 互換 alias
+	 */
+	debian_slim(
+		params: { pythonVersion?: string; forceBuild?: boolean } = {},
+	): Image {
+		return this.debianSlim(params);
+	}
+
+	/**
+	 * @description local Dockerfile から Image を作成する
+	 */
+	fromDockerfile(
+		dockerfilePath: string,
+		params: ImageBuildStepParams & {
+			contextDir?: string;
+			addPython?: string;
+		} = {},
+	): Image {
+		const commands = readFileSync(dockerfilePath, "utf8")
+			.split(/\r?\n/)
+			.filter((line) => line.length > 0);
+		const contextDir = params.contextDir ?? path.dirname(dockerfilePath);
+		let image = new Image(this.#client, "", "scratch", undefined, [
+			{
+				commands,
+				contextFiles: { "/": contextDir },
+				...(params.forceBuild !== undefined && {
+					forceBuild: params.forceBuild,
+				}),
+				...(params.gpu !== undefined && {
+					gpuConfig: parseGpuConfig(params.gpu),
+				}),
+				...(params.env !== undefined && { env: params.env }),
+				...(params.secrets !== undefined && { secrets: params.secrets }),
+				...(params.buildArgs !== undefined && { buildArgs: params.buildArgs }),
+				includeBase: false,
+			},
+		]);
+		if (params.addPython) {
+			image = image.dockerfileCommands([
+				`RUN apt-get update && apt-get install -y python${params.addPython} python3-pip`,
+			]);
+		}
+		return image;
+	}
+
+	/**
+	 * @description {@link ImageService#fromDockerfile} の Python 互換 alias
+	 */
+	from_dockerfile(
+		dockerfilePath: string,
+		params: Parameters<ImageService["fromDockerfile"]>[1] = {},
+	): Image {
+		return this.fromDockerfile(dockerfilePath, params);
+	}
+
+	/**
+	 * @description Micromamba base image を作成する
+	 */
+	micromamba(
+		params: { pythonVersion?: string; forceBuild?: boolean } = {},
+	): Image {
+		const pythonVersion = params.pythonVersion ?? "3.12";
+		const image = new Image(this.#client, "", "mambaorg/micromamba:latest");
+		return image.dockerfileCommands(
+			[
+				'SHELL ["/usr/local/bin/_dockerfile_shell.sh"]',
+				"ENV MAMBA_DOCKERFILE_ACTIVATE=1",
+				`RUN micromamba install -n base -y python=${pythonVersion} pip -c conda-forge`,
 			],
 			params.forceBuild === undefined
 				? undefined
@@ -270,6 +464,16 @@ export type ImageDockerfileCommandsParams = {
 	 * @description キャッシュを無視してビルドする ('docker build --no-cache' に相当)
 	 */
 	forceBuild?: boolean;
+
+	/**
+	 * @description Docker build context に含める local file mapping
+	 */
+	contextFiles?: Record<string, string>;
+
+	/**
+	 * @description Dockerfile ARG に渡す build arguments
+	 */
+	buildArgs?: Record<string, string>;
 };
 
 /**
@@ -291,6 +495,9 @@ type Layer = {
 	secrets?: Secret[];
 	gpuConfig?: GPUConfig;
 	forceBuild?: boolean;
+	contextFiles?: Record<string, string>;
+	buildArgs?: Record<string, string>;
+	includeBase?: boolean;
 };
 
 /**
@@ -332,17 +539,6 @@ export class Image {
 		return this.#imageId;
 	}
 
-	private static validateDockerfileCommands(commands: string[]): void {
-		for (const command of commands) {
-			const trimmed = command.trim().toUpperCase();
-			if (trimmed.startsWith("COPY ") && !trimmed.startsWith("COPY --FROM=")) {
-				throw new InvalidError(
-					"COPY commands that copy from local context are not yet supported.",
-				);
-			}
-		}
-	}
-
 	/**
 	 * @description 任意の Dockerfile コマンドで Image を拡張する。各呼び出しは順次ビルドされる新しいレイヤーを作成する
 	 * @param commands - Dockerfile コマンドの文字列配列
@@ -357,8 +553,6 @@ export class Image {
 			return this;
 		}
 
-		Image.validateDockerfileCommands(commands);
-
 		const newLayer: Layer = {
 			commands: [...commands],
 			...(params?.env !== undefined && { env: params.env }),
@@ -368,6 +562,12 @@ export class Image {
 			}),
 			...(params?.forceBuild !== undefined && {
 				forceBuild: params.forceBuild,
+			}),
+			...(params?.contextFiles !== undefined && {
+				contextFiles: params.contextFiles,
+			}),
+			...(params?.buildArgs !== undefined && {
+				buildArgs: params.buildArgs,
 			}),
 		};
 
@@ -385,6 +585,16 @@ export class Image {
 	}
 
 	/**
+	 * @description {@link Image#dockerfileCommands} の Python 互換 alias
+	 */
+	dockerfile_commands(
+		commands: string[],
+		params?: ImageDockerfileCommandsParams,
+	): Image {
+		return this.dockerfileCommands(commands, params);
+	}
+
+	/**
 	 * @description Debian package を apt で install する
 	 * @param packages - package 名
 	 * @param params - build step オプション
@@ -398,6 +608,13 @@ export class Image {
 			],
 			params,
 		);
+	}
+
+	/**
+	 * @description {@link Image#aptInstall} の Python 互換 alias
+	 */
+	apt_install(packages: string[], params?: ImageBuildStepParams): Image {
+		return this.aptInstall(packages, params);
 	}
 
 	/**
@@ -436,6 +653,496 @@ export class Image {
 	}
 
 	/**
+	 * @description {@link Image#pipInstall} の Python 互換 alias
+	 */
+	pip_install(
+		packages: string[],
+		params: Parameters<Image["pipInstall"]>[1] = {},
+	): Image {
+		return this.pipInstall(packages, params);
+	}
+
+	/**
+	 * @description private git repository を pip install する
+	 */
+	pipInstallPrivateRepos(
+		repositories: string[],
+		params: ImageBuildStepParams & {
+			gitUser?: string;
+			tokenSecret?: Secret;
+		} = {},
+	): Image {
+		if (repositories.length === 0) return this;
+		const secrets = params.tokenSecret
+			? [...(params.secrets ?? []), params.tokenSecret]
+			: params.secrets;
+		const user = params.gitUser ?? "git";
+		const packages = repositories.map((repo) =>
+			repo.startsWith("git+") ? repo : `git+ssh://${user}@${repo}`,
+		);
+		const { gitUser: _gitUser, tokenSecret: _tokenSecret, ...rest } = params;
+		return this.pipInstall(packages, {
+			...rest,
+			...(secrets !== undefined && { secrets }),
+		});
+	}
+
+	/**
+	 * @description {@link Image#pipInstallPrivateRepos} の Python 互換 alias
+	 */
+	pip_install_private_repos(
+		repositories: string[],
+		params: Parameters<Image["pipInstallPrivateRepos"]>[1] = {},
+	): Image {
+		return this.pipInstallPrivateRepos(repositories, params);
+	}
+
+	/**
+	 * @description local file を Image layer に追加する
+	 */
+	addLocalFile(
+		localPath: string,
+		remotePath: string,
+		_params: { copy?: boolean } = {},
+	): Image {
+		ensureAbsoluteRemotePath(remotePath, "image.addLocalFile()");
+		const finalRemotePath = remotePath.endsWith("/")
+			? `${remotePath}${basename(localPath)}`
+			: remotePath;
+		const contextPath = posixJoin(
+			"/.modal_context",
+			finalRemotePath.replace(/^\/+/, ""),
+		);
+		return this.dockerfileCommands([`COPY ${contextPath} ${finalRemotePath}`], {
+			contextFiles: { [contextPath]: localPath },
+		});
+	}
+
+	/**
+	 * @description {@link Image#addLocalFile} の Python 互換 alias
+	 */
+	add_local_file(
+		localPath: string,
+		remotePath: string,
+		params: { copy?: boolean } = {},
+	): Image {
+		return this.addLocalFile(localPath, remotePath, params);
+	}
+
+	/**
+	 * @description local directory を Image layer に再帰的に追加する
+	 */
+	addLocalDir(
+		localPath: string,
+		remotePath: string,
+		_params: { copy?: boolean; ignore?: unknown } = {},
+	): Image {
+		ensureAbsoluteRemotePath(remotePath, "image.addLocalDir()");
+		const contextRoot = posixJoin(
+			"/.modal_context",
+			remotePath.replace(/^\/+/, ""),
+		);
+		return this.dockerfileCommands([`COPY ${contextRoot}/ ${remotePath}/`], {
+			contextFiles: { [contextRoot]: localPath },
+		});
+	}
+
+	/**
+	 * @description {@link Image#addLocalDir} の Python 互換 alias
+	 */
+	add_local_dir(
+		localPath: string,
+		remotePath: string,
+		params: { copy?: boolean; ignore?: unknown } = {},
+	): Image {
+		return this.addLocalDir(localPath, remotePath, params);
+	}
+
+	/**
+	 * @description local Python module/package を `/root` 配下に追加する
+	 */
+	addLocalPythonSource(
+		modules: string[],
+		params: { copy?: boolean; ignore?: unknown } = {},
+	): Image {
+		let image: Image = this;
+		for (const moduleName of modules) {
+			const modulePath = moduleName.replaceAll(".", path.sep);
+			const packagePath = path.resolve(modulePath);
+			const filePath = path.resolve(`${modulePath}.py`);
+			if (existsSync(packagePath)) {
+				image = image.addLocalDir(
+					packagePath,
+					posixJoin("/root", modulePath.replaceAll(path.sep, "/")),
+					params,
+				);
+			} else if (existsSync(filePath)) {
+				image = image.addLocalFile(
+					filePath,
+					posixJoin("/root", `${modulePath.replaceAll(path.sep, "/")}.py`),
+					params,
+				);
+			} else {
+				throw new InvalidError(
+					`Could not find local Python module or package '${moduleName}'`,
+				);
+			}
+		}
+		return image;
+	}
+
+	/**
+	 * @description {@link Image#addLocalPythonSource} の Python 互換 alias
+	 */
+	add_local_python_source(
+		modules: string[],
+		params: { copy?: boolean; ignore?: unknown } = {},
+	): Image {
+		return this.addLocalPythonSource(modules, params);
+	}
+
+	/**
+	 * @description requirements.txt から pip install する
+	 */
+	pipInstallFromRequirements(
+		requirementsTxt: string,
+		params: ImageBuildStepParams & {
+			findLinks?: string;
+			indexUrl?: string;
+			extraIndexUrl?: string;
+			pre?: boolean;
+			extraOptions?: string;
+		} = {},
+	): Image {
+		const extraArgs = [
+			params.findLinks && `-f ${shellQuote(params.findLinks)}`,
+			params.indexUrl && `--index-url ${shellQuote(params.indexUrl)}`,
+			params.extraIndexUrl &&
+				`--extra-index-url ${shellQuote(params.extraIndexUrl)}`,
+			params.pre && "--pre",
+			params.extraOptions,
+		]
+			.filter(Boolean)
+			.join(" ");
+		const suffix = extraArgs ? ` ${extraArgs}` : "";
+		return this.dockerfileCommands(
+			[
+				"COPY /.requirements.txt /.requirements.txt",
+				`RUN python -m pip install -r /.requirements.txt${suffix}`,
+			],
+			{
+				...params,
+				contextFiles: { "/.requirements.txt": requirementsTxt },
+			},
+		);
+	}
+
+	/**
+	 * @description {@link Image#pipInstallFromRequirements} の Python 互換 alias
+	 */
+	pip_install_from_requirements(
+		requirementsTxt: string,
+		params: ImageBuildStepParams & {
+			findLinks?: string;
+			indexUrl?: string;
+			extraIndexUrl?: string;
+			pre?: boolean;
+			extraOptions?: string;
+		} = {},
+	): Image {
+		return this.pipInstallFromRequirements(requirementsTxt, params);
+	}
+
+	/**
+	 * @description pyproject.toml の project dependencies を pip install する
+	 */
+	pipInstallFromPyproject(
+		pyprojectToml: string,
+		optionalDependencies: string[] = [],
+		params: ImageBuildStepParams & {
+			findLinks?: string;
+			indexUrl?: string;
+			extraIndexUrl?: string;
+			pre?: boolean;
+			extraOptions?: string;
+		} = {},
+	): Image {
+		const config = parseToml(readFileSync(pyprojectToml, "utf8")) as {
+			project?: {
+				dependencies?: string[];
+				"optional-dependencies"?: Record<string, string[]>;
+			};
+		};
+		const dependencies = [...(config.project?.dependencies ?? [])];
+		for (const group of optionalDependencies) {
+			dependencies.push(
+				...(config.project?.["optional-dependencies"]?.[group] ?? []),
+			);
+		}
+		if (dependencies.length === 0) {
+			throw new InvalidError(
+				"No [project.dependencies] section in pyproject.toml file.",
+			);
+		}
+		return this.pipInstall(dependencies.sort(), params);
+	}
+
+	/**
+	 * @description {@link Image#pipInstallFromPyproject} の Python 互換 alias
+	 */
+	pip_install_from_pyproject(
+		pyprojectToml: string,
+		optionalDependencies: string[] = [],
+		params: Parameters<Image["pipInstallFromPyproject"]>[2] = {},
+	): Image {
+		return this.pipInstallFromPyproject(
+			pyprojectToml,
+			optionalDependencies,
+			params,
+		);
+	}
+
+	/**
+	 * @description uv pip install を使って package を install する
+	 */
+	uvPipInstall(
+		packages: string[] = [],
+		params: ImageBuildStepParams & {
+			requirements?: string[];
+			findLinks?: string;
+			indexUrl?: string;
+			extraIndexUrl?: string;
+			pre?: boolean;
+			extraOptions?: string;
+			uvVersion?: string;
+		} = {},
+	): Image {
+		const uvRoot = "/.uv";
+		const commands = [
+			params.uvVersion
+				? `COPY --from=ghcr.io/astral-sh/uv:${params.uvVersion} /uv ${uvRoot}/uv`
+				: `COPY --from=ghcr.io/astral-sh/uv:latest /uv ${uvRoot}/uv`,
+		];
+		const contextFiles: Record<string, string> = {};
+		const args = ["--python $(command -v python)", "--compile-bytecode"];
+		if (params.findLinks)
+			args.push(`--find-links ${shellQuote(params.findLinks)}`);
+		if (params.indexUrl)
+			args.push(`--index-url ${shellQuote(params.indexUrl)}`);
+		if (params.extraIndexUrl) {
+			args.push(`--extra-index-url ${shellQuote(params.extraIndexUrl)}`);
+		}
+		if (params.pre) args.push("--prerelease allow");
+		if (params.extraOptions) args.push(params.extraOptions);
+		for (const [index, requirement] of (params.requirements ?? []).entries()) {
+			const contextPath = `/.${index}_${basename(requirement)}`;
+			const destPath = `${uvRoot}/${index}/${basename(requirement)}`;
+			contextFiles[contextPath] = requirement;
+			commands.push(`COPY ${contextPath} ${destPath}`);
+			args.push(`--requirements ${destPath}`);
+		}
+		args.push(...packages.map(shellQuote).sort());
+		if (packages.length === 0 && Object.keys(contextFiles).length === 0) {
+			return this;
+		}
+		commands.push(`RUN ${uvRoot}/uv pip install ${args.join(" ")}`);
+		return this.dockerfileCommands(commands, { ...params, contextFiles });
+	}
+
+	/**
+	 * @description {@link Image#uvPipInstall} の Python 互換 alias
+	 */
+	uv_pip_install(
+		packages: string[] = [],
+		params: Parameters<Image["uvPipInstall"]>[1] = {},
+	): Image {
+		return this.uvPipInstall(packages, params);
+	}
+
+	/**
+	 * @description Poetry pyproject から dependency を install する
+	 */
+	poetryInstallFromFile(
+		pyprojectToml: string,
+		params: ImageBuildStepParams & {
+			poetryLockfile?: string;
+			ignoreLockfile?: boolean;
+			with?: string[];
+			without?: string[];
+			only?: string[];
+			poetryVersion?: string | null;
+			oldInstaller?: boolean;
+		} = {},
+	): Image {
+		const contextFiles: Record<string, string> = {
+			"/.pyproject.toml": pyprojectToml,
+		};
+		const commands: string[] = [];
+		const poetryVersion = params.poetryVersion ?? "latest";
+		if (poetryVersion !== null) {
+			commands.push(
+				`RUN python -m pip install poetry${poetryVersion === "latest" ? "" : `==${poetryVersion}`}`,
+			);
+		}
+		if (params.oldInstaller) {
+			commands.push("RUN poetry config experimental.new-installer false");
+		}
+		if (!params.ignoreLockfile && params.poetryLockfile) {
+			contextFiles["/.poetry.lock"] = params.poetryLockfile;
+			commands.push("COPY /.poetry.lock /tmp/poetry/poetry.lock");
+		}
+		let installCommand = "poetry install --no-root";
+		if (params.with?.length)
+			installCommand += ` --with ${params.with.join(",")}`;
+		if (params.without?.length) {
+			installCommand += ` --without ${params.without.join(",")}`;
+		}
+		if (params.only?.length)
+			installCommand += ` --only ${params.only.join(",")}`;
+		installCommand += " --compile";
+		commands.push(
+			"COPY /.pyproject.toml /tmp/poetry/pyproject.toml",
+			"RUN cd /tmp/poetry && \\",
+			"  poetry config virtualenvs.create false && \\",
+			`  ${installCommand}`,
+		);
+		return this.dockerfileCommands(commands, { ...params, contextFiles });
+	}
+
+	/**
+	 * @description {@link Image#poetryInstallFromFile} の Python 互換 alias
+	 */
+	poetry_install_from_file(
+		pyprojectToml: string,
+		params: Parameters<Image["poetryInstallFromFile"]>[1] = {},
+	): Image {
+		return this.poetryInstallFromFile(pyprojectToml, params);
+	}
+
+	/**
+	 * @description uv sync で pyproject/uv.lock dependency を install する
+	 */
+	uvSync(
+		projectDir = ".",
+		params: ImageBuildStepParams & {
+			groups?: string[];
+			extras?: string[];
+			frozen?: boolean;
+			extraOptions?: string;
+			uvVersion?: string;
+		} = {},
+	): Image {
+		const uvRoot = "/.uv";
+		const contextFiles: Record<string, string> = {
+			"/.pyproject.toml": path.join(projectDir, "pyproject.toml"),
+		};
+		const lockPath = path.join(projectDir, "uv.lock");
+		const commands = [
+			params.uvVersion
+				? `COPY --from=ghcr.io/astral-sh/uv:${params.uvVersion} /uv ${uvRoot}/uv`
+				: `COPY --from=ghcr.io/astral-sh/uv:latest /uv ${uvRoot}/uv`,
+			"COPY /.pyproject.toml /tmp/uv/pyproject.toml",
+		];
+		if (existsSync(lockPath)) {
+			contextFiles["/.uv.lock"] = lockPath;
+			commands.push("COPY /.uv.lock /tmp/uv/uv.lock");
+		}
+		const args = ["sync", "--compile-bytecode", "--no-dev"];
+		if (params.frozen ?? true) args.push("--frozen");
+		for (const group of params.groups ?? [])
+			args.push("--group", shellQuote(group));
+		for (const extra of params.extras ?? [])
+			args.push("--extra", shellQuote(extra));
+		if (params.extraOptions) args.push(params.extraOptions);
+		commands.push(`RUN cd /tmp/uv && ${uvRoot}/uv ${args.join(" ")}`);
+		return this.dockerfileCommands(commands, { ...params, contextFiles });
+	}
+
+	/**
+	 * @description {@link Image#uvSync} の Python 互換 alias
+	 */
+	uv_sync(
+		projectDir = ".",
+		params: Parameters<Image["uvSync"]>[1] = {},
+	): Image {
+		return this.uvSync(projectDir, params);
+	}
+
+	/**
+	 * @description micromamba install で conda package を追加する
+	 */
+	micromambaInstall(
+		packages: string[] = [],
+		params: ImageBuildStepParams & {
+			specFile?: string;
+			channels?: string[];
+		} = {},
+	): Image {
+		if (packages.length === 0 && !params.specFile) return this;
+		const contextFiles: Record<string, string> = {};
+		const commands: string[] = [];
+		const packageArgs = packages.map(shellQuote).join(" ");
+		const channelArgs = (params.channels ?? [])
+			.map((channel) => `-c ${shellQuote(channel)}`)
+			.join(" ");
+		let fileArg = "";
+		if (params.specFile) {
+			const remoteSpecFile = `/${basename(params.specFile)}`;
+			contextFiles[remoteSpecFile] = params.specFile;
+			commands.push(`COPY ${remoteSpecFile} ${remoteSpecFile}`);
+			fileArg = ` -f ${remoteSpecFile} -n base`;
+		}
+		commands.push(
+			`RUN micromamba install ${packageArgs}${fileArg}${channelArgs ? ` ${channelArgs}` : ""} --yes`,
+		);
+		return this.dockerfileCommands(commands, { ...params, contextFiles });
+	}
+
+	/**
+	 * @description {@link Image#micromambaInstall} の Python 互換 alias
+	 */
+	micromamba_install(
+		packages: string[] = [],
+		params: Parameters<Image["micromambaInstall"]>[1] = {},
+	): Image {
+		return this.micromambaInstall(packages, params);
+	}
+
+	/**
+	 * @description Image を任意の callback で変換する
+	 */
+	pipe(fn: (image: Image) => Image): Image {
+		return fn(this);
+	}
+
+	/**
+	 * @description build step として command を実行する
+	 */
+	runFunction(
+		command: string | string[],
+		params?: ImageBuildStepParams,
+	): Image {
+		return this.runCommands(asArray(command), params);
+	}
+
+	/**
+	 * @description {@link Image#runFunction} の Python 互換 alias
+	 */
+	run_function(
+		command: string | string[],
+		params?: ImageBuildStepParams,
+	): Image {
+		return this.runFunction(command, params);
+	}
+
+	/**
+	 * @description Python の Image.imports() に近い構文互換 helper
+	 */
+	imports<T>(callback: () => T): T {
+		return callback();
+	}
+
+	/**
 	 * @description shell command を RUN layer として実行する
 	 * @param commands - 実行する command
 	 * @param params - build step オプション
@@ -446,6 +1153,13 @@ export class Image {
 			commands.map((cmd) => `RUN ${cmd}`),
 			params,
 		);
+	}
+
+	/**
+	 * @description {@link Image#runCommands} の Python 互換 alias
+	 */
+	run_commands(commands: string[], params?: ImageBuildStepParams): Image {
+		return this.runCommands(commands, params);
 	}
 
 	/**
@@ -533,11 +1247,15 @@ export class Image {
 
 			const secretIds = mergedSecrets.map((secret) => secret.secretId);
 			const gpuConfig = layer.gpuConfig;
+			const contextFiles = await buildContextFiles(layer.contextFiles ?? {});
 
 			let dockerfileCommands: string[];
 			let baseImages: Array<{ dockerTag: string; imageId: string }>;
 
-			if (i === 0 && baseImageId) {
+			if (i === 0 && layer.includeBase === false) {
+				dockerfileCommands = [...layer.commands];
+				baseImages = [];
+			} else if (i === 0 && baseImageId) {
 				dockerfileCommands = ["FROM base", ...layer.commands];
 				baseImages = [{ dockerTag: "base", imageId: baseImageId }];
 			} else if (i === 0) {
@@ -559,8 +1277,9 @@ export class Image {
 					imageRegistryConfig,
 					secretIds,
 					gpuConfig,
-					contextFiles: [],
+					contextFiles,
 					baseImages,
+					buildArgs: layer.buildArgs ?? {},
 				}),
 				builderVersion: this.#client.imageBuilderVersion(),
 				forceBuild: layer.forceBuild || false,
@@ -625,6 +1344,13 @@ export class Image {
 			throw new Error("No image ID produced after building layers");
 		this.#imageId = baseImageId;
 		this.#client.logger.debug("Image build completed", "image_id", baseImageId);
+		return this;
+	}
+
+	/**
+	 * @description 既に参照済みの Image handle を返す Python 互換 helper
+	 */
+	async hydrate(): Promise<Image> {
 		return this;
 	}
 

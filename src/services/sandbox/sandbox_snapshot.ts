@@ -32,6 +32,13 @@ export class SandboxSnapshot {
 		return new SandboxSnapshot(snapshotId, params.client);
 	}
 
+	static from_id(
+		snapshotId: string,
+		params: SandboxSnapshotFromIdParams = {},
+	): SandboxSnapshot {
+		return SandboxSnapshot.fromId(snapshotId, params);
+	}
+
 	/**
 	 * @description snapshot ID をサーバーへ問い合わせて検証する
 	 */

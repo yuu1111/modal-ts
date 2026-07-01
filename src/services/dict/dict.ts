@@ -1,4 +1,4 @@
-import type { ModalClient } from "@/core/client";
+import { getDefaultClient, type ModalClient } from "@/core/client";
 import { InvalidError, NotFoundError } from "@/core/errors";
 import { rethrowNotFound, suppressNotFound } from "@/core/grpc/errors";
 import {
@@ -127,6 +127,10 @@ export class DictService {
 		}
 	}
 
+	async from_id(dictId: string): Promise<Dict> {
+		return await this.fromId(dictId);
+	}
+
 	/**
 	 * @description 名前で Dict を参照する
 	 * @param name - Dict 名
@@ -151,6 +155,13 @@ export class DictService {
 		} catch (err) {
 			rethrowNotFound(err);
 		}
+	}
+
+	async from_name(
+		name: string,
+		params: DictFromNameParams = {},
+	): Promise<Dict> {
+		return await this.fromName(name, params);
 	}
 
 	/**
@@ -241,6 +252,21 @@ export class Dict {
 		if (ephemeralHbManager !== undefined)
 			this.#ephemeralHbManager = ephemeralHbManager;
 		if (info !== undefined) this.#info = info;
+	}
+
+	static get objects(): DictService {
+		return getDefaultClient().dicts;
+	}
+
+	static async from_name(
+		name: string,
+		params: DictFromNameParams = {},
+	): Promise<Dict> {
+		return await getDefaultClient().dicts.fromName(name, params);
+	}
+
+	static async from_id(dictId: string): Promise<Dict> {
+		return await getDefaultClient().dicts.fromId(dictId);
 	}
 
 	/**

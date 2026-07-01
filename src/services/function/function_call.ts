@@ -25,6 +25,13 @@ export class FunctionCallService {
 	async fromId(functionCallId: string): Promise<FunctionCall> {
 		return new FunctionCall(this.#client, functionCallId);
 	}
+
+	/**
+	 * @description {@link FunctionCallService#fromId} の Python 互換 alias
+	 */
+	async from_id(functionCallId: string): Promise<FunctionCall> {
+		return await this.fromId(functionCallId);
+	}
 }
 
 /**
@@ -62,6 +69,13 @@ export class FunctionCall {
 	}
 
 	/**
+	 * @description FunctionCall ID から handle を作る Python 互換 static helper
+	 */
+	static from_id(functionCallId: string): FunctionCall {
+		return new FunctionCall(getDefaultClient(), functionCallId);
+	}
+
+	/**
 	 * @description FunctionCallの結果を取得する(タイムアウト付き待機可)
 	 * @param params - オプションパラメータ
 	 * @returns Function実行結果
@@ -87,6 +101,30 @@ export class FunctionCall {
 		});
 		this.#numInputs = resp.numInputs;
 		return this.#numInputs;
+	}
+
+	/**
+	 * @description {@link FunctionCall#numInputs} の Python 互換 alias
+	 */
+	async num_inputs(): Promise<number> {
+		return await this.numInputs();
+	}
+
+	/**
+	 * @description Function call graph を返す
+	 */
+	async getCallGraph(): Promise<unknown> {
+		const cpClient = this.#client?.cpClient || getDefaultClient().cpClient;
+		return await cpClient.functionGetCallGraph({
+			functionCallId: this.functionCallId,
+		});
+	}
+
+	/**
+	 * @description {@link FunctionCall#getCallGraph} の Python 互換 alias
+	 */
+	async get_call_graph(): Promise<unknown> {
+		return await this.getCallGraph();
 	}
 
 	/**
