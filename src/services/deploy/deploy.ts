@@ -8,6 +8,8 @@ import {
 	ObjectCreationType,
 	type WebhookConfig,
 } from "@/generated/modal_proto/api";
+import { App } from "@/services/deploy/app";
+import type { Image } from "@/services/image/image";
 import type { Schedule } from "@/services/schedule/schedule";
 import type { SchedulerPlacement } from "@/services/scheduler_placement/scheduler_placement";
 
@@ -32,6 +34,7 @@ export interface DeployAppParams {
  * @property functionName - Function名
  * @property moduleName - Pythonモジュールパス
  * @property imageId - 使用するコンテナイメージID @optional
+ * @property image - 使用するコンテナイメージ @optional
  * @property mountIds - アタッチするMountのID配列 @optional
  * @property secretIds - アタッチするSecretのID配列 @optional
  * @property minContainers - 最小コンテナ数(warm pool) @optional @default 0
@@ -44,6 +47,7 @@ export interface DeployFunctionParams {
 	functionName: string;
 	moduleName: string;
 	imageId?: string;
+	image?: Image;
 	mountIds?: string[];
 	secretIds?: string[];
 	minContainers?: number;
@@ -59,6 +63,7 @@ export interface DeployFunctionParams {
  * @property moduleName - Pythonモジュールパス
  * @property methods - 公開するメソッド名の配列
  * @property imageId - 使用するコンテナイメージID @optional
+ * @property image - 使用するコンテナイメージ @optional
  * @property mountIds - アタッチするMountのID配列 @optional
  * @property secretIds - アタッチするSecretのID配列 @optional
  * @property minContainers - 最小コンテナ数(warm pool) @optional @default 0
@@ -70,6 +75,7 @@ export interface DeployClassParams {
 	moduleName: string;
 	methods: string[];
 	imageId?: string;
+	image?: Image;
 	mountIds?: string[];
 	secretIds?: string[];
 	minContainers?: number;
@@ -312,13 +318,27 @@ export async function deployApp(
 		throw new Error("Server returned empty appId from appGetOrCreate");
 	}
 	const appId = appResp.appId;
+	const app = new App(appId, params.name);
 
 	const functionIds: Record<string, string> = {};
 	const classIds: Record<string, string> = {};
 	const definitionIds: Record<string, string> = {};
 
 	for (const fn of params.functions ?? []) {
-		const result = await createFunctionInternal(cpClient, appId, fn);
+		const functionParams = { ...fn };
+		if (functionParams.image !== undefined) {
+			await functionParams.image.build(app);
+			functionParams.imageId = functionParams.image.imageId;
+			functionParams.mountIds = [
+				...(functionParams.mountIds ?? []),
+				...(await functionParams.image.mountIds(app)),
+			];
+		}
+		const result = await createFunctionInternal(
+			cpClient,
+			appId,
+			functionParams,
+		);
 		functionIds[fn.functionName] = result.functionId;
 		if (result.definitionId) {
 			definitionIds[result.functionId] = result.definitionId;
@@ -326,6 +346,15 @@ export async function deployApp(
 	}
 
 	for (const cls of params.classes ?? []) {
+		const classParams = { ...cls };
+		if (classParams.image !== undefined) {
+			await classParams.image.build(app);
+			classParams.imageId = classParams.image.imageId;
+			classParams.mountIds = [
+				...(classParams.mountIds ?? []),
+				...(await classParams.image.mountIds(app)),
+			];
+		}
 		const methodDefs: Record<
 			string,
 			{
@@ -335,9 +364,9 @@ export async function deployApp(
 				supportedOutputFormats: DataFormat[];
 			}
 		> = {};
-		for (const methodName of cls.methods) {
+		for (const methodName of classParams.methods) {
 			methodDefs[methodName] = {
-				functionName: `${cls.className}.${methodName}`,
+				functionName: `${classParams.className}.${methodName}`,
 				functionType: Function_FunctionType.FUNCTION_TYPE_FUNCTION,
 				supportedInputFormats: DEFAULT_DATA_FORMATS,
 				supportedOutputFormats: DEFAULT_DATA_FORMATS,
@@ -346,7 +375,7 @@ export async function deployApp(
 
 		const precreateResp = await cpClient.functionPrecreate({
 			appId,
-			functionName: cls.className,
+			functionName: classParams.className,
 			functionType: Function_FunctionType.FUNCTION_TYPE_FUNCTION,
 			supportedInputFormats: DEFAULT_DATA_FORMATS,
 			supportedOutputFormats: DEFAULT_DATA_FORMATS,
@@ -357,10 +386,10 @@ export async function deployApp(
 			appId,
 			existingFunctionId: precreateResp.functionId ?? "",
 			function: {
-				moduleName: cls.moduleName,
-				functionName: cls.className,
-				mountIds: cls.mountIds ?? [],
-				imageId: cls.imageId ?? "",
+				moduleName: classParams.moduleName,
+				functionName: classParams.className,
+				mountIds: classParams.mountIds ?? [],
+				imageId: classParams.imageId ?? "",
 				definitionType: Function_DefinitionType.DEFINITION_TYPE_FILE,
 				functionType: Function_FunctionType.FUNCTION_TYPE_FUNCTION,
 				secretIds: cls.secretIds ?? [],
@@ -378,12 +407,12 @@ export async function deployApp(
 
 		if (!createResp.functionId) {
 			throw new Error(
-				`Server returned empty functionId for class '${cls.className}'`,
+				`Server returned empty functionId for class '${classParams.className}'`,
 			);
 		}
 
 		const fnId = createResp.functionId;
-		functionIds[cls.className] = fnId;
+		functionIds[classParams.className] = fnId;
 		if (createResp.handleMetadata?.definitionId) {
 			definitionIds[fnId] = createResp.handleMetadata.definitionId;
 		}
@@ -395,10 +424,10 @@ export async function deployApp(
 
 		if (!classResp.classId) {
 			throw new Error(
-				`Server returned empty classId for class '${cls.className}'`,
+				`Server returned empty classId for class '${classParams.className}'`,
 			);
 		}
-		classIds[cls.className] = classResp.classId;
+		classIds[classParams.className] = classResp.classId;
 	}
 
 	await cpClient.appPublish({

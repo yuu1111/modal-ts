@@ -145,8 +145,14 @@ export class NetworkFileSystemService {
 	async create_deployed(
 		name: string,
 		params: NetworkFileSystemCreateParams = {},
-	): Promise<void> {
+	): Promise<NetworkFileSystem> {
 		await this.create(name, params);
+		return await this.fromName(name, {
+			...(params.environment !== undefined && {
+				environment: params.environment,
+			}),
+			createIfMissing: false,
+		});
 	}
 
 	/**

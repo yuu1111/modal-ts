@@ -88,6 +88,7 @@ export type SandboxCreateParams = {
 	command?: string[];
 	env?: Record<string, string>;
 	secrets?: Secret[];
+	mountIds?: string[];
 	volumes?: Record<string, Volume>;
 	networkFileSystems?: Record<string, NetworkFileSystem>;
 	cloudBucketMounts?: Record<string, CloudBucketMount>;
@@ -436,6 +437,7 @@ export async function buildSandboxCreateRequestProto(
 		appId,
 		definition: {
 			entrypointArgs: params.command ?? [],
+			mountIds: params.mountIds ?? [],
 			imageId,
 			timeoutSecs:
 				params.timeoutMs !== undefined ? params.timeoutMs / 1000 : 300,

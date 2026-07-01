@@ -287,6 +287,11 @@ export type QueueClearParams = {
  */
 export type QueueGetParams = {
 	/**
+	 * @description false の場合、空なら即座に null を返す
+	 */
+	block?: boolean;
+
+	/**
 	 * @description Queue が空の場合の待機時間(ミリ秒)。デフォルトは無期限
 	 */
 	timeoutMs?: number;
@@ -309,6 +314,11 @@ export type QueueGetManyParams = QueueGetParams;
  * @property partitionTtlMs - パーティションの TTL(ミリ秒) @defaultValue 86400000
  */
 export type QueuePutParams = {
+	/**
+	 * @description false の場合、満杯なら即座に QueueFullError を投げる
+	 */
+	block?: boolean;
+
 	/**
 	 * @description Queue が満杯の場合の待機時間(ミリ秒)。デフォルトは無期限
 	 */
@@ -502,6 +512,16 @@ export class Queue {
 		}
 	}
 
+	async #getNonblocking(n: number, partition?: string): Promise<unknown[]> {
+		const response = await this.#client.cpClient.queueGet({
+			queueId: this.queueId,
+			partitionKey: Queue.#validatePartitionKey(partition),
+			timeout: 0,
+			nValues: n,
+		});
+		return (response.values ?? []).map((value) => pickleDecode(value));
+	}
+
 	/**
 	 * @description Queue から次のオブジェクトを取り出して返す。デフォルトではアイテムが存在するまで待機する
 	 * @param params - オプションパラメータ
@@ -511,8 +531,11 @@ export class Queue {
 	async get(params: QueueGetParams = {}): Promise<unknown | null> {
 		checkForRenamedParams(params, { timeout: "timeoutMs" });
 
-		const values = await this.#get(1, params.partition, params.timeoutMs);
-		return values[0];
+		const values =
+			params.block === false
+				? await this.#getNonblocking(1, params.partition)
+				: await this.#get(1, params.partition, params.timeoutMs);
+		return values.length > 0 ? values[0] : null;
 	}
 
 	/**
@@ -528,7 +551,9 @@ export class Queue {
 	): Promise<unknown[]> {
 		checkForRenamedParams(params, { timeout: "timeoutMs" });
 
-		return await this.#get(n, params.partition, params.timeoutMs);
+		return params.block === false
+			? await this.#getNonblocking(n, params.partition)
+			: await this.#get(n, params.partition, params.timeoutMs);
 	}
 
 	async get_many(
@@ -543,6 +568,7 @@ export class Queue {
 		timeoutMs?: number,
 		partition?: string,
 		partitionTtlMs?: number,
+		block = true,
 	): Promise<void> {
 		const valuesEncoded = values.map((v) => pickleEncode(v));
 		const partitionKey = Queue.#validatePartitionKey(partition);
@@ -561,6 +587,8 @@ export class Queue {
 				break;
 			} catch (e) {
 				if (e instanceof ClientError && e.code === Status.RESOURCE_EXHAUSTED) {
+					if (!block)
+						throw new QueueFullError(`Put failed on ${this.queueId}.`);
 					// Queue が満杯。デッドラインまで指数バックオフでリトライ
 					delay = Math.min(delay * 2, 30_000);
 					if (deadline !== undefined) {
@@ -594,6 +622,7 @@ export class Queue {
 			params.timeoutMs,
 			params.partition,
 			params.partitionTtlMs,
+			params.block ?? true,
 		);
 	}
 
@@ -617,6 +646,7 @@ export class Queue {
 			params.timeoutMs,
 			params.partition,
 			params.partitionTtlMs,
+			params.block ?? true,
 		);
 	}
 

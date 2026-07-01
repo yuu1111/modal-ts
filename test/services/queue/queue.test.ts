@@ -81,6 +81,37 @@ test("QueueNonBlocking", async () => {
 	expect(await queue.get({ timeoutMs: 0 })).toBe(123);
 });
 
+test("Queue block=false get returns immediately", async () => {
+	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
+
+	mock.handleUnary("/QueueGetById", () => ({
+		queueId: "qu-test",
+		metadata: { name: "test-queue" },
+	}));
+	const queue = await mc.queues.fromId("qu-test");
+
+	mock.handleUnary("/QueueGet", (req) => {
+		expect(req).toMatchObject({
+			queueId: "qu-test",
+			timeout: 0,
+			nValues: 1,
+		});
+		return { values: [] };
+	});
+	mock.handleUnary("/QueueGet", (req) => {
+		expect(req).toMatchObject({
+			queueId: "qu-test",
+			timeout: 0,
+			nValues: 3,
+		});
+		return { values: [] };
+	});
+
+	expect(await queue.get({ block: false })).toBeNull();
+	expect(await queue.get_many(3, { block: false })).toEqual([]);
+	mock.assertExhausted();
+});
+
 test("QueueNonEphemeral", async () => {
 	const queueName = `test-queue-${Date.now()}`;
 

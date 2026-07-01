@@ -126,6 +126,10 @@ export class SandboxService {
 		const mergedParams = {
 			...restParams,
 			secrets: mergedSecrets,
+			mountIds: [
+				...(restParams.mountIds ?? []),
+				...(await image.mountIds(app)),
+			],
 		};
 
 		const createReq = await buildSandboxCreateRequestProto(
@@ -168,6 +172,10 @@ export class SandboxService {
 		const mergedParams = {
 			...restParams,
 			secrets: mergedSecrets,
+			mountIds: [
+				...(restParams.mountIds ?? []),
+				...(await image.mountIds(app)),
+			],
 		};
 
 		const createReq = await buildSandboxCreateV2RequestProto(

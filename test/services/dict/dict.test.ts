@@ -1,5 +1,4 @@
 import { expect, test } from "vitest";
-import { NotFoundError } from "../../../src/core/errors";
 import { createMockModalClients } from "../../support/grpc_mock";
 
 test("DictService.fromName and Dict put/get", async () => {
@@ -34,7 +33,7 @@ test("DictService.fromName and Dict put/get", async () => {
 	mock.assertExhausted();
 });
 
-test("Dict.get returns default or throws", async () => {
+test("Dict.get returns default or undefined for missing keys", async () => {
 	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
 
 	mock.handleUnary("/DictGetById", () => ({
@@ -47,6 +46,6 @@ test("Dict.get returns default or throws", async () => {
 	mock.handleUnary("/DictGet", () => ({ found: false }));
 
 	expect(await dict.get("missing", "fallback")).toBe("fallback");
-	await expect(dict.get("missing")).rejects.toThrow(NotFoundError);
+	expect(await dict.get("missing")).toBeUndefined();
 	mock.assertExhausted();
 });

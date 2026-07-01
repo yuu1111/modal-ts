@@ -14,7 +14,9 @@ import {
 	RegistryAuthType,
 } from "@/generated/modal_proto/api";
 import { type App, parseGpuConfig } from "@/services/deploy/app";
+import { createMount, type MountFileEntry } from "@/services/deploy/deploy";
 import { mergeEnvIntoSecrets, Secret } from "@/services/secret/secret";
+import { FilePatternMatcher } from "@/utils/file_pattern_matcher";
 
 const DEFAULT_IMAGE_TAG = "latest";
 
@@ -87,27 +89,59 @@ function ensureAbsoluteRemotePath(remotePath: string, method: string): void {
 	}
 }
 
+export type ImageIgnoreMatcher =
+	| string[]
+	| FilePatternMatcher
+	| ((filePath: string) => boolean);
+
+function shouldIgnore(
+	ignore: ImageIgnoreMatcher | undefined,
+	rootPath: string,
+	filePath: string,
+): boolean {
+	if (ignore === undefined) return false;
+	const relativePath = path.relative(rootPath, filePath).replaceAll("\\", "/");
+	if (Array.isArray(ignore)) {
+		return new FilePatternMatcher(...ignore).matches(relativePath);
+	}
+	if (ignore instanceof FilePatternMatcher) {
+		return ignore.matches(relativePath);
+	}
+	return ignore(filePath);
+}
+
 async function* walkLocalFiles(
 	dir: string,
+	ignore?: ImageIgnoreMatcher,
+	rootPath = dir,
 ): AsyncGenerator<string, void, unknown> {
 	for (const entry of await readdir(dir, { withFileTypes: true })) {
 		const entryPath = path.join(dir, entry.name);
+		if (shouldIgnore(ignore, rootPath, entryPath)) {
+			continue;
+		}
 		if (entry.isDirectory()) {
-			yield* walkLocalFiles(entryPath);
+			yield* walkLocalFiles(entryPath, ignore, rootPath);
 		} else if (entry.isFile()) {
 			yield entryPath;
 		}
 	}
 }
 
+type LocalPathSpec =
+	| string
+	| { localPath: string; ignore?: ImageIgnoreMatcher };
+
 async function buildContextFiles(
-	contextFiles: Record<string, string>,
+	contextFiles: Record<string, LocalPathSpec>,
 ): Promise<Array<{ filename: string; data: Uint8Array }>> {
 	const files: Array<{ filename: string; data: Uint8Array }> = [];
-	for (const [containerPath, localPath] of Object.entries(contextFiles)) {
+	for (const [containerPath, spec] of Object.entries(contextFiles)) {
+		const localPath = typeof spec === "string" ? spec : spec.localPath;
+		const ignore = typeof spec === "string" ? undefined : spec.ignore;
 		const localStat = await stat(localPath);
 		if (localStat.isDirectory()) {
-			for await (const filePath of walkLocalFiles(localPath)) {
+			for await (const filePath of walkLocalFiles(localPath, ignore)) {
 				const relativePath = path
 					.relative(localPath, filePath)
 					.replaceAll("\\", "/");
@@ -124,6 +158,42 @@ async function buildContextFiles(
 		}
 	}
 	return files;
+}
+
+type LocalMountLayer = {
+	remotePath: string;
+	localPath: string;
+	ignore?: ImageIgnoreMatcher;
+	isDirectory: boolean;
+};
+
+async function localMountLayerFiles(
+	layer: LocalMountLayer,
+): Promise<MountFileEntry[]> {
+	const localStat = await stat(layer.localPath);
+	if (layer.isDirectory || localStat.isDirectory()) {
+		const files: MountFileEntry[] = [];
+		for await (const filePath of walkLocalFiles(
+			layer.localPath,
+			layer.ignore,
+		)) {
+			const relativePath = path.relative(layer.localPath, filePath);
+			files.push({
+				remotePath: posixJoin(
+					layer.remotePath,
+					relativePath.replaceAll("\\", "/"),
+				),
+				content: await readFile(filePath),
+			});
+		}
+		return files;
+	}
+	return [
+		{
+			remotePath: layer.remotePath,
+			content: await readFile(layer.localPath),
+		},
+	];
 }
 
 /**
@@ -468,7 +538,7 @@ export type ImageDockerfileCommandsParams = {
 	/**
 	 * @description Docker build context に含める local file mapping
 	 */
-	contextFiles?: Record<string, string>;
+	contextFiles?: Record<string, LocalPathSpec>;
 
 	/**
 	 * @description Dockerfile ARG に渡す build arguments
@@ -495,7 +565,7 @@ type Layer = {
 	secrets?: Secret[];
 	gpuConfig?: GPUConfig;
 	forceBuild?: boolean;
-	contextFiles?: Record<string, string>;
+	contextFiles?: Record<string, LocalPathSpec>;
 	buildArgs?: Record<string, string>;
 	includeBase?: boolean;
 };
@@ -510,6 +580,7 @@ export class Image {
 	#baseImageId: string;
 	#imageRegistryConfig?: ImageRegistryConfig;
 	#layers: Layer[];
+	#localMountLayers: LocalMountLayer[];
 
 	/**
 	 * @internal
@@ -521,6 +592,7 @@ export class Image {
 		imageRegistryConfig?: ImageRegistryConfig,
 		layers?: Layer[],
 		baseImageId?: string,
+		localMountLayers?: LocalMountLayer[],
 	) {
 		this.#client = client;
 		this.#imageId = imageId;
@@ -534,9 +606,22 @@ export class Image {
 				forceBuild: false,
 			},
 		];
+		this.#localMountLayers = localMountLayers ?? [];
 	}
 	get imageId(): string {
 		return this.#imageId;
+	}
+
+	/**
+	 * @internal
+	 */
+	async mountIds(app: App): Promise<string[]> {
+		const ids: string[] = [];
+		for (const layer of this.#localMountLayers) {
+			const files = await localMountLayerFiles(layer);
+			ids.push(await createMount(this.#client.cpClient, app.appId, files));
+		}
+		return ids;
 	}
 
 	/**
@@ -551,6 +636,11 @@ export class Image {
 	): Image {
 		if (commands.length === 0) {
 			return this;
+		}
+		if (this.#localMountLayers.length > 0) {
+			throw new InvalidError(
+				"Cannot add build steps after image.addLocalFile/addLocalDir with copy=false. Pass { copy: true } when adding local files if later build steps need to see them.",
+			);
 		}
 
 		const newLayer: Layer = {
@@ -581,6 +671,7 @@ export class Image {
 			this.#imageRegistryConfig,
 			[...layers, newLayer],
 			baseImageId,
+			this.#localMountLayers,
 		);
 	}
 
@@ -669,21 +760,88 @@ export class Image {
 		repositories: string[],
 		params: ImageBuildStepParams & {
 			gitUser?: string;
+			git_user?: string;
 			tokenSecret?: Secret;
+			findLinks?: string;
+			indexUrl?: string;
+			extraIndexUrl?: string;
+			pre?: boolean;
+			extraOptions?: string;
 		} = {},
 	): Image {
 		if (repositories.length === 0) return this;
 		const secrets = params.tokenSecret
 			? [...(params.secrets ?? []), params.tokenSecret]
 			: params.secrets;
-		const user = params.gitUser ?? "git";
-		const packages = repositories.map((repo) =>
-			repo.startsWith("git+") ? repo : `git+ssh://${user}@${repo}`,
-		);
-		const { gitUser: _gitUser, tokenSecret: _tokenSecret, ...rest } = params;
-		return this.pipInstall(packages, {
+		if (!secrets || secrets.length === 0) {
+			throw new InvalidError(
+				"No secrets provided to function. Installing private packages requires tokens to be passed via modal.Secret objects.",
+			);
+		}
+
+		const user = params.gitUser ?? params.git_user;
+		if (!user) {
+			throw new InvalidError("pipInstallPrivateRepos requires gitUser.");
+		}
+
+		const invalidRepos: string[] = [];
+		const installUrls: string[] = [];
+		for (const repo of repositories) {
+			const host = repo.split("/", 1)[0];
+			if (host === "github.com") {
+				installUrls.push(`git+https://${user}:$GITHUB_TOKEN@${repo}`);
+			} else if (host === "gitlab.com") {
+				installUrls.push(`git+https://${user}:$GITLAB_TOKEN@${repo}`);
+			} else {
+				invalidRepos.push(repo);
+			}
+		}
+		if (invalidRepos.length > 0) {
+			throw new InvalidError(
+				`${invalidRepos.length} out of ${repositories.length} given repository refs are invalid. Invalid refs: ${invalidRepos.join(", ")}.`,
+			);
+		}
+
+		const extraArgs = [
+			params.findLinks && `--find-links ${shellQuote(params.findLinks)}`,
+			params.indexUrl && `--index-url ${shellQuote(params.indexUrl)}`,
+			params.extraIndexUrl &&
+				`--extra-index-url ${shellQuote(params.extraIndexUrl)}`,
+			params.pre && "--pre",
+			params.extraOptions,
+		]
+			.filter(Boolean)
+			.join(" ");
+		const suffix = extraArgs ? ` ${extraArgs}` : "";
+		const commands: string[] = [];
+		if (repositories.some((repo) => repo.startsWith("github.com"))) {
+			commands.push(
+				"RUN bash -c \"[[ -v GITHUB_TOKEN ]] || (echo 'GITHUB_TOKEN env var not set by provided modal.Secret(s)' && exit 1)\"",
+			);
+		}
+		if (repositories.some((repo) => repo.startsWith("gitlab.com"))) {
+			commands.push(
+				"RUN bash -c \"[[ -v GITLAB_TOKEN ]] || (echo 'GITLAB_TOKEN env var not set by provided modal.Secret(s)' && exit 1)\"",
+			);
+		}
+		commands.push("RUN apt-get update && apt-get install -y git");
+		for (const url of installUrls) {
+			commands.push(`RUN python3 -m pip install "${url}"${suffix}`);
+		}
+		const {
+			gitUser: _gitUser,
+			git_user: _git_user,
+			tokenSecret: _tokenSecret,
+			findLinks: _findLinks,
+			indexUrl: _indexUrl,
+			extraIndexUrl: _extraIndexUrl,
+			pre: _pre,
+			extraOptions: _extraOptions,
+			...rest
+		} = params;
+		return this.dockerfileCommands(commands, {
 			...rest,
-			...(secrets !== undefined && { secrets }),
+			secrets,
 		});
 	}
 
@@ -703,19 +861,40 @@ export class Image {
 	addLocalFile(
 		localPath: string,
 		remotePath: string,
-		_params: { copy?: boolean } = {},
+		params: { copy?: boolean } = {},
 	): Image {
 		ensureAbsoluteRemotePath(remotePath, "image.addLocalFile()");
 		const finalRemotePath = remotePath.endsWith("/")
 			? `${remotePath}${basename(localPath)}`
 			: remotePath;
-		const contextPath = posixJoin(
-			"/.modal_context",
-			finalRemotePath.replace(/^\/+/, ""),
+		if (params.copy === true) {
+			const contextPath = posixJoin(
+				"/.modal_context",
+				finalRemotePath.replace(/^\/+/, ""),
+			);
+			return this.dockerfileCommands(
+				[`COPY ${contextPath} ${finalRemotePath}`],
+				{
+					contextFiles: { [contextPath]: localPath },
+				},
+			);
+		}
+		return new Image(
+			this.#client,
+			this.#imageId,
+			this.#tag,
+			this.#imageRegistryConfig,
+			this.#layers,
+			this.#baseImageId,
+			[
+				...this.#localMountLayers,
+				{
+					localPath,
+					remotePath: finalRemotePath,
+					isDirectory: false,
+				},
+			],
 		);
-		return this.dockerfileCommands([`COPY ${contextPath} ${finalRemotePath}`], {
-			contextFiles: { [contextPath]: localPath },
-		});
 	}
 
 	/**
@@ -735,16 +914,37 @@ export class Image {
 	addLocalDir(
 		localPath: string,
 		remotePath: string,
-		_params: { copy?: boolean; ignore?: unknown } = {},
+		params: { copy?: boolean; ignore?: ImageIgnoreMatcher } = {},
 	): Image {
 		ensureAbsoluteRemotePath(remotePath, "image.addLocalDir()");
-		const contextRoot = posixJoin(
-			"/.modal_context",
-			remotePath.replace(/^\/+/, ""),
+		if (params.copy === true) {
+			const contextRoot = posixJoin(
+				"/.modal_context",
+				remotePath.replace(/^\/+/, ""),
+			);
+			const contextSpec: { localPath: string; ignore?: ImageIgnoreMatcher } = {
+				localPath,
+			};
+			if (params.ignore !== undefined) contextSpec.ignore = params.ignore;
+			return this.dockerfileCommands([`COPY ${contextRoot}/ ${remotePath}/`], {
+				contextFiles: { [contextRoot]: contextSpec },
+			});
+		}
+		const mountLayer: LocalMountLayer = {
+			localPath,
+			remotePath,
+			isDirectory: true,
+		};
+		if (params.ignore !== undefined) mountLayer.ignore = params.ignore;
+		return new Image(
+			this.#client,
+			this.#imageId,
+			this.#tag,
+			this.#imageRegistryConfig,
+			this.#layers,
+			this.#baseImageId,
+			[...this.#localMountLayers, mountLayer],
 		);
-		return this.dockerfileCommands([`COPY ${contextRoot}/ ${remotePath}/`], {
-			contextFiles: { [contextRoot]: localPath },
-		});
 	}
 
 	/**
@@ -753,7 +953,7 @@ export class Image {
 	add_local_dir(
 		localPath: string,
 		remotePath: string,
-		params: { copy?: boolean; ignore?: unknown } = {},
+		params: { copy?: boolean; ignore?: ImageIgnoreMatcher } = {},
 	): Image {
 		return this.addLocalDir(localPath, remotePath, params);
 	}
@@ -763,7 +963,7 @@ export class Image {
 	 */
 	addLocalPythonSource(
 		modules: string[],
-		params: { copy?: boolean; ignore?: unknown } = {},
+		params: { copy?: boolean; ignore?: ImageIgnoreMatcher } = {},
 	): Image {
 		let image: Image = this;
 		for (const moduleName of modules) {
@@ -796,7 +996,7 @@ export class Image {
 	 */
 	add_local_python_source(
 		modules: string[],
-		params: { copy?: boolean; ignore?: unknown } = {},
+		params: { copy?: boolean; ignore?: ImageIgnoreMatcher } = {},
 	): Image {
 		return this.addLocalPythonSource(modules, params);
 	}
@@ -1351,6 +1551,11 @@ export class Image {
 	 * @description 既に参照済みの Image handle を返す Python 互換 helper
 	 */
 	async hydrate(): Promise<Image> {
+		if (this.#imageId === "") {
+			throw new InvalidError(
+				"Images cannot currently be hydrated on demand; build the Image by running an App that uses it.",
+			);
+		}
 		return this;
 	}
 

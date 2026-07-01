@@ -277,9 +277,53 @@ test("Image local context helpers", async () => {
 	try {
 		const image = await mc.images
 			.fromRegistry("alpine:3.21")
-			.addLocalDir(dir, "/app")
+			.addLocalDir(dir, "/app", { copy: true })
 			.build(new App("ap-test", "libmodal-test"));
 		expect(image.imageId).toBe("im-dir");
+		mock.assertExhausted();
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
+test("Image local helpers mount by default and honor ignore patterns", async () => {
+	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
+	const dir = mkdtempSync(path.join(tmpdir(), "modal-image-mount-"));
+	writeFileSync(path.join(dir, "keep.txt"), "keep");
+	writeFileSync(path.join(dir, "skip.log"), "skip");
+
+	mock.handleUnary("/ImageGetOrCreate", () => ({
+		imageId: "im-base",
+		result: { status: 1 },
+	}));
+	mock.handleUnary("/MountPutFile", (req) => {
+		expect(req.data).toBeUndefined();
+		return { exists: false };
+	});
+	mock.handleUnary("/MountPutFile", (req) => {
+		expect(new TextDecoder().decode(req.data as Uint8Array)).toBe("keep");
+		return { exists: true };
+	});
+	mock.handleUnary("/MountGetOrCreate", (req) => {
+		expect(req.files).toMatchObject([{ filename: "/app/keep.txt" }]);
+		return { mountId: "mo-local" };
+	});
+	mock.handleUnary("/SandboxCreate", (req) => {
+		expect(req.definition).toMatchObject({
+			imageId: "im-base",
+			mountIds: ["mo-local"],
+		});
+		return { sandboxId: "sb-local" };
+	});
+
+	try {
+		const sandbox = await mc.sandboxes.create(
+			new App("ap-test", "libmodal-test"),
+			mc.images.fromRegistry("alpine:3.21").addLocalDir(dir, "/app", {
+				ignore: ["*.log"],
+			}),
+		);
+		expect(sandbox.sandboxId).toBe("sb-local");
 		mock.assertExhausted();
 	} finally {
 		rmSync(dir, { recursive: true, force: true });
@@ -320,6 +364,44 @@ test("Image package manager helpers produce expected dockerfile", async () => {
 	} finally {
 		rmSync(dir, { recursive: true, force: true });
 	}
+});
+
+test("Image.pipInstallPrivateRepos uses token-based HTTPS URLs", async () => {
+	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
+
+	mock.handleUnary("/ImageGetOrCreate", () => ({
+		imageId: "im-base",
+		result: { status: 1 },
+	}));
+	mock.handleUnary("/ImageGetOrCreate", (req) => {
+		expect(req.image).toMatchObject({
+			dockerfileCommands: [
+				"FROM base",
+				"RUN bash -c \"[[ -v GITHUB_TOKEN ]] || (echo 'GITHUB_TOKEN env var not set by provided modal.Secret(s)' && exit 1)\"",
+				"RUN apt-get update && apt-get install -y git",
+				'RUN python3 -m pip install "git+https://alice:$GITHUB_TOKEN@github.com/org/repo@main"',
+			],
+			secretIds: ["st-github"],
+		});
+		return { imageId: "im-private", result: { status: 1 } };
+	});
+
+	const image = await mc.images
+		.fromRegistry("alpine:3.21")
+		.pipInstallPrivateRepos(["github.com/org/repo@main"], {
+			gitUser: "alice",
+			secrets: [new Secret("st-github", "github-read")],
+		})
+		.build(new App("ap-test", "libmodal-test"));
+	expect(image.imageId).toBe("im-private");
+	mock.assertExhausted();
+});
+
+test("Image.hydrate rejects unbuilt images", async () => {
+	const { mockClient: mc } = createMockModalClients();
+	await expect(mc.images.fromRegistry("alpine:3.21").hydrate()).rejects.toThrow(
+		"Images cannot currently be hydrated on demand",
+	);
 });
 
 test("ImageService.fromDockerfile includes context directory", async () => {
@@ -386,7 +468,7 @@ test("Image.addLocalPythonSource adds package under root", async () => {
 
 		const image = await mc.images
 			.fromRegistry("alpine:3.21")
-			.addLocalPythonSource(["pkg"])
+			.addLocalPythonSource(["pkg"], { copy: true })
 			.build(new App("ap-test", "libmodal-test"));
 		expect(image.imageId).toBe("im-python-source");
 		mock.assertExhausted();

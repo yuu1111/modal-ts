@@ -318,7 +318,7 @@ export class Dict {
 		});
 		if (!resp.found) {
 			if (defaultValue.length > 0) return defaultValue[0];
-			throw new NotFoundError("Key not found");
+			return undefined;
 		}
 		if (resp.value === undefined) return undefined;
 		return pickleDecode(resp.value);
