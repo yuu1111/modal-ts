@@ -27,7 +27,7 @@ const outputsTimeoutMs = 55 * 1000;
  * インプットプレーン: AttemptStart, AttemptRetry, AttemptAwait RPC を使用
  */
 export interface Invocation {
-	awaitOutput(timeoutMs?: number): Promise<unknown>;
+	awaitOutput(timeoutMs?: number, index?: number): Promise<unknown>;
 	retry(retryCount: number): Promise<void>;
 }
 
@@ -86,22 +86,23 @@ export class ControlPlaneInvocation implements Invocation {
 		return new ControlPlaneInvocation(client.cpClient, functionCallId);
 	}
 
-	async awaitOutput(timeoutMs?: number): Promise<unknown> {
+	async awaitOutput(timeoutMs?: number, index = 0): Promise<unknown> {
 		return await pollFunctionOutput(
 			this.cpClient,
-			(timeoutMs: number) => this.#getOutput(timeoutMs),
+			(timeoutMs: number) => this.#getOutput(timeoutMs, index),
 			timeoutMs,
 		);
 	}
 
 	async #getOutput(
 		timeoutMs: number,
+		index: number,
 	): Promise<FunctionGetOutputsItem | undefined> {
 		const response = await this.cpClient.functionGetOutputs({
 			functionCallId: this.functionCallId,
 			maxValues: 1,
 			timeout: timeoutMs / 1000,
-			lastEntryId: "0-0",
+			lastEntryId: `${index}-0`,
 			clearOnSuccess: true,
 			requestedAt: timeNowSeconds(),
 		});

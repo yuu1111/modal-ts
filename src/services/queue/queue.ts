@@ -5,6 +5,7 @@ import { InvalidError, QueueEmptyError, QueueFullError } from "@/core/errors";
 import { rethrowNotFound, suppressNotFound } from "@/core/grpc/errors";
 import {
 	ObjectCreationType,
+	type QueueMetadata,
 	type QueueNextItemsRequest,
 } from "@/generated/modal_proto/api";
 import { EphemeralHeartbeatManager } from "@/utils/ephemeral";
@@ -30,6 +31,28 @@ const queueDefaultPartitionTtlMs = 24 * 3600 * 1000;
 export type QueueFromNameParams = {
 	environment?: string;
 	createIfMissing?: boolean;
+};
+
+/**
+ * @description {@link QueueService#create client.queues.create()} のオプションパラメータ
+ * @property environment - 使用する環境名
+ * @property allowExisting - 既に存在する場合に成功として扱うか
+ */
+export type QueueCreateParams = {
+	environment?: string;
+	allowExisting?: boolean;
+};
+
+/**
+ * @description {@link QueueService#list client.queues.list()} のオプションパラメータ
+ * @property environment - 使用する環境名
+ * @property maxObjects - 最大取得件数
+ * @property createdBefore - この Unix 秒より前に作成された Queue だけを返す
+ */
+export type QueueListParams = {
+	environment?: string;
+	maxObjects?: number;
+	createdBefore?: number;
 };
 
 /**
@@ -90,6 +113,40 @@ export class QueueService {
 	}
 
 	/**
+	 * @description 名前付き Queue を作成する
+	 * @param name - Queue 名
+	 * @param params - オプションパラメータ
+	 */
+	async create(name: string, params: QueueCreateParams = {}): Promise<void> {
+		await this.#client.cpClient.queueGetOrCreate({
+			deploymentName: name,
+			objectCreationType: params.allowExisting
+				? ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_IF_MISSING
+				: ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_FAIL_IF_EXISTS,
+			environmentName: this.#client.environmentName(params.environment),
+		});
+	}
+
+	/**
+	 * @description IDで {@link Queue} を参照する
+	 * @param queueId - Queue ID
+	 */
+	async fromId(queueId: string): Promise<Queue> {
+		try {
+			const resp = await this.#client.cpClient.queueGetById({ queueId });
+			return new Queue(
+				this.#client,
+				queueId,
+				resp.metadata?.name || undefined,
+				undefined,
+				queueInfoFromMetadata(resp.metadata),
+			);
+		} catch (err) {
+			rethrowNotFound(err, `Queue with id: '${queueId}' not found`);
+		}
+	}
+
+	/**
 	 * @description 名前で {@link Queue} を参照する
 	 * @param name - Queue の名前
 	 * @param params - オプションパラメータ
@@ -119,6 +176,53 @@ export class QueueService {
 		} catch (err) {
 			rethrowNotFound(err);
 		}
+	}
+
+	/**
+	 * @description 名前付き Queue の一覧を取得する
+	 * @param params - オプションパラメータ
+	 */
+	async list(params: QueueListParams = {}): Promise<Queue[]> {
+		if (params.maxObjects !== undefined && params.maxObjects < 0) {
+			throw new InvalidError("maxObjects cannot be negative");
+		}
+
+		const queues: Queue[] = [];
+		let createdBefore = params.createdBefore ?? 0;
+		while (
+			params.maxObjects === undefined ||
+			queues.length < params.maxObjects
+		) {
+			const maxPageSize =
+				params.maxObjects === undefined
+					? 100
+					: Math.min(100, params.maxObjects - queues.length);
+			const resp = await this.#client.cpClient.queueList({
+				environmentName: this.#client.environmentName(params.environment),
+				pagination: { maxObjects: maxPageSize, createdBefore },
+			});
+
+			if (!resp.queues || resp.queues.length === 0) break;
+			for (const item of resp.queues) {
+				queues.push(
+					new Queue(
+						this.#client,
+						item.queueId,
+						item.metadata?.name || item.name || undefined,
+						undefined,
+						queueInfoFromMetadata(item.metadata, item.name, item.createdAt),
+					),
+				);
+			}
+			if (resp.queues.length < maxPageSize) break;
+			createdBefore =
+				resp.queues[resp.queues.length - 1]?.metadata?.creationInfo
+					?.createdAt ??
+				resp.queues[resp.queues.length - 1]?.createdAt ??
+				0;
+		}
+
+		return queues;
 	}
 
 	/**
@@ -250,12 +354,22 @@ export type QueueIterateParams = {
 };
 
 /**
+ * @description Queue オブジェクトのメタデータ
+ */
+export type QueueInfo = {
+	name?: string;
+	createdAt?: number;
+	createdBy?: string;
+};
+
+/**
  * @description Modal {@link App} 内のデータフロー用分散 FIFO キュー
  */
 export class Queue {
 	readonly #client: ModalClient;
 	readonly queueId: string;
 	readonly name?: string;
+	readonly #info?: QueueInfo;
 	readonly #ephemeralHbManager?: EphemeralHeartbeatManager;
 
 	/**
@@ -266,10 +380,12 @@ export class Queue {
 		queueId: string,
 		name?: string,
 		ephemeralHbManager?: EphemeralHeartbeatManager,
+		info?: QueueInfo,
 	) {
 		this.#client = client;
 		this.queueId = queueId;
 		if (name !== undefined) this.name = name;
+		if (info !== undefined) this.#info = info;
 		if (ephemeralHbManager !== undefined)
 			this.#ephemeralHbManager = ephemeralHbManager;
 	}
@@ -296,6 +412,13 @@ export class Queue {
 		} else {
 			throw new InvalidError("Queue is not ephemeral.");
 		}
+	}
+
+	/**
+	 * @description Queue のメタデータを返す
+	 */
+	info(): QueueInfo {
+		return this.#info ?? queueInfoFromMetadata(undefined, this.name);
 	}
 
 	/**
@@ -519,4 +642,19 @@ export class Queue {
 			}
 		}
 	}
+}
+
+function queueInfoFromMetadata(
+	metadata?: QueueMetadata,
+	fallbackName?: string,
+	fallbackCreatedAt?: number,
+): QueueInfo {
+	const info: QueueInfo = {};
+	const name = metadata?.name || fallbackName;
+	const createdAt = metadata?.creationInfo?.createdAt || fallbackCreatedAt;
+	const createdBy = metadata?.creationInfo?.createdBy;
+	if (name) info.name = name;
+	if (createdAt) info.createdAt = createdAt;
+	if (createdBy) info.createdBy = createdBy;
+	return info;
 }

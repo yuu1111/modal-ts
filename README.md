@@ -2,12 +2,35 @@
 
 [日本語](./README.ja.md)
 
-Unofficial Modal SDK for TypeScript/JavaScript. Forked from [modal-labs/libmodal](https://github.com/modal-labs/libmodal) (Apache-2.0).
+Unofficial Modal SDK for TypeScript/JavaScript.
+Use Modal from JS/TS projects without a Python runtime.
+
+Based on the JavaScript/TypeScript SDK from
+[modal-labs/modal-client](https://github.com/modal-labs/modal-client) (Apache-2.0).
+
+## Why modal-ts
+
+`modal-ts` packages Modal for JavaScript and TypeScript projects that do not
+want a Python runtime in their app setup.
+
+- **Python-free** - Install and run from Node.js without Python
+- **TypeScript-first** - Strong types for Modal resources, params, and responses
+- **Resource coverage** - Functions, Sandboxes, Queues, Volumes, Images,
+  Secrets, and Deploys from one client
 
 ## Install
 
 ```bash
 npm install modal-ts
+```
+
+## Authentication
+
+Set environment variables or configure `~/.modal.toml`:
+
+```bash
+export MODAL_TOKEN_ID=ak-...
+export MODAL_TOKEN_SECRET=as-...
 ```
 
 ## Quick Start
@@ -28,15 +51,6 @@ const image = modal.images.fromRegistry("alpine:3.21");
 const sb = await modal.sandboxes.create(app, image, { command: ["echo", "hi"] });
 console.log(await sb.stdout.readText());
 await sb.terminate();
-```
-
-## Authentication
-
-Set environment variables or configure `~/.modal.toml`:
-
-```bash
-export MODAL_TOKEN_ID=ak-...
-export MODAL_TOKEN_SECRET=as-...
 ```
 
 ## Features
@@ -60,17 +74,10 @@ bun run build         # Build (esbuild + tsc)
 bun run test          # Run tests (vitest)
 ```
 
-## Differences from upstream
-
-This fork diverges from `modal-labs/libmodal`:
-
-- **TypeScript-only** - Go SDK removed
-- **No Python dependency** - Test infrastructure and release scripts rewritten in TypeScript
-- **Bun** - Uses Bun instead of npm
-- **Biome** - Uses Biome instead of ESLint + Prettier
-- **Strict TypeScript** - `verbatimModuleSyntax`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes` enabled. No `any`, no `@ts-` directives
-- **esbuild** - Direct esbuild instead of tsup
-
 ## License
 
-Apache-2.0. Proto definitions from [modal-labs/modal-client](https://github.com/modal-labs/modal-client) (Apache-2.0).
+Apache-2.0
+
+Protocol Buffer definitions are based on the Apache-2.0 licensed
+`modal_proto/` files from
+[modal-labs/modal-client](https://github.com/modal-labs/modal-client).

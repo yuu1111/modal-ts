@@ -33,6 +33,7 @@ export class FunctionCallService {
  */
 export type FunctionCallGetParams = {
 	timeoutMs?: number;
+	index?: number;
 };
 
 /**
@@ -50,6 +51,7 @@ export type FunctionCallCancelParams = {
 export class FunctionCall {
 	readonly functionCallId: string;
 	#client?: ModalClient;
+	#numInputs?: number;
 
 	/**
 	 * @internal
@@ -71,7 +73,53 @@ export class FunctionCall {
 			this.#client || getDefaultClient(),
 			this.functionCallId,
 		);
-		return invocation.awaitOutput(params.timeoutMs);
+		return invocation.awaitOutput(params.timeoutMs, params.index ?? 0);
+	}
+
+	/**
+	 * @description FunctionCall に含まれる input 数を返す
+	 */
+	async numInputs(): Promise<number> {
+		if (this.#numInputs !== undefined) return this.#numInputs;
+		const cpClient = this.#client?.cpClient || getDefaultClient().cpClient;
+		const resp = await cpClient.functionCallFromId({
+			functionCallId: this.functionCallId,
+		});
+		this.#numInputs = resp.numInputs;
+		return this.#numInputs;
+	}
+
+	/**
+	 * @description 複数 input の結果を index 順に iterate する
+	 * @param params - start/end index
+	 */
+	async *iter(
+		params: { start?: number; end?: number; timeoutMs?: number } = {},
+	): AsyncGenerator<unknown, void, unknown> {
+		const numInputs = await this.numInputs();
+		const start = params.start ?? 0;
+		const end = params.end ?? numInputs;
+		if (start < 0 || end > numInputs || start > end) {
+			throw new RangeError(
+				`Invalid index range: ${start} to ${end} for ${numInputs} inputs`,
+			);
+		}
+		for (let index = start; index < end; index++) {
+			yield await this.get({
+				index,
+				...(params.timeoutMs !== undefined && {
+					timeoutMs: params.timeoutMs,
+				}),
+			});
+		}
+	}
+
+	/**
+	 * @description 複数の FunctionCall の結果を順序を保って待つ
+	 * @param functionCalls - FunctionCall の配列
+	 */
+	static async gather(functionCalls: FunctionCall[]): Promise<unknown[]> {
+		return await Promise.all(functionCalls.map((fc) => fc.get()));
 	}
 
 	/**

@@ -69,6 +69,7 @@ export {
 } from "./services/function/function_call";
 export {
 	Image,
+	type ImageBuildStepParams,
 	type ImageDeleteParams,
 	type ImageDockerfileCommandsParams,
 	type ImageFromNameParams,
@@ -83,12 +84,15 @@ export {
 export {
 	Queue,
 	type QueueClearParams,
+	type QueueCreateParams,
 	type QueueDeleteParams,
 	type QueueEphemeralParams,
 	type QueueFromNameParams,
 	type QueueGetParams,
+	type QueueInfo,
 	type QueueIterateParams,
 	type QueueLenParams,
+	type QueueListParams,
 	type QueuePutParams,
 	QueueService,
 } from "./services/queue/queue";
@@ -134,16 +138,26 @@ export {
 } from "./services/sandbox/sandbox_tunnel";
 export {
 	Secret,
+	type SecretCreateParams,
 	type SecretDeleteParams,
+	type SecretFromDotenvParams,
+	type SecretFromLocalEnvironParams,
 	type SecretFromNameParams,
 	type SecretFromObjectParams,
+	type SecretInfo,
+	type SecretListParams,
 	SecretService,
+	type SecretUpdateParams,
 } from "./services/secret/secret";
 export {
 	Volume,
+	type VolumeCreateParams,
 	type VolumeDeleteParams,
 	type VolumeEphemeralParams,
+	type VolumeFileEntry,
 	type VolumeFromNameParams,
+	type VolumeInfo,
+	type VolumeListParams,
 	type VolumeMountOptions,
 	VolumeService,
 } from "./services/volume/volume";

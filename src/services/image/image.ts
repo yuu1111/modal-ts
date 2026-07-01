@@ -45,6 +45,15 @@ function parseNamedImageRef(value: string): string {
 	return `${name}:${tag}`;
 }
 
+function shellQuote(value: string): string {
+	if (/^[A-Za-z0-9_./:=@%+-]+$/.test(value)) return value;
+	return `'${value.replace(/'/g, "'\"'\"'")}'`;
+}
+
+function jsonArrayCommand(values: string[]): string {
+	return `[${values.map((v) => JSON.stringify(v)).join(", ")}]`;
+}
+
 /**
  * @description {@link Image} を管理するサービス
  *
@@ -140,6 +149,43 @@ export class ImageService {
 		);
 	}
 
+	/**
+	 * @description 空の scratch image を作成する
+	 * @param params - オプションパラメータ
+	 */
+	fromScratch(params: { forceBuild?: boolean } = {}): Image {
+		const layer: Layer = { commands: [] };
+		if (params.forceBuild !== undefined) layer.forceBuild = params.forceBuild;
+		return new Image(this.#client, "", "scratch", undefined, [layer]);
+	}
+
+	/**
+	 * @description Python Debian slim ベースの Image を作成する
+	 * @param params - Python version と build オプション
+	 */
+	debianSlim(
+		params: { pythonVersion?: string; forceBuild?: boolean } = {},
+	): Image {
+		const pythonVersion = params.pythonVersion ?? "3.12";
+		const image = new Image(
+			this.#client,
+			"",
+			`python:${pythonVersion}-slim-bookworm`,
+		);
+		return image.dockerfileCommands(
+			[
+				"RUN apt-get update",
+				"RUN apt-get install -y gcc gfortran build-essential",
+				"RUN pip install --upgrade pip setuptools wheel",
+				"RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections",
+				'CMD ["sleep", "172800"]',
+			],
+			params.forceBuild === undefined
+				? undefined
+				: { forceBuild: params.forceBuild },
+		);
+	}
+
 	#fromRegistryWith(
 		tag: string,
 		secret: Secret | undefined,
@@ -225,6 +271,11 @@ export type ImageDockerfileCommandsParams = {
 	 */
 	forceBuild?: boolean;
 };
+
+/**
+ * @description Image builder の共通オプション
+ */
+export type ImageBuildStepParams = ImageDockerfileCommandsParams;
 
 /**
  * @description 単一の Image レイヤーとそのビルド設定を表す
@@ -331,6 +382,128 @@ export class Image {
 			[...layers, newLayer],
 			baseImageId,
 		);
+	}
+
+	/**
+	 * @description Debian package を apt で install する
+	 * @param packages - package 名
+	 * @param params - build step オプション
+	 */
+	aptInstall(packages: string[], params?: ImageBuildStepParams): Image {
+		if (packages.length === 0) return this;
+		return this.dockerfileCommands(
+			[
+				"RUN apt-get update",
+				`RUN apt-get install -y ${packages.map(shellQuote).join(" ")}`,
+			],
+			params,
+		);
+	}
+
+	/**
+	 * @description Python package を pip で install する
+	 * @param packages - package 名
+	 * @param params - build step オプション
+	 */
+	pipInstall(
+		packages: string[],
+		params: ImageBuildStepParams & {
+			findLinks?: string;
+			indexUrl?: string;
+			extraIndexUrl?: string;
+			pre?: boolean;
+			extraOptions?: string;
+		} = {},
+	): Image {
+		if (packages.length === 0) return this;
+		const extraArgs = [
+			params.findLinks && `--find-links ${shellQuote(params.findLinks)}`,
+			params.indexUrl && `--index-url ${shellQuote(params.indexUrl)}`,
+			params.extraIndexUrl &&
+				`--extra-index-url ${shellQuote(params.extraIndexUrl)}`,
+			params.pre && "--pre",
+			params.extraOptions,
+		]
+			.filter(Boolean)
+			.join(" ");
+		const suffix = extraArgs ? ` ${extraArgs}` : "";
+		return this.dockerfileCommands(
+			[
+				`RUN python -m pip install ${packages.map(shellQuote).join(" ")}${suffix}`,
+			],
+			params,
+		);
+	}
+
+	/**
+	 * @description shell command を RUN layer として実行する
+	 * @param commands - 実行する command
+	 * @param params - build step オプション
+	 */
+	runCommands(commands: string[], params?: ImageBuildStepParams): Image {
+		if (commands.length === 0) return this;
+		return this.dockerfileCommands(
+			commands.map((cmd) => `RUN ${cmd}`),
+			params,
+		);
+	}
+
+	/**
+	 * @description Image に ENV directive を追加する
+	 * @param vars - 環境変数
+	 */
+	env(vars: Record<string, string>): Image {
+		for (const [key, value] of Object.entries(vars)) {
+			if (typeof value !== "string") {
+				throw new InvalidError(`Image ENV variable ${key} must be a string.`);
+			}
+		}
+		return this.dockerfileCommands(
+			Object.entries(vars).map(
+				([key, value]) => `ENV ${key}=${shellQuote(value)}`,
+			),
+		);
+	}
+
+	/**
+	 * @description Image の WORKDIR を設定する
+	 * @param path - container 内 path
+	 */
+	workdir(path: string): Image {
+		return this.dockerfileCommands([`WORKDIR ${shellQuote(path)}`]);
+	}
+
+	/**
+	 * @description Image の CMD を JSON array form で設定する
+	 * @param command - argv tokens
+	 */
+	cmd(command: string[]): Image {
+		if (!command.every((x) => typeof x === "string")) {
+			throw new InvalidError("Image CMD must be a list of strings.");
+		}
+		return this.dockerfileCommands([`CMD ${jsonArrayCommand(command)}`]);
+	}
+
+	/**
+	 * @description Image の ENTRYPOINT を JSON array form で設定する
+	 * @param command - argv tokens
+	 */
+	entrypoint(command: string[]): Image {
+		if (!command.every((x) => typeof x === "string")) {
+			throw new InvalidError("Image ENTRYPOINT must be a list of strings.");
+		}
+		return this.dockerfileCommands([`ENTRYPOINT ${jsonArrayCommand(command)}`]);
+	}
+
+	/**
+	 * @description Image の SHELL を JSON array form で設定する
+	 * @param command - argv tokens
+	 */
+	shell(command: string[]): Image {
+		if (!command.every((x) => typeof x === "string")) {
+			throw new InvalidError("Image SHELL must be a list of strings.");
+		}
+		return this.dockerfileCommands([`SHELL ${jsonArrayCommand(command)}`]);
 	}
 
 	/**

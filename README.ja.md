@@ -2,12 +2,35 @@
 
 [English](./README.md)
 
-TypeScript/JavaScript向けの非公式Modal SDK。[modal-labs/libmodal](https://github.com/modal-labs/libmodal) (Apache-2.0) からフォーク。
+TypeScript/JavaScript向けの非公式Modal SDK。
+PythonランタイムなしでJS/TSプロジェクトからModalを利用できます。
+
+[modal-labs/modal-client](https://github.com/modal-labs/modal-client) (Apache-2.0)
+のJavaScript/TypeScript SDKをベースにしています。
+
+## modal-tsを使う理由
+
+`modal-ts` は、アプリのセットアップにPythonランタイムを持ち込みたくない
+JavaScript/TypeScriptプロジェクト向けにModalをパッケージします。
+
+- **Python不要** - PythonなしでNode.jsからインストール・実行
+- **TypeScript-first** - Modalリソース、パラメータ、レスポンスに強い型を提供
+- **主要リソース対応** - Functions、Sandboxes、Queues、Volumes、Images、
+  Secrets、Deployを1つのクライアントから扱える
 
 ## インストール
 
 ```bash
 npm install modal-ts
+```
+
+## 認証
+
+環境変数を設定するか `~/.modal.toml` を構成:
+
+```bash
+export MODAL_TOKEN_ID=ak-...
+export MODAL_TOKEN_SECRET=as-...
 ```
 
 ## クイックスタート
@@ -28,15 +51,6 @@ const image = modal.images.fromRegistry("alpine:3.21");
 const sb = await modal.sandboxes.create(app, image, { command: ["echo", "hi"] });
 console.log(await sb.stdout.readText());
 await sb.terminate();
-```
-
-## 認証
-
-環境変数を設定するか `~/.modal.toml` を構成:
-
-```bash
-export MODAL_TOKEN_ID=ak-...
-export MODAL_TOKEN_SECRET=as-...
 ```
 
 ## 機能
@@ -60,17 +74,10 @@ bun run build         # ビルド (esbuild + tsc)
 bun run test          # テスト実行 (vitest)
 ```
 
-## upstreamとの違い
-
-このフォークは `modal-labs/libmodal` から以下の点で分岐:
-
-- **TypeScriptのみ** - Go SDKを削除
-- **Python依存なし** - テストインフラとリリーススクリプトをTypeScriptで書き直し
-- **Bun** - npmの代わりにBunを使用
-- **Biome** - ESLint + Prettierの代わりにBiomeを使用
-- **厳格なTypeScript** - `verbatimModuleSyntax`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`を有効化。`any`と`@ts-`ディレクティブなし
-- **esbuild** - tsupの代わりにesbuildを直接使用
-
 ## ライセンス
 
-Apache-2.0。Proto定義は [modal-labs/modal-client](https://github.com/modal-labs/modal-client) (Apache-2.0) から取得。
+Apache-2.0
+
+Protocol Buffer定義は、Apache-2.0ライセンスの
+[modal-labs/modal-client](https://github.com/modal-labs/modal-client)
+に含まれる `modal_proto/` をベースにしています。
