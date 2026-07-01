@@ -16,6 +16,7 @@ import {
 	type VolumeMount,
 } from "@/generated/modal_proto/api";
 import { parseGpuConfig } from "@/services/deploy/app";
+import type { SchedulerPlacement } from "@/services/scheduler_placement/scheduler_placement";
 import { mergeEnvIntoSecrets, type Secret } from "@/services/secret/secret";
 import { type Volume, volumeToMountProto } from "@/services/volume/volume";
 import { parseRetries, type Retries } from "@/utils/retries";
@@ -148,6 +149,7 @@ export interface FunctionUpdateAutoscalerParams {
  * @property bufferContainers - バッファコンテナ数 @optional
  * @property scaledownWindowMs - スケールダウン待機時間(ミリ秒) @optional
  * @property timeoutMs - タイムアウト(ミリ秒) @optional
+ * @property schedulerPlacement - スケジューリング制約 @optional
  */
 export type FunctionWithOptionsParams = {
 	cpu?: number;
@@ -163,6 +165,7 @@ export type FunctionWithOptionsParams = {
 	bufferContainers?: number;
 	scaledownWindowMs?: number;
 	timeoutMs?: number;
+	schedulerPlacement?: SchedulerPlacement;
 };
 
 /**
@@ -337,6 +340,7 @@ export async function buildFunctionOptionsProto(
 		targetConcurrentInputs: o.targetConcurrentInputs,
 		batchMaxSize: o.batchMaxSize,
 		batchLingerMs: o.batchWaitMs,
+		schedulerPlacement: o.schedulerPlacement?.toProto(),
 	});
 }
 

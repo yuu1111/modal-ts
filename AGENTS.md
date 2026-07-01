@@ -5,14 +5,14 @@ Modal (serverless platform) SDK for JavaScript/TypeScript. Proto definitions liv
 # Commands
 
 ```bash
-bun install                              # Install deps + generate proto code
+bun install                              # Install deps
 bun run typecheck                        # TypeScript type checking
 bun run lint                             # Biome lint
 bun run format                           # Biome format
 bun run build                            # Build distribution (esbuild + tsc)
 bun run test                             # Run all tests (vitest)
 bun run test -- test/client.test.ts      # Single test file
-bun run test -- --grep "pattern"         # Filter by test name
+bun run test -- -t "pattern"             # Filter by test name
 ```
 
 # Proto Regeneration

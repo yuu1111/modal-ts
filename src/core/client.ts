@@ -20,14 +20,18 @@ import { ClientType, ModalClientDefinition } from "@/generated/modal_proto/api";
 import { CloudBucketMountService } from "@/services/cloud_bucket_mount/cloud_bucket_mount";
 import { ClsService } from "@/services/cls/cls";
 import { AppService } from "@/services/deploy/app";
+import { DictService } from "@/services/dict/dict";
+import { EnvironmentService } from "@/services/environment/environment";
 import { FunctionService } from "@/services/function/function";
 import { FunctionCallService } from "@/services/function/function_call";
 import { ImageService } from "@/services/image/image";
+import { NetworkFileSystemService } from "@/services/network_file_system/network_file_system";
 import { ProxyService } from "@/services/proxy/proxy";
 import { QueueService } from "@/services/queue/queue";
 import { SandboxService } from "@/services/sandbox/sandbox";
 import { SecretService } from "@/services/secret/secret";
 import { VolumeService } from "@/services/volume/volume";
+import { WorkspaceService } from "@/services/workspace/workspace";
 import { createLogger, type Logger, type LogLevel } from "@/utils/logger";
 import { checkForRenamedParams } from "@/utils/validation";
 import { SDK_VERSION } from "@/utils/version";
@@ -113,14 +117,18 @@ export class ModalClient {
 	readonly apps: AppService;
 	readonly cloudBucketMounts: CloudBucketMountService;
 	readonly cls: ClsService;
+	readonly dicts: DictService;
+	readonly environments: EnvironmentService;
 	readonly functions: FunctionService;
 	readonly functionCalls: FunctionCallService;
 	readonly images: ImageService;
+	readonly networkFileSystems: NetworkFileSystemService;
 	readonly proxies: ProxyService;
 	readonly queues: QueueService;
 	readonly sandboxes: SandboxService;
 	readonly secrets: SecretService;
 	readonly volumes: VolumeService;
+	readonly workspaces: WorkspaceService;
 
 	/**
 	 * @internal
@@ -163,14 +171,18 @@ export class ModalClient {
 		this.apps = new AppService(this);
 		this.cloudBucketMounts = new CloudBucketMountService(this);
 		this.cls = new ClsService(this);
+		this.dicts = new DictService(this);
+		this.environments = new EnvironmentService(this);
 		this.functions = new FunctionService(this);
 		this.functionCalls = new FunctionCallService(this);
 		this.images = new ImageService(this);
+		this.networkFileSystems = new NetworkFileSystemService(this);
 		this.proxies = new ProxyService(this);
 		this.queues = new QueueService(this);
 		this.sandboxes = new SandboxService(this);
 		this.secrets = new SecretService(this);
 		this.volumes = new VolumeService(this);
+		this.workspaces = new WorkspaceService(this);
 	}
 
 	/**

@@ -11,7 +11,8 @@ import {
 	Resources,
 	SandboxCreateRequest,
 	SandboxCreateV2Request,
-	SchedulerPlacement,
+	SchedulerPlacement as SchedulerPlacementProto,
+	type SharedVolumeMount,
 	TunnelType,
 	type VolumeMount,
 } from "@/generated/modal_proto/api";
@@ -22,7 +23,9 @@ import {
 } from "@/generated/modal_proto/task_command_router";
 import type { CloudBucketMount } from "@/services/cloud_bucket_mount/cloud_bucket_mount";
 import { parseGpuConfig } from "@/services/deploy/app";
+import type { NetworkFileSystem } from "@/services/network_file_system/network_file_system";
 import type { Proxy as ModalProxy } from "@/services/proxy/proxy";
+import type { SchedulerPlacement } from "@/services/scheduler_placement/scheduler_placement";
 import type { Secret } from "@/services/secret/secret";
 import { type Volume, volumeToMountProto } from "@/services/volume/volume";
 import { checkForRenamedParams } from "@/utils/validation";
@@ -64,6 +67,7 @@ export type StreamMode = "text" | "binary";
  * @property cidrAllowlist - アクセスを許可する CIDR の一覧。blockNetwork とは併用不可 @optional
  * @property cloud - 使用するクラウドプロバイダー @optional
  * @property regions - 実行するリージョン @optional
+ * @property schedulerPlacement - スケジューリング制約 @optional
  * @property verbose - 詳細ログを有効にする @optional
  * @property proxy - Sandbox の前段に配置する Proxy @optional
  * @property name - Sandbox の名前(App 内で一意) @optional
@@ -85,6 +89,7 @@ export type SandboxCreateParams = {
 	env?: Record<string, string>;
 	secrets?: Secret[];
 	volumes?: Record<string, Volume>;
+	networkFileSystems?: Record<string, NetworkFileSystem>;
 	cloudBucketMounts?: Record<string, CloudBucketMount>;
 	pty?: boolean;
 	encryptedPorts?: number[];
@@ -97,6 +102,7 @@ export type SandboxCreateParams = {
 	inboundCidrAllowlist?: string[];
 	cloud?: string;
 	regions?: string[];
+	schedulerPlacement?: SchedulerPlacement;
 	verbose?: boolean;
 	proxy?: ModalProxy;
 	name?: string;
@@ -274,6 +280,14 @@ export async function buildSandboxCreateRequestProto(
 			)
 		: [];
 
+	const nfsMounts: SharedVolumeMount[] = params.networkFileSystems
+		? Object.entries(params.networkFileSystems).map(([mountPath, nfs]) => ({
+				mountPath,
+				sharedVolumeId: nfs.networkFileSystemId,
+				cloudProvider: 0,
+			}))
+		: [];
+
 	const cloudBucketMounts: CloudBucketMountProto[] = params.cloudBucketMounts
 		? Object.entries(params.cloudBucketMounts).map(([mountPath, mount]) =>
 				mount.toProto(mountPath),
@@ -343,12 +357,13 @@ export async function buildSandboxCreateRequestProto(
 		};
 	}
 
-	const schedulerPlacement: SchedulerPlacement | undefined = params.regions
-		?.length
-		? SchedulerPlacement.create({
-				regions: params.regions,
-			})
-		: undefined;
+	const schedulerPlacement =
+		params.schedulerPlacement?.toProto() ??
+		(params.regions?.length
+			? SchedulerPlacementProto.create({
+					regions: params.regions,
+				})
+			: undefined);
 
 	let ptyInfo: PTYInfo | undefined;
 	if (params.pty) {
@@ -437,6 +452,7 @@ export async function buildSandboxCreateRequestProto(
 				gpuConfig,
 			}),
 			volumeMounts,
+			nfsMounts,
 			cloudBucketMounts,
 			ptyInfo,
 			secretIds,

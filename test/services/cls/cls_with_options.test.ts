@@ -1,5 +1,5 @@
 import type { Secret, Volume } from "modal";
-import { Retries } from "modal";
+import { Retries, SchedulerPlacement } from "modal";
 import { expect, test } from "vitest";
 import { createMockModalClients } from "../../support/grpc_mock";
 
@@ -80,6 +80,38 @@ test("Cls.withConcurrency/withConcurrency/withBatching chaining", async () => {
 		.withBatching({ maxBatchSize: 11, waitMs: 12 });
 
 	const instance = await chained.instance();
+	expect(instance).toBeTruthy();
+
+	mock.assertExhausted();
+});
+
+test("Cls.withOptions schedulerPlacement", async () => {
+	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
+
+	mock.handleUnary("FunctionGet", (_) => {
+		return _mockFunctionProto;
+	});
+
+	const cls = await mc.cls.fromName("modal-ts-test-support", "EchoCls");
+
+	mock.handleUnary("FunctionBindParams", (req) => {
+		expect(req).toMatchObject({ functionId: "fid" });
+		const fo = req.functionOptions as Record<string, unknown>;
+		expect(fo.schedulerPlacement).toMatchObject({
+			regions: ["us-west-2"],
+			Lifecycle: "spot",
+		});
+		return { boundFunctionId: "fid-1", handleMetadata: {} };
+	});
+
+	const instance = await cls
+		.withOptions({
+			schedulerPlacement: new SchedulerPlacement({
+				region: "us-west-2",
+				spot: true,
+			}),
+		})
+		.instance();
 	expect(instance).toBeTruthy();
 
 	mock.assertExhausted();

@@ -6,6 +6,7 @@ import {
 	GenericResult_GenericStatus,
 } from "../../../src/generated/modal_proto/api";
 import { Function_ } from "../../../src/services/function/function";
+import { SchedulerPlacement } from "../../../src/services/scheduler_placement/scheduler_placement";
 import { Volume } from "../../../src/services/volume/volume";
 import { cborEncode } from "../../../src/utils/serialization";
 import { createMockModalClients } from "../../support/grpc_mock";
@@ -303,6 +304,37 @@ test("FunctionWithOptionsInstance", async () => {
 		})
 		.withConcurrency({ maxInputs: 8, targetInputs: 4 })
 		.withBatching({ maxBatchSize: 16, waitMs: 25 });
+
+	const bound = await function_.instance();
+	expect(bound.functionId).toBe("fid-bound");
+
+	mock.assertExhausted();
+});
+
+test("FunctionWithOptionsSchedulerPlacement", async () => {
+	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
+
+	mock.handleUnary("/FunctionBindParams", (req) => {
+		expect(req).toMatchObject({
+			functionId: "fid-placement",
+			functionOptions: {
+				schedulerPlacement: {
+					regions: ["eu-west-1"],
+					Lifecycle: "on-demand",
+					InstanceTypes: ["h100"],
+				},
+			},
+		});
+		return { boundFunctionId: "fid-bound" };
+	});
+
+	const function_ = new Function_(mc, "fid-placement").withOptions({
+		schedulerPlacement: new SchedulerPlacement({
+			region: "eu-west-1",
+			spot: false,
+			instanceType: "h100",
+		}),
+	});
 
 	const bound = await function_.instance();
 	expect(bound.functionId).toBe("fid-bound");

@@ -14,6 +14,7 @@ import {
 	buildTaskExecStartRequestProto,
 	validateExecArgs,
 } from "../../../src/services/sandbox/sandbox_config";
+import { SchedulerPlacement } from "../../../src/services/scheduler_placement/scheduler_placement";
 import { createMockModalClients } from "../../support/grpc_mock";
 import { tc } from "../../support/test-client";
 
@@ -674,6 +675,26 @@ test("buildSandboxCreateRequestProto_defaults", async () => {
 	expect(def.secretIds).toEqual([]);
 	expect(def.openPorts?.ports).toEqual([]);
 	expect(def.name).toBeUndefined();
+});
+
+test("buildSandboxCreateRequestProto_schedulerPlacement", async () => {
+	const req = await buildSandboxCreateRequestProto("app-123", "img-456", {
+		schedulerPlacement: new SchedulerPlacement({
+			region: ["us-east-1", "us-west-2"],
+			zone: "us-east-1a",
+			spot: true,
+			instanceType: "a10g",
+		}),
+	});
+	const def = req.definition;
+	if (!def) throw new Error("Expected definition in sandbox create request");
+
+	expect(def.schedulerPlacement).toMatchObject({
+		regions: ["us-east-1", "us-west-2"],
+		Zone: "us-east-1a",
+		Lifecycle: "spot",
+		InstanceTypes: ["a10g"],
+	});
 });
 
 test("sandboxInvalidTimeouts", async () => {

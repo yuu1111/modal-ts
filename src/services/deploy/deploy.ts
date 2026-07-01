@@ -8,6 +8,8 @@ import {
 	ObjectCreationType,
 	type WebhookConfig,
 } from "@/generated/modal_proto/api";
+import type { Schedule } from "@/services/schedule/schedule";
+import type { SchedulerPlacement } from "@/services/scheduler_placement/scheduler_placement";
 
 const textEncoder = new TextEncoder();
 
@@ -33,6 +35,8 @@ export interface DeployAppParams {
  * @property mountIds - アタッチするMountのID配列 @optional
  * @property secretIds - アタッチするSecretのID配列 @optional
  * @property minContainers - 最小コンテナ数(warm pool) @optional @default 0
+ * @property schedule - 定期実行スケジュール @optional
+ * @property schedulerPlacement - スケジューリング制約 @optional
  * @property experimentalOptions - 実験的オプション @optional
  * @property webhookConfig - Webhookエンドポイント設定 @optional
  */
@@ -43,6 +47,8 @@ export interface DeployFunctionParams {
 	mountIds?: string[];
 	secretIds?: string[];
 	minContainers?: number;
+	schedule?: Schedule;
+	schedulerPlacement?: SchedulerPlacement;
 	experimentalOptions?: Record<string, string>;
 	webhookConfig?: Partial<WebhookConfig>;
 }
@@ -56,6 +62,7 @@ export interface DeployFunctionParams {
  * @property mountIds - アタッチするMountのID配列 @optional
  * @property secretIds - アタッチするSecretのID配列 @optional
  * @property minContainers - 最小コンテナ数(warm pool) @optional @default 0
+ * @property schedulerPlacement - スケジューリング制約 @optional
  * @property experimentalOptions - 実験的オプション @optional
  */
 export interface DeployClassParams {
@@ -66,6 +73,7 @@ export interface DeployClassParams {
 	mountIds?: string[];
 	secretIds?: string[];
 	minContainers?: number;
+	schedulerPlacement?: SchedulerPlacement;
 	experimentalOptions?: Record<string, string>;
 }
 
@@ -235,6 +243,8 @@ async function createFunctionInternal(
 			functionType: Function_FunctionType.FUNCTION_TYPE_FUNCTION,
 			secretIds: fn.secretIds ?? [],
 			warmPoolSize: fn.minContainers ?? 0,
+			schedule: fn.schedule?.toProto(),
+			schedulerPlacement: fn.schedulerPlacement?.toProto(),
 			experimentalOptions: fn.experimentalOptions ?? {},
 			isMethod: fn.isMethod ?? false,
 			supportedInputFormats: DEFAULT_DATA_FORMATS,
@@ -355,6 +365,7 @@ export async function deployApp(
 				functionType: Function_FunctionType.FUNCTION_TYPE_FUNCTION,
 				secretIds: cls.secretIds ?? [],
 				warmPoolSize: cls.minContainers ?? 0,
+				schedulerPlacement: cls.schedulerPlacement?.toProto(),
 				experimentalOptions: cls.experimentalOptions ?? {},
 				isClass: true,
 				isMethod: false,

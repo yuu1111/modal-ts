@@ -52,6 +52,25 @@ export {
 	type MountFileEntry,
 } from "./services/deploy/deploy";
 export {
+	Dict,
+	type DictCreateParams,
+	type DictDeleteParams,
+	type DictEphemeralParams,
+	type DictFromNameParams,
+	type DictInfo,
+	type DictListParams,
+	DictService,
+} from "./services/dict/dict";
+export {
+	Environment,
+	type EnvironmentCreateParams,
+	type EnvironmentFromNameParams,
+	type EnvironmentInfo,
+	type EnvironmentListEntry,
+	EnvironmentService,
+	type EnvironmentUpdateParams,
+} from "./services/environment/environment";
+export {
 	Function_,
 	type FunctionFromNameParams,
 	FunctionService,
@@ -76,6 +95,16 @@ export {
 	type ImagePublishParams,
 	ImageService,
 } from "./services/image/image";
+export {
+	NetworkFileSystem,
+	type NetworkFileSystemCreateParams,
+	type NetworkFileSystemDeleteParams,
+	type NetworkFileSystemEphemeralParams,
+	type NetworkFileSystemFileEntry,
+	type NetworkFileSystemFromNameParams,
+	type NetworkFileSystemListParams,
+	NetworkFileSystemService,
+} from "./services/network_file_system/network_file_system";
 export {
 	Proxy,
 	type ProxyFromNameParams,
@@ -137,6 +166,17 @@ export {
 	Tunnel,
 } from "./services/sandbox/sandbox_tunnel";
 export {
+	Cron,
+	type CronParams,
+	Period,
+	type PeriodParams,
+	Schedule,
+} from "./services/schedule/schedule";
+export {
+	SchedulerPlacement,
+	type SchedulerPlacementParams,
+} from "./services/scheduler_placement/scheduler_placement";
+export {
 	Secret,
 	type SecretCreateParams,
 	type SecretDeleteParams,
@@ -161,7 +201,19 @@ export {
 	type VolumeMountOptions,
 	VolumeService,
 } from "./services/volume/volume";
+export {
+	type ProxyTokenInfo,
+	type TokenData,
+	Workspace,
+	type WorkspaceMemberInfo,
+	type WorkspaceMemberRole,
+	WorkspaceMembersManager,
+	WorkspaceProxyTokenManager,
+	WorkspaceService,
+	type WorkspaceSettings,
+} from "./services/workspace/workspace";
 export type { Logger, LogLevel } from "./utils/logger";
 export { Retries } from "./utils/retries";
 export type { ModalReadStream, ModalWriteStream } from "./utils/streams";
 export { checkForRenamedParams } from "./utils/validation";
+export { SDK_VERSION, SDK_VERSION as __version__ } from "./utils/version";

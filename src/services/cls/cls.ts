@@ -14,6 +14,7 @@ import {
 } from "@/generated/modal_proto/api";
 import { parseGpuConfig } from "@/services/deploy/app";
 import { Function_ } from "@/services/function/function";
+import type { SchedulerPlacement } from "@/services/scheduler_placement/scheduler_placement";
 import type { Secret } from "@/services/secret/secret";
 import { mergeEnvIntoSecrets } from "@/services/secret/secret";
 import { type Volume, volumeToMountProto } from "@/services/volume/volume";
@@ -115,6 +116,7 @@ export class ClsService {
  * @property bufferContainers - バッファコンテナ数 @optional
  * @property scaledownWindowMs - スケールダウン待機時間(ミリ秒) @optional
  * @property timeoutMs - タイムアウト(ミリ秒) @optional
+ * @property schedulerPlacement - スケジューリング制約 @optional
  */
 export type ClsWithOptionsParams = {
 	cpu?: number;
@@ -130,6 +132,7 @@ export type ClsWithOptionsParams = {
 	bufferContainers?: number;
 	scaledownWindowMs?: number;
 	timeoutMs?: number;
+	schedulerPlacement?: SchedulerPlacement;
 };
 
 /**
@@ -456,6 +459,7 @@ async function buildFunctionOptionsProto(
 		targetConcurrentInputs: o.targetConcurrentInputs,
 		batchMaxSize: o.batchMaxSize,
 		batchLingerMs: o.batchWaitMs,
+		schedulerPlacement: o.schedulerPlacement?.toProto(),
 	});
 
 	return functionOptions;

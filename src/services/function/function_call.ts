@@ -118,8 +118,15 @@ export class FunctionCall {
 	 * @description 複数の FunctionCall の結果を順序を保って待つ
 	 * @param functionCalls - FunctionCall の配列
 	 */
-	static async gather(functionCalls: FunctionCall[]): Promise<unknown[]> {
-		return await Promise.all(functionCalls.map((fc) => fc.get()));
+	static async gather(...functionCalls: FunctionCall[]): Promise<unknown[]>;
+	static async gather(functionCalls: FunctionCall[]): Promise<unknown[]>;
+	static async gather(
+		...functionCalls: FunctionCall[] | [FunctionCall[]]
+	): Promise<unknown[]> {
+		const calls = Array.isArray(functionCalls[0])
+			? functionCalls[0]
+			: (functionCalls as FunctionCall[]);
+		return await Promise.all(calls.map((fc) => fc.get()));
 	}
 
 	/**
