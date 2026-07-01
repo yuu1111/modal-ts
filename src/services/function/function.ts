@@ -125,12 +125,16 @@ export interface FunctionStats {
  * @property minContainers - 最小コンテナ数 @optional
  * @property maxContainers - 最大コンテナ数 @optional
  * @property bufferContainers - バッファコンテナ数 @optional
+ * @property targetConcurrency - 目標同時リクエスト数 @optional
+ * @property scaleupWindowMs - スケールアップ猶予期間(ミリ秒) @optional
  * @property scaledownWindowMs - スケールダウン猶予期間(ミリ秒) @optional
  */
 export interface FunctionUpdateAutoscalerParams {
 	minContainers?: number;
 	maxContainers?: number;
 	bufferContainers?: number;
+	targetConcurrency?: number;
+	scaleupWindowMs?: number;
 	scaledownWindowMs?: number;
 }
 
@@ -664,6 +668,43 @@ export class Function_ {
 	}
 
 	/**
+	 * @description 各入力を Function に渡して結果を配列で返す
+	 * @param inputs - 各 call の第一位置引数
+	 */
+	async map(inputs: Iterable<unknown>): Promise<unknown[]> {
+		const calls = await Promise.all(
+			Array.from(inputs, (input) => this.spawn([input])),
+		);
+		return await FunctionCall.gather(calls);
+	}
+
+	/**
+	 * @description 各入力タプルを Function の位置引数として渡して結果を配列で返す
+	 * @param inputs - 各 call の位置引数配列
+	 */
+	async starmap(inputs: Iterable<readonly unknown[]>): Promise<unknown[]> {
+		const calls = await Promise.all(
+			Array.from(inputs, (args) => this.spawn([...args])),
+		);
+		return await FunctionCall.gather(calls);
+	}
+
+	/**
+	 * @description 各入力を Function に渡して完了を待つ。結果値は破棄する
+	 * @param inputs - 各 call の第一位置引数
+	 */
+	async forEach(inputs: Iterable<unknown>): Promise<void> {
+		await this.map(inputs);
+	}
+
+	/**
+	 * @description {@link Function_#forEach} の Python 互換 alias
+	 */
+	async for_each(inputs: Iterable<unknown>): Promise<void> {
+		await this.forEach(inputs);
+	}
+
+	/**
 	 * @description Functionの現在の統計情報を取得する
 	 * @returns バックログとランナー数を含む統計情報
 	 */
@@ -694,6 +735,11 @@ export class Function_ {
 				minContainers: params.minContainers,
 				maxContainers: params.maxContainers,
 				bufferContainers: params.bufferContainers,
+				targetConcurrency: params.targetConcurrency,
+				scaleupWindow:
+					params.scaleupWindowMs !== undefined
+						? Math.trunc(params.scaleupWindowMs / 1000)
+						: undefined,
 				scaledownWindow:
 					params.scaledownWindowMs !== undefined
 						? Math.trunc(params.scaledownWindowMs / 1000)

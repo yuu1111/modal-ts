@@ -52,6 +52,14 @@ export type VolumeDeleteParams = {
 };
 
 /**
+ * @description {@link VolumeService#rename client.volumes.rename()} のオプションパラメータ
+ * @property environment - 使用する環境名
+ */
+export type VolumeRenameParams = {
+	environment?: string;
+};
+
+/**
  * @description Volume をマウントするときのオプション
  * @property readOnly - コンテナ内で読み取り専用にするか
  * @property subPath - Volume 内の一部ディレクトリだけをマウントするパス
@@ -246,6 +254,29 @@ export class VolumeService {
 			suppressNotFound(err, params?.allowMissing);
 		}
 	}
+
+	/**
+	 * @description 名前付き {@link Volume} の名前を変更する
+	 * @param oldName - 変更前の Volume 名
+	 * @param newName - 変更後の Volume 名
+	 * @param params - オプションパラメータ
+	 */
+	async rename(
+		oldName: string,
+		newName: string,
+		params: VolumeRenameParams = {},
+	): Promise<void> {
+		const volume = await this.fromName(oldName, {
+			...(params.environment !== undefined && {
+				environment: params.environment,
+			}),
+			createIfMissing: false,
+		});
+		await this.#client.cpClient.volumeRename({
+			volumeId: volume.volumeId,
+			name: newName,
+		});
+	}
 }
 
 /**
@@ -283,7 +314,8 @@ export class Volume {
 			this.volumeId = volumeIdOrName as string;
 			if (typeof nameOrMountOptions === "string")
 				this.name = nameOrMountOptions;
-			else mountOptions = nameOrMountOptions;
+			else if (nameOrMountOptions !== undefined)
+				mountOptions = nameOrMountOptions;
 		}
 		if (info !== undefined) this.#info = info;
 		if (typeof mountOptions === "boolean") {

@@ -49,6 +49,13 @@ export class Tunnel {
 	}
 
 	/**
+	 * @description {@link Tunnel#tlsSocket} の Python 互換 alias
+	 */
+	get tls_socket(): [string, number] {
+		return this.tlsSocket;
+	}
+
+	/**
 	 * @description 公開 TCP ソケットを [host, port] タプルで取得する
 	 */
 	get tcpSocket(): [string, number] {
@@ -58,5 +65,12 @@ export class Tunnel {
 			);
 		}
 		return [this.unencryptedHost, this.unencryptedPort];
+	}
+
+	/**
+	 * @description {@link Tunnel#tcpSocket} の Python 互換 alias
+	 */
+	get tcp_socket(): [string, number] {
+		return this.tcpSocket;
 	}
 }

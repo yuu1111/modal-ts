@@ -1,4 +1,16 @@
-export { ModalClient, type ModalClientParams } from "./core/client";
+export {
+	type BillingReportItem,
+	billing,
+	type WorkspaceBillingReportItem,
+	type WorkspaceBillingReportParams,
+	workspace_billing_report,
+	workspaceBillingReport,
+} from "./billing";
+export {
+	ModalClient,
+	ModalClient as Client,
+	type ModalClientParams,
+} from "./core/client";
 export type { Profile } from "./core/config";
 export {
 	AlreadyExistsError,
@@ -7,6 +19,7 @@ export {
 	InternalFailure,
 	InvalidError,
 	ModalError,
+	ModalError as Error,
 	NotFoundError,
 	QueueEmptyError,
 	QueueFullError,
@@ -22,6 +35,16 @@ export {
 	SandboxTimeoutError,
 	TimeoutError,
 } from "./core/errors";
+export { enable_output, enableOutput, OutputManager } from "./output";
+export {
+	currentFunctionCallId,
+	currentFunctionCallId as current_function_call_id,
+	currentInputId,
+	currentInputId as current_input_id,
+	interact,
+	isLocal,
+	isLocal as is_local,
+} from "./runtime/execution_context";
 export {
 	CloudBucketMount,
 	CloudBucketMountService,
@@ -63,15 +86,21 @@ export {
 } from "./services/dict/dict";
 export {
 	Environment,
+	EnvironmentBillingManager,
+	type EnvironmentBillingReportItem,
 	type EnvironmentCreateParams,
 	type EnvironmentFromNameParams,
 	type EnvironmentInfo,
 	type EnvironmentListEntry,
+	type EnvironmentMemberRole,
+	type EnvironmentMembers,
+	EnvironmentMembersManager,
 	EnvironmentService,
 	type EnvironmentUpdateParams,
 } from "./services/environment/environment";
 export {
 	Function_,
+	Function_ as Function,
 	type FunctionFromNameParams,
 	FunctionService,
 	type FunctionStats,
@@ -105,6 +134,26 @@ export {
 	type NetworkFileSystemListParams,
 	NetworkFileSystemService,
 } from "./services/network_file_system/network_file_system";
+export {
+	asgi_app,
+	asgiApp,
+	batched,
+	concurrent,
+	enter,
+	exit,
+	fastapi_endpoint,
+	fastapiEndpoint,
+	method,
+	type PartialFunctionMetadata,
+	parameter,
+	partialFunctionMetadataKey,
+	web_endpoint,
+	web_server,
+	webEndpoint,
+	webServer,
+	wsgi_app,
+	wsgiApp,
+} from "./services/partial_function/partial_function";
 export {
 	Proxy,
 	type ProxyFromNameParams,
@@ -161,6 +210,10 @@ export {
 	type SidecarTerminateParams,
 } from "./services/sandbox/sandbox_sidecar";
 export {
+	SandboxSnapshot,
+	type SandboxSnapshotFromIdParams,
+} from "./services/sandbox/sandbox_snapshot";
+export {
 	type SandboxCreateConnectCredentials,
 	type SandboxCreateConnectTokenParams,
 	Tunnel,
@@ -190,6 +243,13 @@ export {
 	type SecretUpdateParams,
 } from "./services/secret/secret";
 export {
+	Server,
+	type ServerFromNameParams,
+	ServerService,
+	type ServerUpdateAutoscalerParams,
+} from "./services/server/server";
+export { type ForwardParams, forward } from "./services/tunnel/forward";
+export {
 	Volume,
 	type VolumeCreateParams,
 	type VolumeDeleteParams,
@@ -199,12 +259,15 @@ export {
 	type VolumeInfo,
 	type VolumeListParams,
 	type VolumeMountOptions,
+	type VolumeRenameParams,
 	VolumeService,
 } from "./services/volume/volume";
 export {
 	type ProxyTokenInfo,
 	type TokenData,
 	Workspace,
+	WorkspaceBillingManager,
+	type WorkspaceBillingReportRow,
 	type WorkspaceMemberInfo,
 	type WorkspaceMemberRole,
 	WorkspaceMembersManager,
@@ -212,6 +275,7 @@ export {
 	WorkspaceService,
 	type WorkspaceSettings,
 } from "./services/workspace/workspace";
+export { FilePatternMatcher } from "./utils/file_pattern_matcher";
 export type { Logger, LogLevel } from "./utils/logger";
 export { Retries } from "./utils/retries";
 export type { ModalReadStream, ModalWriteStream } from "./utils/streams";

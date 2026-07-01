@@ -1,4 +1,5 @@
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
+import path from "node:path";
 import type { ModalClient } from "@/core/client";
 import { InvalidError } from "@/core/errors";
 import { rethrowNotFound, suppressNotFound } from "@/core/grpc/errors";
@@ -237,6 +238,24 @@ export class NetworkFileSystem {
 	}
 
 	/**
+	 * @description local directory を NetworkFileSystem に再帰的に追加する
+	 */
+	async addLocalDir(localPath: string, remotePath?: string): Promise<number> {
+		const rootRemotePath = remotePath ?? `/${basename(localPath)}`;
+		let totalBytes = 0;
+		for await (const filePath of walkLocalFiles(localPath)) {
+			const relativePath = path
+				.relative(localPath, filePath)
+				.replaceAll("\\", "/");
+			totalBytes += await this.addLocalFile(
+				filePath,
+				posixJoin(rootRemotePath, relativePath),
+			);
+		}
+		return totalBytes;
+	}
+
+	/**
 	 * @description file を読み込む
 	 */
 	async readFile(path: string): Promise<Uint8Array> {
@@ -246,9 +265,16 @@ export class NetworkFileSystem {
 		});
 		if (resp.data !== undefined) return resp.data;
 		if (resp.dataBlobId) {
-			throw new Error(
-				"Large NetworkFileSystem blob reads are not implemented; use Volume.readFile for new code.",
-			);
+			const blob = await this.#client.cpClient.blobGet({
+				blobId: resp.dataBlobId,
+			});
+			const httpResp = await fetch(blob.downloadUrl);
+			if (!httpResp.ok) {
+				throw new Error(
+					`NetworkFileSystem file download failed with ${httpResp.status}`,
+				);
+			}
+			return new Uint8Array(await httpResp.arrayBuffer());
 		}
 		return new Uint8Array();
 	}
@@ -313,4 +339,25 @@ async function sha256Hex(data: Uint8Array): Promise<string> {
 
 function basename(path: string): string {
 	return path.replace(/\\/g, "/").split("/").filter(Boolean).pop() ?? "file";
+}
+
+async function* walkLocalFiles(
+	dir: string,
+): AsyncGenerator<string, void, unknown> {
+	for (const entry of await readdir(dir, { withFileTypes: true })) {
+		const entryPath = path.join(dir, entry.name);
+		if (entry.isDirectory()) {
+			yield* walkLocalFiles(entryPath);
+		} else if (entry.isFile()) {
+			yield entryPath;
+		}
+	}
+}
+
+function posixJoin(...parts: string[]): string {
+	return `/${parts
+		.join("/")
+		.split("/")
+		.filter((part) => part.length > 0)
+		.join("/")}`;
 }

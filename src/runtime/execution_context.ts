@@ -1,4 +1,4 @@
-import { InvalidError } from "@/core/errors";
+import { getDefaultClient, type ModalClient } from "@/core/client";
 
 /**
  * @description 現在の process が Modal Function 実行中でなければ true
@@ -24,8 +24,8 @@ export function currentFunctionCallId(): string | undefined {
 /**
  * @description Modal Function 内の対話モードを有効化する
  */
-export async function interact(): Promise<void> {
-	throw new InvalidError(
-		"Interactivity is not available in the JavaScript SDK runtime yet.",
-	);
+export async function interact(
+	client: ModalClient = getDefaultClient(),
+): Promise<void> {
+	await client.cpClient.functionStartPtyShell({});
 }

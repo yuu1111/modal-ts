@@ -6,7 +6,7 @@ import path from "node:path";
  */
 export class FilePatternMatcher {
 	readonly #patterns?: string[];
-	readonly #filePath?: string;
+	#filePath?: string;
 	#compiled?: CompiledPattern[];
 	#inverted = false;
 
@@ -14,19 +14,13 @@ export class FilePatternMatcher {
 		this.#patterns = patterns;
 	}
 
-	private constructor(filePath: string, inverted: boolean);
-	private constructor(filePathOrFirstPattern?: string, inverted = false) {
-		if (typeof filePathOrFirstPattern === "string" && inverted) {
-			this.#filePath = filePathOrFirstPattern;
-		}
-		this.#inverted = inverted;
-	}
-
 	/**
 	 * @description ignore file から遅延ロードする matcher を作る
 	 */
 	static fromFile(filePath: string): FilePatternMatcher {
-		return new FilePatternMatcher(filePath, true);
+		const matcher = new FilePatternMatcher();
+		matcher.#filePath = filePath;
+		return matcher;
 	}
 
 	/**
@@ -35,7 +29,9 @@ export class FilePatternMatcher {
 	invert(): FilePatternMatcher {
 		const matcher = new FilePatternMatcher(...(this.#patterns ?? []));
 		if (this.#filePath !== undefined) {
-			return new InvertedFilePatternMatcher(FilePatternMatcher.fromFile(this.#filePath));
+			return new InvertedFilePatternMatcher(
+				FilePatternMatcher.fromFile(this.#filePath),
+			);
 		}
 		matcher.#inverted = !this.#inverted;
 		return matcher;
@@ -45,7 +41,9 @@ export class FilePatternMatcher {
 	 * @description ディレクトリ走査時に安全に pruning できるかを返す
 	 */
 	canPruneDirectories(): boolean {
-		return !this.#load().some((pattern) => pattern.exclusion) && !this.#inverted;
+		return (
+			!this.#load().some((pattern) => pattern.exclusion) && !this.#inverted
+		);
 	}
 
 	/**
@@ -116,7 +114,10 @@ type CompiledPattern = {
 };
 
 function compilePattern(rawPattern: string): CompiledPattern[] {
-	let pattern = rawPattern.trim().replaceAll("\\", "/").replace(/^\/+|\/+$/g, "");
+	let pattern = rawPattern
+		.trim()
+		.replaceAll("\\", "/")
+		.replace(/^\/+|\/+$/g, "");
 	if (!pattern || pattern.startsWith("#")) return [];
 
 	let exclusion = false;
@@ -130,7 +131,9 @@ function compilePattern(rawPattern: string): CompiledPattern[] {
 }
 
 function normalizePath(filePath: string): string {
-	return path.posix.normalize(filePath.replaceAll("\\", "/")).replace(/^\/+/, "");
+	return path.posix
+		.normalize(filePath.replaceAll("\\", "/"))
+		.replace(/^\/+/, "");
 }
 
 function globToRegExp(pattern: string): RegExp {
@@ -138,7 +141,11 @@ function globToRegExp(pattern: string): RegExp {
 	for (let i = 0; i < pattern.length; i++) {
 		const char = pattern[i];
 		const next = pattern[i + 1];
-		if (char === "*" && next === "*") {
+		const afterNext = pattern[i + 2];
+		if (char === "*" && next === "*" && afterNext === "/") {
+			source += "(?:.*/)?";
+			i += 2;
+		} else if (char === "*" && next === "*") {
 			source += ".*";
 			i++;
 		} else if (char === "*") {

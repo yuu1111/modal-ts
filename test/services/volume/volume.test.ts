@@ -130,3 +130,30 @@ test("VolumeDelete with allowMissing=false throws", async () => {
 		mc.volumes.delete("missing", { allowMissing: false }),
 	).rejects.toThrow(NotFoundError);
 });
+
+test("VolumeRename", async () => {
+	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
+
+	mock.handleUnary("/VolumeGetOrCreate", (req) => {
+		expect(req).toMatchObject({
+			deploymentName: "old-volume",
+			environmentName: "prod",
+			objectCreationType: 0,
+		});
+		return {
+			volumeId: "vo-test-123",
+			metadata: { name: "old-volume" },
+		};
+	});
+
+	mock.handleUnary("/VolumeRename", (req) => {
+		expect(req).toMatchObject({
+			volumeId: "vo-test-123",
+			name: "new-volume",
+		});
+		return {};
+	});
+
+	await mc.volumes.rename("old-volume", "new-volume", { environment: "prod" });
+	mock.assertExhausted();
+});

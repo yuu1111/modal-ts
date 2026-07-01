@@ -103,6 +103,50 @@ test("FunctionCallJsMap", async () => {
 	mock.assertExhausted();
 });
 
+test("Function map starmap and for_each use spawned calls", async () => {
+	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
+
+	mock.handleUnary("/FunctionGet", () =>
+		makeFunctionGetResponse({
+			handleMetadata: { functionName: "mapper" },
+		}),
+	);
+
+	const function_ = await mc.functions.fromName("app", "mapper");
+
+	mock.handleUnary("/FunctionMap", () => ({
+		functionCallId: "fc-map-1",
+		functionCallJwt: "jwt-1",
+		pipelinedInputs: [{ inputJwt: "input-jwt-1" }],
+	}));
+	mock.handleUnary("/FunctionMap", () => ({
+		functionCallId: "fc-map-2",
+		functionCallJwt: "jwt-2",
+		pipelinedInputs: [{ inputJwt: "input-jwt-2" }],
+	}));
+	mock.handleUnary("/FunctionGetOutputs", () => makeSuccessOutput("a"));
+	mock.handleUnary("/FunctionGetOutputs", () => makeSuccessOutput("b"));
+	await expect(function_.map(["x", "y"])).resolves.toEqual(["a", "b"]);
+
+	mock.handleUnary("/FunctionMap", () => ({
+		functionCallId: "fc-star-1",
+		functionCallJwt: "jwt-3",
+		pipelinedInputs: [{ inputJwt: "input-jwt-3" }],
+	}));
+	mock.handleUnary("/FunctionGetOutputs", () => makeSuccessOutput("sum"));
+	await expect(function_.starmap([[1, 2]])).resolves.toEqual(["sum"]);
+
+	mock.handleUnary("/FunctionMap", () => ({
+		functionCallId: "fc-foreach-1",
+		functionCallJwt: "jwt-4",
+		pipelinedInputs: [{ inputJwt: "input-jwt-4" }],
+	}));
+	mock.handleUnary("/FunctionGetOutputs", () => makeSuccessOutput(undefined));
+	await expect(function_.for_each(["z"])).resolves.toBeUndefined();
+
+	mock.assertExhausted();
+});
+
 test("FunctionCallDateTimeRoundtrip", async () => {
 	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
 

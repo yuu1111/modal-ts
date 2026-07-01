@@ -1,8 +1,11 @@
 import type { ModalClient } from "@/core/client";
+import { InvalidError } from "@/core/errors";
 import {
 	type EnvironmentListItem,
 	type EnvironmentMetadata,
+	EnvironmentRole,
 	ObjectCreationType,
+	type WorkspaceBillingReportItem,
 } from "@/generated/modal_proto/api";
 
 /**
@@ -62,6 +65,33 @@ export type EnvironmentListEntry = {
 	effectiveCycleSpendLimit: number;
 	currentCycleUsage: number;
 	spendLimitReached: boolean;
+};
+
+/**
+ * @description Environment member の role
+ */
+export type EnvironmentMemberRole = "viewer" | "contributor";
+
+/**
+ * @description restricted Environment の members
+ */
+export type EnvironmentMembers = {
+	users: Record<string, EnvironmentMemberRole>;
+	serviceUsers: Record<string, EnvironmentMemberRole>;
+	service_users: Record<string, EnvironmentMemberRole>;
+};
+
+/**
+ * @description Billing report の行
+ */
+export type EnvironmentBillingReportItem = {
+	objectId: string;
+	description: string;
+	environmentName: string;
+	intervalStart: Date;
+	cost: string;
+	costByResource: Record<string, string>;
+	tags: Record<string, string>;
 };
 
 /**
@@ -141,6 +171,8 @@ export class Environment {
 	readonly name: string;
 	readonly webhookSuffix?: string;
 	readonly imageBuilderVersion?: string;
+	readonly billing: EnvironmentBillingManager;
+	readonly members: EnvironmentMembersManager;
 	readonly #client: ModalClient;
 
 	/**
@@ -158,6 +190,14 @@ export class Environment {
 			this.webhookSuffix = info.webhookSuffix;
 		if (info.imageBuilderVersion !== undefined)
 			this.imageBuilderVersion = info.imageBuilderVersion;
+		this.billing = new EnvironmentBillingManager(
+			this.#client,
+			this.environmentId,
+		);
+		this.members = new EnvironmentMembersManager(
+			this.#client,
+			this.environmentId,
+		);
 	}
 
 	/**
@@ -190,6 +230,186 @@ export class Environment {
 			maxConcurrentGpus: params.maxConcurrentGpus,
 		});
 		return environmentListEntryFromProto(updated);
+	}
+}
+
+/**
+ * @description Environment billing 管理
+ */
+export class EnvironmentBillingManager {
+	readonly #client: ModalClient;
+	readonly #environmentId: string;
+
+	constructor(client: ModalClient, environmentId: string) {
+		this.#client = client;
+		this.#environmentId = environmentId;
+	}
+
+	/**
+	 * @description Environment usage の billing report を返す
+	 */
+	async report(params: {
+		start: Date;
+		end?: Date;
+		resolution?: string;
+		tagNames?: string[];
+		tag_names?: string[];
+	}): Promise<EnvironmentBillingReportItem[]> {
+		const rows: EnvironmentBillingReportItem[] = [];
+		const stream = await this.#client.cpClient.workspaceBillingReport({
+			startTimestamp: params.start,
+			endTimestamp: params.end ?? new Date(),
+			resolution: params.resolution ?? "d",
+			tagNames: params.tagNames ?? params.tag_names ?? [],
+			environmentIds: [this.#environmentId],
+		});
+		for await (const item of stream) {
+			rows.push(environmentBillingReportItemFromProto(item));
+		}
+		return rows;
+	}
+}
+
+/**
+ * @description restricted Environment の members 管理
+ */
+export class EnvironmentMembersManager {
+	readonly #client: ModalClient;
+	readonly #environmentId: string;
+
+	constructor(client: ModalClient, environmentId: string) {
+		this.#client = client;
+		this.#environmentId = environmentId;
+	}
+
+	/**
+	 * @description restricted Environment の members を返す
+	 */
+	async list(): Promise<EnvironmentMembers> {
+		const resp = await this.#client.cpClient.environmentGetManaged({
+			environmentId: this.#environmentId,
+		});
+		const users: Record<string, EnvironmentMemberRole> = {};
+		const serviceUsers: Record<string, EnvironmentMemberRole> = {};
+		for (const principal of resp.principalRoles) {
+			const role = environmentRoleFromProto(principal.role);
+			if (principal.userId) {
+				users[principal.userName] = role;
+			} else if (principal.serviceUserId) {
+				serviceUsers[principal.serviceUserName] = role;
+			}
+		}
+		return { users, serviceUsers, service_users: serviceUsers };
+	}
+
+	/**
+	 * @description restricted Environment の members を追加または更新する
+	 */
+	async update(params: {
+		users?: Record<string, EnvironmentMemberRole>;
+		serviceUsers?: Record<string, EnvironmentMemberRole>;
+		service_users?: Record<string, EnvironmentMemberRole>;
+	}): Promise<void> {
+		const roles = await this.#client.cpClient.environmentGetManaged({
+			environmentId: this.#environmentId,
+		});
+		const serviceUsers = params.serviceUsers ?? params.service_users ?? {};
+		const userIds = new Map<string, string>();
+		const serviceUserIds = new Map<string, string>();
+		for (const principal of [
+			...roles.principalRoles,
+			...roles.additionalRoles,
+		]) {
+			if (principal.userId) userIds.set(principal.userName, principal.userId);
+			if (principal.serviceUserId) {
+				serviceUserIds.set(principal.serviceUserName, principal.serviceUserId);
+			}
+		}
+		const requests: Array<Promise<unknown>> = [];
+		for (const [name, role] of Object.entries(params.users ?? {})) {
+			const userId = userIds.get(name);
+			if (!userId)
+				throw new InvalidError(`User '${name}' not found in workspace`);
+			requests.push(
+				this.#client.cpClient.environmentRoleSet({
+					environmentId: this.#environmentId,
+					userId,
+					serviceUserId: "",
+					role: environmentRoleToProto(role),
+				}),
+			);
+		}
+		for (const [name, role] of Object.entries(serviceUsers)) {
+			const serviceUserId = serviceUserIds.get(name);
+			if (!serviceUserId) {
+				throw new InvalidError(`Service user '${name}' not found in workspace`);
+			}
+			requests.push(
+				this.#client.cpClient.environmentRoleSet({
+					environmentId: this.#environmentId,
+					userId: "",
+					serviceUserId,
+					role: environmentRoleToProto(role),
+				}),
+			);
+		}
+		await Promise.all(requests);
+	}
+
+	/**
+	 * @description restricted Environment から members を削除する
+	 */
+	async remove(params: {
+		users?: string[];
+		serviceUsers?: string[];
+		service_users?: string[];
+	}): Promise<void> {
+		const roles = await this.#client.cpClient.environmentGetManaged({
+			environmentId: this.#environmentId,
+		});
+		const serviceUsers = params.serviceUsers ?? params.service_users ?? [];
+		const userIds = new Map<string, string>();
+		const serviceUserIds = new Map<string, string>();
+		for (const principal of roles.principalRoles) {
+			if (principal.userId) userIds.set(principal.userName, principal.userId);
+			if (principal.serviceUserId) {
+				serviceUserIds.set(principal.serviceUserName, principal.serviceUserId);
+			}
+		}
+		const requests: Array<Promise<unknown>> = [];
+		for (const name of params.users ?? []) {
+			const userId = userIds.get(name);
+			if (!userId) {
+				throw new InvalidError(
+					`User '${name}' is not a member of this Environment`,
+				);
+			}
+			requests.push(
+				this.#client.cpClient.environmentRoleSet({
+					environmentId: this.#environmentId,
+					userId,
+					serviceUserId: "",
+					role: EnvironmentRole.ENVIRONMENT_ROLE_UNSPECIFIED,
+				}),
+			);
+		}
+		for (const name of serviceUsers) {
+			const serviceUserId = serviceUserIds.get(name);
+			if (!serviceUserId) {
+				throw new InvalidError(
+					`Service user '${name}' is not a member of this Environment`,
+				);
+			}
+			requests.push(
+				this.#client.cpClient.environmentRoleSet({
+					environmentId: this.#environmentId,
+					userId: "",
+					serviceUserId,
+					role: EnvironmentRole.ENVIRONMENT_ROLE_UNSPECIFIED,
+				}),
+			);
+		}
+		await Promise.all(requests);
 	}
 }
 
@@ -240,4 +460,36 @@ function checkEnvironmentName(name: string): void {
 	if (!/^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(name)) {
 		throw new Error(`Invalid Environment name: ${name}`);
 	}
+}
+
+function environmentRoleFromProto(
+	role: EnvironmentRole,
+): EnvironmentMemberRole {
+	if (role === EnvironmentRole.ENVIRONMENT_ROLE_VIEWER) return "viewer";
+	if (role === EnvironmentRole.ENVIRONMENT_ROLE_CONTRIBUTOR) {
+		return "contributor";
+	}
+	throw new InvalidError(`Unknown Environment role: ${role}`);
+}
+
+function environmentRoleToProto(role: EnvironmentMemberRole): EnvironmentRole {
+	if (role === "viewer") return EnvironmentRole.ENVIRONMENT_ROLE_VIEWER;
+	if (role === "contributor") {
+		return EnvironmentRole.ENVIRONMENT_ROLE_CONTRIBUTOR;
+	}
+	throw new InvalidError(`Unknown Environment role: ${role}`);
+}
+
+function environmentBillingReportItemFromProto(
+	item: WorkspaceBillingReportItem,
+): EnvironmentBillingReportItem {
+	return {
+		objectId: item.objectId,
+		description: item.description,
+		environmentName: item.environmentName,
+		intervalStart: item.interval ?? new Date(0),
+		cost: item.cost,
+		costByResource: item.costByResource,
+		tags: item.tags,
+	};
 }

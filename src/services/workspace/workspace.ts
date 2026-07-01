@@ -1,6 +1,7 @@
 import type { ModalClient } from "@/core/client";
 import {
 	MemberRole,
+	type WorkspaceBillingReportItem as WorkspaceBillingReportItemProto,
 	type WorkspaceMembersListItem,
 } from "@/generated/modal_proto/api";
 
@@ -10,6 +11,16 @@ import {
 export type WorkspaceSettings = {
 	defaultEnvironmentName: string;
 	imageBuilderVersion: string;
+};
+
+export type WorkspaceBillingReportRow = {
+	objectId: string;
+	description: string;
+	environmentName: string;
+	intervalStart: Date;
+	cost: string;
+	costByResource: Record<string, string>;
+	tags: Record<string, string>;
 };
 
 /**
@@ -73,6 +84,7 @@ export class WorkspaceService {
  */
 export class Workspace {
 	readonly name: string;
+	readonly billing: WorkspaceBillingManager;
 	readonly members: WorkspaceMembersManager;
 	readonly proxyTokens: WorkspaceProxyTokenManager;
 	readonly #client: ModalClient;
@@ -83,6 +95,7 @@ export class Workspace {
 	constructor(client: ModalClient, name: string) {
 		this.#client = client;
 		this.name = name;
+		this.billing = new WorkspaceBillingManager(client);
 		this.members = new WorkspaceMembersManager(client);
 		this.proxyTokens = new WorkspaceProxyTokenManager(client);
 	}
@@ -125,6 +138,44 @@ export class Workspace {
 			newImageBuilderVersion: version,
 		});
 		return resp.imageBuilderVersion;
+	}
+}
+
+/**
+ * @description Workspace billing 管理
+ */
+export class WorkspaceBillingManager {
+	readonly #client: ModalClient;
+
+	/**
+	 * @internal
+	 */
+	constructor(client: ModalClient) {
+		this.#client = client;
+	}
+
+	/**
+	 * @description Workspace usage の billing report を返す
+	 */
+	async report(params: {
+		start: Date;
+		end?: Date;
+		resolution?: string;
+		tagNames?: string[];
+	}): Promise<WorkspaceBillingReportRow[]> {
+		const rows: WorkspaceBillingReportRow[] = [];
+		const stream = await this.#client.cpClient.workspaceBillingReport({
+			startTimestamp: params.start,
+			endTimestamp: params.end ?? new Date(),
+			resolution: params.resolution ?? "d",
+			tagNames: params.tagNames ?? [],
+			environmentIds: [],
+			appIds: [],
+		});
+		for await (const item of stream) {
+			rows.push(workspaceBillingReportRowFromProto(item));
+		}
+		return rows;
 	}
 }
 
@@ -252,4 +303,18 @@ function memberRoleFromProto(role: MemberRole): WorkspaceMemberRole {
 		default:
 			throw new Error(`Unknown workspace member role: ${role}`);
 	}
+}
+
+function workspaceBillingReportRowFromProto(
+	item: WorkspaceBillingReportItemProto,
+): WorkspaceBillingReportRow {
+	return {
+		objectId: item.objectId,
+		description: item.description,
+		environmentName: item.environmentName,
+		intervalStart: item.interval ?? new Date(0),
+		cost: item.cost,
+		costByResource: item.costByResource,
+		tags: item.tags,
+	};
 }

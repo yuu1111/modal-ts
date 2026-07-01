@@ -30,6 +30,7 @@ import { ProxyService } from "@/services/proxy/proxy";
 import { QueueService } from "@/services/queue/queue";
 import { SandboxService } from "@/services/sandbox/sandbox";
 import { SecretService } from "@/services/secret/secret";
+import { ServerService } from "@/services/server/server";
 import { VolumeService } from "@/services/volume/volume";
 import { WorkspaceService } from "@/services/workspace/workspace";
 import { createLogger, type Logger, type LogLevel } from "@/utils/logger";
@@ -127,6 +128,7 @@ export class ModalClient {
 	readonly queues: QueueService;
 	readonly sandboxes: SandboxService;
 	readonly secrets: SecretService;
+	readonly servers: ServerService;
 	readonly volumes: VolumeService;
 	readonly workspaces: WorkspaceService;
 
@@ -181,6 +183,7 @@ export class ModalClient {
 		this.queues = new QueueService(this);
 		this.sandboxes = new SandboxService(this);
 		this.secrets = new SecretService(this);
+		this.servers = new ServerService(this);
 		this.volumes = new VolumeService(this);
 		this.workspaces = new WorkspaceService(this);
 	}
