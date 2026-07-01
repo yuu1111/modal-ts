@@ -18,11 +18,16 @@ import {
 	FileDescriptor,
 	type GenericResult,
 	GenericResult_GenericStatus,
+	NetworkAccess,
+	NetworkAccess_NetworkAccessType,
 	type SandboxTagsGetResponse,
 } from "@/generated/modal_proto/api";
 import {
 	TaskMountDirectoryRequest,
+	TaskReloadVolumesRequest,
+	TaskSetNetworkAccessRequest,
 	TaskSnapshotDirectoryRequest,
+	TaskSnapshotFilesystemRequest,
 	TaskUnmountDirectoryRequest,
 } from "@/generated/modal_proto/task_command_router";
 import type { App } from "@/services/deploy/app";
@@ -38,12 +43,18 @@ import {
 } from "@/utils/streams";
 import {
 	buildSandboxCreateRequestProto,
+	buildSandboxCreateV2RequestProto,
 	buildTaskExecStartRequestProto,
 	type SandboxCreateParams,
 	type SandboxExecParams,
+	type SandboxExperimentalListParams,
 	type SandboxFromNameParams,
 	type SandboxListParams,
+	type SandboxMountImageParams,
+	type SandboxSnapshotDirectoryParams,
+	type SandboxSnapshotFilesystemParams,
 	type SandboxTerminateParams,
+	type SandboxUpdateNetworkPolicyParams,
 	validateExecArgs,
 } from "./sandbox_config";
 import {
@@ -51,7 +62,9 @@ import {
 	SandboxFile,
 	type SandboxFileMode,
 } from "./sandbox_filesystem";
+import { SandboxFilesystem } from "./sandbox_fs";
 import { ContainerProcess } from "./sandbox_process";
+import { SidecarService } from "./sandbox_sidecar";
 import { inputStreamSb, outputStreamSb } from "./sandbox_streams";
 import {
 	type SandboxCreateConnectCredentials,
@@ -68,6 +81,22 @@ import {
  * const sb = await modal.sandboxes.create(app, image);
  * ```
  */
+function resolveTtlSeconds(ttlMs: number | null | undefined): number {
+	if (ttlMs === undefined) {
+		return 30 * 24 * 3600;
+	}
+	if (ttlMs === null) {
+		return -1;
+	}
+	if (ttlMs < 1000) {
+		throw new InvalidError(`ttlMs must be at least 1000ms, got ${ttlMs}`);
+	}
+	if (ttlMs % 1000 !== 0) {
+		throw new InvalidError(`ttlMs must be a multiple of 1000ms, got ${ttlMs}`);
+	}
+	return ttlMs / 1000;
+}
+
 export class SandboxService {
 	readonly #client: ModalClient;
 	constructor(client: ModalClient) {
@@ -117,12 +146,75 @@ export class SandboxService {
 	}
 
 	/**
+	 * @description 実験的 V2 backend で Sandbox を作成する
+	 * @param app - Appインスタンス
+	 * @param image - コンテナイメージ
+	 * @param params - Sandbox作成パラメータ
+	 * @returns 作成された V2 Sandbox
+	 */
+	async experimentalCreate(
+		app: App,
+		image: Image,
+		params: SandboxCreateParams = {},
+	): Promise<Sandbox> {
+		await image.build(app);
+
+		const mergedSecrets = await mergeEnvIntoSecrets(
+			this.#client,
+			params.env,
+			params.secrets,
+		);
+		const { env: _env, ...restParams } = params;
+		const mergedParams = {
+			...restParams,
+			secrets: mergedSecrets,
+		};
+
+		const createReq = await buildSandboxCreateV2RequestProto(
+			app.appId,
+			image.imageId,
+			mergedParams,
+		);
+		const createResp = await this.#client.cpClient
+			.sandboxCreateV2(createReq)
+			.catch(rethrowAlreadyExists);
+
+		this.#client.logger.debug(
+			"Created experimental V2 Sandbox",
+			"sandbox_id",
+			createResp.sandboxId,
+		);
+
+		const tunnels =
+			createResp.tunnels.length > 0
+				? Object.fromEntries(
+						createResp.tunnels.map((t) => [
+							t.containerPort,
+							new Tunnel(t.host, t.port, t.unencryptedHost, t.unencryptedPort),
+						]),
+					)
+				: undefined;
+
+		return new Sandbox(
+			this.#client,
+			createResp.sandboxId,
+			true,
+			createResp.taskId,
+			tunnels,
+		);
+	}
+
+	/**
 	 * @description IDから実行中のSandboxを取得する
 	 * @param sandboxId - Sandbox ID
 	 * @returns Sandboxインスタンス
 	 * @throws NotFoundError 指定されたSandboxが存在しない場合
 	 */
 	async fromId(sandboxId: string): Promise<Sandbox> {
+		const isV2 = Sandbox.isV2SandboxId(sandboxId);
+		if (isV2) {
+			return new Sandbox(this.#client, sandboxId, true);
+		}
 		try {
 			await this.#client.cpClient.sandboxWait({
 				sandboxId,
@@ -200,6 +292,38 @@ export class SandboxService {
 			}
 		}
 	}
+
+	/**
+	 * @description 実験的 V2 Sandbox の一覧を返す
+	 * @param params - フィルタリングパラメータ
+	 */
+	async *experimentalList(
+		params: SandboxExperimentalListParams,
+	): AsyncGenerator<Sandbox, void, unknown> {
+		if (!params?.appId) {
+			throw new InvalidError(
+				"experimentalList requires an `appId`:\n\n" +
+					'const app = await modal.apps.fromName("my-app");\n' +
+					"modal.sandboxes.experimentalList({ appId: app.appId });",
+			);
+		}
+
+		let beforeTimestamp: number | undefined;
+		while (true) {
+			const resp = await this.#client.cpClient.sandboxListV2({
+				appId: params.appId,
+				...(beforeTimestamp !== undefined && { beforeTimestamp }),
+				includeFinished: false,
+			});
+			if (!resp.sandboxes || resp.sandboxes.length === 0) {
+				return;
+			}
+			for (const info of resp.sandboxes) {
+				yield new Sandbox(this.#client, info.id, true);
+			}
+			beforeTimestamp = resp.sandboxes[resp.sandboxes.length - 1]?.createdAt;
+		}
+	}
 }
 
 /**
@@ -219,11 +343,36 @@ export class Sandbox {
 	#commandRouterClient: TaskCommandRouterClientImpl | undefined;
 	#commandRouterClientPromise: Promise<TaskCommandRouterClientImpl> | undefined;
 	#attached: boolean = true;
+	#filesystem: SandboxFilesystem | undefined;
+	#experimentalSidecars: SidecarService | undefined;
+	#isV2: boolean;
 
 	/** @internal */
-	constructor(client: ModalClient, sandboxId: string) {
+	constructor(
+		client: ModalClient,
+		sandboxId: string,
+		isV2 = false,
+		taskId?: string,
+		tunnels?: Record<number, Tunnel>,
+	) {
 		this.#client = client;
 		this.sandboxId = sandboxId;
+		this.#isV2 = isV2;
+		if (taskId !== undefined) this.#taskId = taskId;
+		if (tunnels !== undefined) this.#tunnels = tunnels;
+	}
+
+	static isV2SandboxId(sandboxId: string): boolean {
+		const [prefix, suffix, ...extra] = sandboxId.split("-");
+		const ulidAlphabet = new Set("0123456789ABCDEFGHJKMNPQRSTVWXYZ");
+		return (
+			prefix === "sb" &&
+			extra.length === 0 &&
+			suffix !== undefined &&
+			suffix.length === 26 &&
+			"01234567".includes(suffix[0] ?? "") &&
+			Array.from(suffix).every((ch) => ulidAlphabet.has(ch))
+		);
 	}
 
 	/**
@@ -284,6 +433,39 @@ export class Sandbox {
 			);
 		}
 		return this.#stderr;
+	}
+
+	/**
+	 * @description Sandbox filesystem API の namespace
+	 */
+	get filesystem(): SandboxFilesystem {
+		if (!this.#filesystem) {
+			this.#filesystem = new SandboxFilesystem((command, params) =>
+				this.exec(command, params as SandboxExecParams & { mode: "binary" }),
+			);
+		}
+		return this.#filesystem;
+	}
+
+	/**
+	 * @description Sandbox 内 sidecar container API の namespace
+	 */
+	get experimentalSidecars(): SidecarService {
+		if (!this.#experimentalSidecars) {
+			this.#experimentalSidecars = new SidecarService({
+				exec: (command, params, containerId) =>
+					this.#exec(command, params, containerId),
+				commandRouter: async () => {
+					const taskId = await this.#getTaskId();
+					const commandRouter =
+						await this.#getOrCreateCommandRouterClient(taskId);
+					return [taskId, commandRouter];
+				},
+				mergeEnvIntoSecrets: async (env, secrets) =>
+					await mergeEnvIntoSecrets(this.#client, env, secrets),
+			});
+		}
+		return this.#experimentalSidecars;
 	}
 
 	/**
@@ -364,6 +546,14 @@ export class Sandbox {
 		command: string[],
 		params?: SandboxExecParams,
 	): Promise<ContainerProcess> {
+		return this.#exec(command, params);
+	}
+
+	async #exec(
+		command: string[],
+		params?: SandboxExecParams,
+		containerId?: string,
+	): Promise<ContainerProcess> {
 		this.#ensureAttached();
 		validateExecArgs(command);
 		const taskId = await this.#getTaskId();
@@ -388,6 +578,7 @@ export class Sandbox {
 			execId,
 			command,
 			mergedParams,
+			containerId,
 		);
 
 		await commandRouterClient.execStart(request);
@@ -428,9 +619,13 @@ export class Sandbox {
 			return this.#taskId;
 		}
 		for (let i = 0; i < Sandbox.#maxGetTaskIdAttempts; i++) {
-			const resp = await this.#client.cpClient.sandboxGetTaskId({
-				sandboxId: this.sandboxId,
-			});
+			const resp = this.#isV2
+				? await this.#client.cpClient.sandboxGetTaskIdV2({
+						sandboxId: this.sandboxId,
+					})
+				: await this.#client.cpClient.sandboxGetTaskId({
+						sandboxId: this.sandboxId,
+					});
 			if (resp.taskResult) {
 				if (
 					resp.taskResult.status ===
@@ -471,6 +666,8 @@ export class Sandbox {
 				taskId,
 				this.#client.logger,
 				this.#client.profile,
+				this.sandboxId,
+				this.#isV2,
 			);
 			if (!client) {
 				throw new Error(
@@ -521,6 +718,13 @@ export class Sandbox {
 		this.#ensureAttached();
 		if (timeoutMs <= 0) {
 			throw new InvalidError(`timeoutMs must be positive, got ${timeoutMs}`);
+		}
+
+		if (this.#isV2) {
+			const taskId = await this.#getTaskId();
+			const commandRouter = await this.#getOrCreateCommandRouterClient(taskId);
+			await commandRouter.sandboxWaitUntilReady(taskId, timeoutMs);
+			return;
 		}
 
 		const deadline = Date.now() + timeoutMs;
@@ -647,11 +851,37 @@ export class Sandbox {
 	/**
 	 * @description Sandbox のファイルシステムをスナップショットする。
 	 * 返された {@link Image} で同じファイルシステムの新しい Sandbox を起動できる
-	 * @param timeoutMs - スナップショット操作のタイムアウト(ミリ秒)
+	 * @param paramsOrTimeoutMs - スナップショット操作のパラメータ、または旧形式のタイムアウト(ミリ秒)
 	 * @returns {@link Image}
 	 */
-	async snapshotFilesystem(timeoutMs = 55000): Promise<Image> {
+	async snapshotFilesystem(
+		paramsOrTimeoutMs: SandboxSnapshotFilesystemParams | number = {},
+	): Promise<Image> {
 		this.#ensureAttached();
+		const params =
+			typeof paramsOrTimeoutMs === "number"
+				? { timeoutMs: paramsOrTimeoutMs }
+				: paramsOrTimeoutMs;
+		const timeoutMs = params.timeoutMs ?? 55000;
+
+		if (this.#isV2) {
+			const taskId = await this.#getTaskId();
+			const commandRouterClient =
+				await this.#getOrCreateCommandRouterClient(taskId);
+			const resp = await commandRouterClient.snapshotFilesystem(
+				TaskSnapshotFilesystemRequest.create({
+					taskId,
+					snapshotId: uuidv4(),
+					ttlSeconds: resolveTtlSeconds(params.ttlMs),
+					customerSuppliedEncryptionKey: params.experimentalEncryptionKey,
+				}),
+			);
+			if (!resp.imageId) {
+				throw new Error("Sandbox snapshot response missing `imageId`");
+			}
+			return new Image(this.#client, resp.imageId, "");
+		}
+
 		const resp = await this.#client.cpClient.sandboxSnapshotFs({
 			sandboxId: this.sandboxId,
 			timeout: timeoutMs / 1000,
@@ -677,7 +907,11 @@ export class Sandbox {
 	 * @param path - マウント先のパス
 	 * @param image - マウントする {@link Image}。未指定なら空ディレクトリをマウント
 	 */
-	async mountImage(path: string, image?: Image): Promise<void> {
+	async mountImage(
+		path: string,
+		image?: Image,
+		params: SandboxMountImageParams = {},
+	): Promise<void> {
 		this.#ensureAttached();
 		const taskId = await this.#getTaskId();
 		const commandRouterClient =
@@ -695,6 +929,7 @@ export class Sandbox {
 			taskId,
 			path: pathBytes,
 			imageId,
+			customerSuppliedEncryptionKey: params.experimentalEncryptionKey,
 		});
 		await commandRouterClient.mountDirectory(request);
 	}
@@ -720,9 +955,13 @@ export class Sandbox {
 	/**
 	 * @description 実行中の Sandbox 内のディレクトリをスナップショットし新しい {@link Image} を作成する
 	 * @param path - スナップショット対象のディレクトリパス
+	 * @param params - スナップショットパラメータ
 	 * @returns {@link Image}
 	 */
-	async snapshotDirectory(path: string): Promise<Image> {
+	async snapshotDirectory(
+		path: string,
+		params: SandboxSnapshotDirectoryParams = {},
+	): Promise<Image> {
 		this.#ensureAttached();
 		const taskId = await this.#getTaskId();
 		const commandRouterClient =
@@ -732,6 +971,9 @@ export class Sandbox {
 		const request = TaskSnapshotDirectoryRequest.create({
 			taskId,
 			path: pathBytes,
+			snapshotId: uuidv4(),
+			ttlSeconds: resolveTtlSeconds(params.ttlMs),
+			customerSuppliedEncryptionKey: params.experimentalEncryptionKey,
 		});
 		const response = await commandRouterClient.snapshotDirectory(request);
 
@@ -740,6 +982,50 @@ export class Sandbox {
 		}
 
 		return new Image(this.#client, response.imageId, "");
+	}
+
+	/**
+	 * @description Sandbox の outbound network policy を更新する
+	 * @param params - network policy パラメータ
+	 */
+	async updateNetworkPolicy(
+		params: SandboxUpdateNetworkPolicyParams,
+	): Promise<void> {
+		this.#ensureAttached();
+		if (
+			params.outboundCidrAllowlist === undefined ||
+			params.outboundDomainAllowlist === undefined
+		) {
+			throw new InvalidError(
+				"updateNetworkPolicy currently requires both outboundCidrAllowlist and outboundDomainAllowlist to be set",
+			);
+		}
+		const taskId = await this.#getTaskId();
+		const commandRouterClient =
+			await this.#getOrCreateCommandRouterClient(taskId);
+		await commandRouterClient.setNetworkAccess(
+			TaskSetNetworkAccessRequest.create({
+				taskId,
+				networkAccess: NetworkAccess.create({
+					networkAccessType: NetworkAccess_NetworkAccessType.ALLOWLIST,
+					allowedCidrs: params.outboundCidrAllowlist,
+					allowedDomains: params.outboundDomainAllowlist,
+				}),
+			}),
+		);
+	}
+
+	/**
+	 * @description Sandbox にマウントされた Volume を最新コミット状態へ reload する
+	 */
+	async reloadVolumes(): Promise<void> {
+		this.#ensureAttached();
+		const taskId = await this.#getTaskId();
+		const commandRouterClient =
+			await this.#getOrCreateCommandRouterClient(taskId);
+		await commandRouterClient.reloadVolumes(
+			TaskReloadVolumesRequest.create({ taskId }),
+		);
 	}
 
 	/**

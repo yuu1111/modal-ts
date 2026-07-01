@@ -28,6 +28,49 @@ test("ImageFromRegistry", async () => {
 	expect(image.imageId).toMatch(/^im-/);
 });
 
+test("ImageFromName", async () => {
+	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
+
+	mock.handleUnary("/ImageGetByTag", (req) => {
+		expect(req).toMatchObject({
+			environmentName: "dev",
+			tag: "published-image:latest",
+		});
+		return { imageId: "im-published" };
+	});
+
+	const image = await mc.images.fromName("published-image", {
+		environment: "dev",
+	});
+	expect(image.imageId).toBe("im-published");
+
+	mock.assertExhausted();
+});
+
+test("ImagePublish", async () => {
+	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
+
+	mock.handleUnary("/ImageFromId", () => ({ imageId: "im-built" }));
+
+	mock.handleUnary("/ImagePublish", (req) => {
+		expect(req).toMatchObject({
+			imageId: "im-built",
+			environmentName: "prod",
+			isPublic: false,
+			tag: "published-image:v1",
+		});
+		return {};
+	});
+
+	await mc.images.fromId("im-built").then((image) =>
+		image.publish("published-image:v1", {
+			environment: "prod",
+		}),
+	);
+
+	mock.assertExhausted();
+});
+
 test("ImageFromRegistryWithSecret", async () => {
 	// GCP Artifact Registry also supports auth using username and password, if the username is "_json_key"
 	// and the password is the service account JSON blob. See:

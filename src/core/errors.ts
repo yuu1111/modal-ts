@@ -63,6 +63,41 @@ export class QueueFullError extends ModalError {}
 export class SandboxFilesystemError extends ModalError {}
 
 /**
+ * @description Sandbox filesystem のパスが見つからない
+ */
+export class SandboxFilesystemNotFoundError extends SandboxFilesystemError {}
+
+/**
+ * @description Sandbox filesystem のディレクトリが空ではない
+ */
+export class SandboxFilesystemDirectoryNotEmptyError extends SandboxFilesystemError {}
+
+/**
+ * @description Sandbox filesystem の対象がディレクトリ
+ */
+export class SandboxFilesystemIsADirectoryError extends SandboxFilesystemError {}
+
+/**
+ * @description Sandbox filesystem の対象がディレクトリではない
+ */
+export class SandboxFilesystemNotADirectoryError extends SandboxFilesystemError {}
+
+/**
+ * @description Sandbox filesystem の操作権限がない
+ */
+export class SandboxFilesystemPermissionError extends SandboxFilesystemError {}
+
+/**
+ * @description Sandbox filesystem のファイルサイズが大きすぎる
+ */
+export class SandboxFilesystemFileTooLargeError extends SandboxFilesystemError {}
+
+/**
+ * @description Sandbox filesystem のパスが既に存在する
+ */
+export class SandboxFilesystemPathAlreadyExistsError extends SandboxFilesystemError {}
+
+/**
  * @description Sandbox操作が許容時間を超過した
  */
 export class SandboxTimeoutError extends ModalError {

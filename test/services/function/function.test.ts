@@ -6,6 +6,7 @@ import {
 	GenericResult_GenericStatus,
 } from "../../../src/generated/modal_proto/api";
 import { Function_ } from "../../../src/services/function/function";
+import { Volume } from "../../../src/services/volume/volume";
 import { cborEncode } from "../../../src/utils/serialization";
 import { createMockModalClients } from "../../support/grpc_mock";
 
@@ -249,6 +250,62 @@ test("FunctionGetCurrentStats", async () => {
 	const function_ = new Function_(mc, "fid-stats");
 	const stats = await function_.getCurrentStats();
 	expect(stats).toEqual({ backlog: 3, numTotalRunners: 7 });
+
+	mock.assertExhausted();
+});
+
+test("FunctionWithOptionsInstance", async () => {
+	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
+
+	mock.handleUnary("/FunctionBindParams", (req) => {
+		expect(req).toMatchObject({
+			functionId: "fid-options",
+			serializedParams: new Uint8Array(),
+			environmentName: "",
+			functionOptions: {
+				secretIds: [],
+				replaceSecretIds: false,
+				replaceVolumeMounts: true,
+				volumeMounts: [
+					{
+						volumeId: "vo-test",
+						mountPath: "/data",
+						allowBackgroundCommits: true,
+						readOnly: true,
+						subPath: "/users/alice",
+					},
+				],
+				resources: {
+					milliCpu: 500,
+					memoryMb: 1024,
+				},
+				maxConcurrentInputs: 8,
+				targetConcurrentInputs: 4,
+				batchMaxSize: 16,
+				batchLingerMs: 25,
+				timeoutSecs: 30,
+			},
+		});
+		return { boundFunctionId: "fid-bound" };
+	});
+
+	const function_ = new Function_(mc, "fid-options")
+		.withOptions({
+			cpu: 0.5,
+			memoryMiB: 1024,
+			timeoutMs: 30_000,
+			volumes: {
+				"/data": new Volume("vo-test", "test").withMountOptions({
+					readOnly: true,
+					subPath: "/users/alice",
+				}),
+			},
+		})
+		.withConcurrency({ maxInputs: 8, targetInputs: 4 })
+		.withBatching({ maxBatchSize: 16, waitMs: 25 });
+
+	const bound = await function_.instance();
+	expect(bound.functionId).toBe("fid-bound");
 
 	mock.assertExhausted();
 });

@@ -1,7 +1,10 @@
 import type { ModalClient } from "@/core/client";
 import { InvalidError } from "@/core/errors";
 import { rethrowNotFound, suppressNotFound } from "@/core/grpc/errors";
-import { ObjectCreationType } from "@/generated/modal_proto/api";
+import {
+	ObjectCreationType,
+	type VolumeMount,
+} from "@/generated/modal_proto/api";
 import { EphemeralHeartbeatManager } from "@/utils/ephemeral";
 
 /**
@@ -30,6 +33,26 @@ export type VolumeEphemeralParams = {
 export type VolumeDeleteParams = {
 	environment?: string;
 	allowMissing?: boolean;
+};
+
+/**
+ * @description Volume をマウントするときのオプション
+ * @property readOnly - コンテナ内で読み取り専用にするか
+ * @property subPath - Volume 内の一部ディレクトリだけをマウントするパス
+ */
+export type VolumeMountOptions = {
+	readOnly?: boolean;
+	subPath?: string;
+};
+
+type ResolvedMountOptions = {
+	readOnly: boolean;
+	subPath: string | undefined;
+};
+
+const DEFAULT_MOUNT_OPTIONS: ResolvedMountOptions = {
+	readOnly: false,
+	subPath: undefined,
 };
 
 /**
@@ -134,19 +157,29 @@ export class VolumeService {
 export class Volume {
 	readonly volumeId: string;
 	readonly name?: string;
-	private _readOnly: boolean = false;
+	/**
+	 * @internal
+	 */
+	readonly _mountOptions: ResolvedMountOptions = DEFAULT_MOUNT_OPTIONS;
 	readonly #ephemeralHbManager?: EphemeralHeartbeatManager;
 
 	/** @internal */
 	constructor(
 		volumeId: string,
 		name?: string,
-		readOnly: boolean = false,
+		mountOptions?: ResolvedMountOptions | boolean,
 		ephemeralHbManager?: EphemeralHeartbeatManager,
 	) {
 		this.volumeId = volumeId;
 		if (name !== undefined) this.name = name;
-		this._readOnly = readOnly;
+		if (typeof mountOptions === "boolean") {
+			this._mountOptions = {
+				...DEFAULT_MOUNT_OPTIONS,
+				readOnly: mountOptions,
+			};
+		} else if (mountOptions !== undefined) {
+			this._mountOptions = mountOptions;
+		}
 		if (ephemeralHbManager !== undefined)
 			this.#ephemeralHbManager = ephemeralHbManager;
 	}
@@ -156,11 +189,33 @@ export class Volume {
 	 * @returns 読み取り専用に設定された新しい Volume インスタンス
 	 */
 	readOnly(): Volume {
-		return new Volume(this.volumeId, this.name, true, this.#ephemeralHbManager);
+		return this.withMountOptions({ readOnly: true });
+	}
+
+	/**
+	 * @description Volume のマウントオプションを設定する
+	 * @param params - マウントオプション。未指定の項目は既存設定を引き継ぐ
+	 * @returns マウントオプションが適用された新しい Volume インスタンス
+	 */
+	withMountOptions(params: VolumeMountOptions = {}): Volume {
+		let subPath = this._mountOptions.subPath;
+		if (params.subPath !== undefined) {
+			subPath = params.subPath === "/" ? undefined : params.subPath;
+		}
+
+		return new Volume(
+			this.volumeId,
+			this.name,
+			{
+				readOnly: params.readOnly ?? this._mountOptions.readOnly,
+				subPath,
+			},
+			this.#ephemeralHbManager,
+		);
 	}
 
 	get isReadOnly(): boolean {
-		return this._readOnly;
+		return this._mountOptions.readOnly;
 	}
 
 	/**
@@ -173,4 +228,22 @@ export class Volume {
 			throw new InvalidError("Volume is not ephemeral.");
 		}
 	}
+}
+
+/**
+ * @description Volume のマウント設定から gRPC VolumeMount を構築する
+ * @internal
+ */
+export function volumeToMountProto(
+	mountPath: string,
+	volume: Volume,
+): VolumeMount {
+	const opts = volume._mountOptions ?? DEFAULT_MOUNT_OPTIONS;
+	return {
+		volumeId: volume.volumeId,
+		mountPath,
+		allowBackgroundCommits: true,
+		readOnly: opts.readOnly,
+		subPath: opts.subPath,
+	};
 }

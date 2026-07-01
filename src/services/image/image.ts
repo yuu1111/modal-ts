@@ -12,6 +12,39 @@ import {
 import { type App, parseGpuConfig } from "@/services/deploy/app";
 import { mergeEnvIntoSecrets, Secret } from "@/services/secret/secret";
 
+const DEFAULT_IMAGE_TAG = "latest";
+
+function validateImageName(name: string): void {
+	if (name === "") {
+		throw new InvalidError("Image name must be non-empty.");
+	}
+	if (name.startsWith("im-")) {
+		throw new InvalidError(
+			"Image name cannot start with 'im-' (reserved for image IDs).",
+		);
+	}
+}
+
+function validateImageTag(tag: string): void {
+	if (tag === "") {
+		throw new InvalidError("Image tag must be non-empty.");
+	}
+}
+
+function parseNamedImageRef(value: string): string {
+	const separatorIndex = value.indexOf(":");
+	if (separatorIndex === -1) {
+		validateImageName(value);
+		return `${value}:${DEFAULT_IMAGE_TAG}`;
+	}
+
+	const name = value.slice(0, separatorIndex);
+	const tag = value.slice(separatorIndex + 1);
+	validateImageName(name);
+	validateImageTag(tag);
+	return `${name}:${tag}`;
+}
+
 /**
  * @description {@link Image} を管理するサービス
  *
@@ -37,7 +70,31 @@ export class ImageService {
 			const resp = await this.#client.cpClient.imageFromId({ imageId });
 			return new Image(this.#client, resp.imageId, "");
 		} catch (err) {
-			rethrowNotFound(err, { preconditionPatterns: ["Could not find image with ID"] });
+			rethrowNotFound(err, {
+				preconditionPatterns: ["Could not find image with ID"],
+			});
+		}
+	}
+
+	/**
+	 * @description publish 済みの名前付き Image を参照する
+	 * @param name - Image 名。`name:tag` 形式も指定可能。タグ未指定時は `latest`
+	 * @param params - オプションパラメータ
+	 * @returns Image インスタンス
+	 */
+	async fromName(
+		name: string,
+		params: ImageFromNameParams = {},
+	): Promise<Image> {
+		const tag = parseNamedImageRef(name);
+		try {
+			const resp = await this.#client.cpClient.imageGetByTag({
+				environmentName: this.#client.environmentName(params.environment),
+				tag,
+			});
+			return new Image(this.#client, resp.imageId, "");
+		} catch (err) {
+			rethrowNotFound(err);
 		}
 	}
 
@@ -112,7 +169,9 @@ export class ImageService {
 		try {
 			await this.#client.cpClient.imageDelete({ imageId });
 		} catch (err) {
-			rethrowNotFound(err, { preconditionPatterns: ["Could not find image with ID"] });
+			rethrowNotFound(err, {
+				preconditionPatterns: ["Could not find image with ID"],
+			});
 		}
 	}
 }
@@ -121,6 +180,22 @@ export class ImageService {
  * @description {@link ImageService#delete client.images.delete()} のオプションパラメータ
  */
 export type ImageDeleteParams = Record<never, never>;
+
+/**
+ * @description {@link ImageService#fromName client.images.fromName()} のオプションパラメータ
+ * @property environment - Image を解決する Modal 環境名
+ */
+export type ImageFromNameParams = {
+	environment?: string;
+};
+
+/**
+ * @description {@link Image#publish Image.publish()} のオプションパラメータ
+ * @property environment - Image を publish する Modal 環境名
+ */
+export type ImagePublishParams = {
+	environment?: string;
+};
 
 /**
  * @description {@link Image#dockerfileCommands Image.dockerfileCommands()} のオプションパラメータ
@@ -174,6 +249,7 @@ export class Image {
 	#client: ModalClient;
 	#imageId: string;
 	#tag: string;
+	#baseImageId: string;
 	#imageRegistryConfig?: ImageRegistryConfig;
 	#layers: Layer[];
 
@@ -186,10 +262,12 @@ export class Image {
 		tag: string,
 		imageRegistryConfig?: ImageRegistryConfig,
 		layers?: Layer[],
+		baseImageId?: string,
 	) {
 		this.#client = client;
 		this.#imageId = imageId;
 		this.#tag = tag;
+		this.#baseImageId = baseImageId || "";
 		if (imageRegistryConfig !== undefined)
 			this.#imageRegistryConfig = imageRegistryConfig;
 		this.#layers = layers || [
@@ -242,10 +320,17 @@ export class Image {
 			}),
 		};
 
-		return new Image(this.#client, "", this.#tag, this.#imageRegistryConfig, [
-			...this.#layers,
-			newLayer,
-		]);
+		const baseImageId = this.#imageId || this.#baseImageId;
+		const layers = this.#imageId === "" ? this.#layers : [];
+
+		return new Image(
+			this.#client,
+			"",
+			this.#tag,
+			this.#imageRegistryConfig,
+			[...layers, newLayer],
+			baseImageId,
+		);
 	}
 
 	/**
@@ -261,7 +346,7 @@ export class Image {
 
 		this.#client.logger.debug("Building image", "app_id", app.appId);
 
-		let baseImageId: string | undefined;
+		let baseImageId: string | undefined = this.#baseImageId || undefined;
 
 		for (let i = 0; i < this.#layers.length; i++) {
 			const layer = this.#layers[i];
@@ -279,7 +364,10 @@ export class Image {
 			let dockerfileCommands: string[];
 			let baseImages: Array<{ dockerTag: string; imageId: string }>;
 
-			if (i === 0) {
+			if (i === 0 && baseImageId) {
+				dockerfileCommands = ["FROM base", ...layer.commands];
+				baseImages = [{ dockerTag: "base", imageId: baseImageId }];
+			} else if (i === 0) {
 				dockerfileCommands = [`FROM ${this.#tag}`, ...layer.commands];
 				baseImages = [];
 			} else {
@@ -288,12 +376,14 @@ export class Image {
 					throw new Error("Expected baseImageId from previous layer");
 				baseImages = [{ dockerTag: "base", imageId: baseImageId }];
 			}
+			const imageRegistryConfig =
+				i === 0 && !baseImageId ? this.#imageRegistryConfig : undefined;
 
 			const resp = await this.#client.cpClient.imageGetOrCreate({
 				appId: app.appId,
 				image: ImageProto.create({
 					dockerfileCommands,
-					imageRegistryConfig: this.#imageRegistryConfig,
+					imageRegistryConfig,
 					secretIds,
 					gpuConfig,
 					contextFiles: [],
@@ -363,5 +453,27 @@ export class Image {
 		this.#imageId = baseImageId;
 		this.#client.logger.debug("Image build completed", "image_id", baseImageId);
 		return this;
+	}
+
+	/**
+	 * @description ビルド済み Image を安定した名前とタグで publish する
+	 * @param name - publish する Image 名。`name:tag` 形式も指定可能。タグ未指定時は `latest`
+	 * @param params - オプションパラメータ
+	 */
+	async publish(name: string, params: ImagePublishParams = {}): Promise<void> {
+		const tag = parseNamedImageRef(name);
+
+		if (this.#imageId === "") {
+			throw new InvalidError(
+				"Cannot publish an image that has not been built yet. Call build() first.",
+			);
+		}
+
+		await this.#client.cpClient.imagePublish({
+			imageId: this.#imageId,
+			environmentName: this.#client.environmentName(params.environment),
+			isPublic: false,
+			tag,
+		});
 	}
 }

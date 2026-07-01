@@ -61,7 +61,12 @@ export function rethrowNotFound(
 	err: unknown,
 	messageOrOptions?: string | RethrowOptions,
 ): never {
-	rethrowGrpc(err, NotFoundError, Status.NOT_FOUND, resolveOptions(messageOrOptions));
+	rethrowGrpc(
+		err,
+		NotFoundError,
+		Status.NOT_FOUND,
+		resolveOptions(messageOrOptions),
+	);
 }
 
 /**
@@ -74,7 +79,12 @@ export function rethrowInvalid(
 	err: unknown,
 	messageOrOptions?: string | RethrowOptions,
 ): never {
-	rethrowGrpc(err, InvalidError, Status.INVALID_ARGUMENT, resolveOptions(messageOrOptions));
+	rethrowGrpc(
+		err,
+		InvalidError,
+		Status.INVALID_ARGUMENT,
+		resolveOptions(messageOrOptions),
+	);
 }
 
 /**
@@ -87,7 +97,12 @@ export function rethrowAlreadyExists(
 	err: unknown,
 	messageOrOptions?: string | RethrowOptions,
 ): never {
-	rethrowGrpc(err, AlreadyExistsError, Status.ALREADY_EXISTS, resolveOptions(messageOrOptions));
+	rethrowGrpc(
+		err,
+		AlreadyExistsError,
+		Status.ALREADY_EXISTS,
+		resolveOptions(messageOrOptions),
+	);
 }
 
 /**

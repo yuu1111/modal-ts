@@ -1,6 +1,10 @@
 import { ClientError, Status } from "nice-grpc";
 import { expect, onTestFinished, test } from "vitest";
 import { NotFoundError } from "../../../src/core/errors";
+import {
+	Volume,
+	volumeToMountProto,
+} from "../../../src/services/volume/volume";
 import { createMockModalClients } from "../../support/grpc_mock";
 import { tc } from "../../support/test-client";
 
@@ -30,6 +34,28 @@ test("Volume.readOnly", async () => {
 	expect(readOnlyVolume.name).toBe(volume.name);
 
 	expect(volume.isReadOnly).toBe(false);
+});
+
+test("Volume.withMountOptions", () => {
+	const volume = new Volume("vo-test", "test-volume");
+
+	const scoped = volume.withMountOptions({
+		readOnly: true,
+		subPath: "/users/alice",
+	});
+
+	expect(scoped.isReadOnly).toBe(true);
+	expect(volume.isReadOnly).toBe(false);
+	expect(volumeToMountProto("/mnt/data", scoped)).toMatchObject({
+		volumeId: "vo-test",
+		mountPath: "/mnt/data",
+		allowBackgroundCommits: true,
+		readOnly: true,
+		subPath: "/users/alice",
+	});
+
+	const wholeVolume = scoped.withMountOptions({ subPath: "/" });
+	expect(volumeToMountProto("/mnt/data", wholeVolume).subPath).toBeUndefined();
 });
 
 test("VolumeEphemeral", async () => {

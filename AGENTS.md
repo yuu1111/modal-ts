@@ -36,13 +36,13 @@ Tests: max 10 concurrent, 20s timeout.
 
 # Architecture
 
-- **Client** (`src/client.ts`) — Central entry point managing auth, gRPC connection, and service access
+- **Client** (`src/core/client.ts`) — Central entry point managing auth, gRPC connection, and service access
 - **Services** (`FunctionService`, `SandboxService`, etc.) — Per-resource classes accessed via `client.functions`, `client.sandboxes`, etc., with factory methods (`.fromName()`, `.fromId()`, `.create()`)
-- **Auth** (`src/auth_token_manager.ts`) — JWT-based token management with automatic rotation
-- **Config** (`src/config.ts`) — TOML config from `~/.modal.toml`, overridable by `MODAL_*` env vars and explicit params
-- **Errors** (`src/errors.ts`) — Typed hierarchy: `RemoteError`, `NotFoundError`, `InvalidError`, `FunctionTimeoutError`, etc.
-- **Serialization** (`src/serialization.ts`) — CBOR for gRPC payloads
-- **Deploy** (`src/deploy.ts`) — Deploy apps, functions, classes via gRPC API
+- **Auth** (`src/core/auth_token_manager.ts`) — JWT-based token management with automatic rotation
+- **Config** (`src/core/config.ts`) — TOML config from `~/.modal.toml`, overridable by `MODAL_*` env vars and explicit params
+- **Errors** (`src/core/errors.ts`) — Typed hierarchy: `RemoteError`, `NotFoundError`, `InvalidError`, `FunctionTimeoutError`, etc.
+- **Serialization** (`src/utils/serialization.ts`) — CBOR for gRPC payloads
+- **Deploy** (`src/services/deploy/deploy.ts`) — Deploy apps, functions, classes via gRPC API
 
 # Key Conventions
 

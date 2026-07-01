@@ -11,11 +11,22 @@ import {
 } from "nice-grpc";
 import {
 	FileDescriptor,
+	SandboxGetCommandRouterAccessRequest,
 	TaskGetCommandRouterAccessRequest,
 	type TaskGetCommandRouterAccessResponse,
 } from "@/generated/modal_proto/api";
 import {
+	type SandboxWaitUntilReadyTcrResponse,
 	TaskCommandRouterDefinition,
+	type TaskContainerCreateRequest,
+	type TaskContainerCreateResponse,
+	type TaskContainerGetRequest,
+	type TaskContainerGetResponse,
+	type TaskContainerListRequest,
+	type TaskContainerListResponse,
+	type TaskContainerTerminateRequest,
+	type TaskContainerWaitRequest,
+	type TaskContainerWaitResponse,
 	TaskExecPollRequest,
 	type TaskExecPollResponse,
 	type TaskExecStartRequest,
@@ -28,8 +39,12 @@ import {
 	TaskExecWaitRequest,
 	type TaskExecWaitResponse,
 	type TaskMountDirectoryRequest,
+	type TaskReloadVolumesRequest,
+	type TaskSetNetworkAccessRequest,
 	type TaskSnapshotDirectoryRequest,
 	type TaskSnapshotDirectoryResponse,
+	type TaskSnapshotFilesystemRequest,
+	type TaskSnapshotFilesystemResponse,
 	type TaskUnmountDirectoryRequest,
 } from "@/generated/modal_proto/task_command_router";
 import type { Logger } from "@/utils/logger";
@@ -133,6 +148,8 @@ export class TaskCommandRouterClientImpl {
 	private channel: ReturnType<typeof createChannel>;
 	private serverClient: ModalGrpcClient;
 	private taskId: string;
+	private sandboxId: string;
+	private isV2: boolean;
 	private serverUrl: string;
 	private jwt: string;
 	private jwtExp: number | null;
@@ -152,12 +169,20 @@ export class TaskCommandRouterClientImpl {
 		taskId: string,
 		logger: Logger,
 		profile: Profile,
+		sandboxId?: string,
+		isV2 = false,
 	): Promise<TaskCommandRouterClientImpl | null> {
 		let resp: TaskGetCommandRouterAccessResponse;
 		try {
-			resp = await serverClient.taskGetCommandRouterAccess(
-				TaskGetCommandRouterAccessRequest.create({ taskId }),
-			);
+			resp = isV2
+				? await serverClient.sandboxGetCommandRouterAccess(
+						SandboxGetCommandRouterAccessRequest.create({
+							sandboxId: sandboxId ?? "",
+						}),
+					)
+				: await serverClient.taskGetCommandRouterAccess(
+						TaskGetCommandRouterAccessRequest.create({ taskId }),
+					);
 		} catch (err) {
 			if (
 				err instanceof ClientError &&
@@ -205,6 +230,8 @@ export class TaskCommandRouterClientImpl {
 		const client = new TaskCommandRouterClientImpl(
 			serverClient,
 			taskId,
+			sandboxId ?? "",
+			isV2,
 			resp.url,
 			resp.jwt,
 			channel,
@@ -223,6 +250,8 @@ export class TaskCommandRouterClientImpl {
 	private constructor(
 		serverClient: ModalGrpcClient,
 		taskId: string,
+		sandboxId: string,
+		isV2: boolean,
 		serverUrl: string,
 		jwt: string,
 		channel: ReturnType<typeof createChannel>,
@@ -230,6 +259,8 @@ export class TaskCommandRouterClientImpl {
 	) {
 		this.serverClient = serverClient;
 		this.taskId = taskId;
+		this.sandboxId = sandboxId;
+		this.isV2 = isV2;
 		this.serverUrl = serverUrl;
 		this.jwt = jwt;
 		this.jwtExp = decodeJwtExp(jwt);
@@ -264,6 +295,53 @@ export class TaskCommandRouterClientImpl {
 	): Promise<TaskExecStartResponse> {
 		return await callWithRetriesOnTransientErrors(
 			() => this.callWithAuthRetry(() => this.stub.taskExecStart(request)),
+			this.retryOptions,
+		);
+	}
+
+	async containerCreate(
+		request: TaskContainerCreateRequest,
+	): Promise<TaskContainerCreateResponse> {
+		return await callWithRetriesOnTransientErrors(
+			() =>
+				this.callWithAuthRetry(() => this.stub.taskContainerCreate(request)),
+			this.retryOptions,
+		);
+	}
+
+	async containerGet(
+		request: TaskContainerGetRequest,
+	): Promise<TaskContainerGetResponse> {
+		return await callWithRetriesOnTransientErrors(
+			() => this.callWithAuthRetry(() => this.stub.taskContainerGet(request)),
+			this.retryOptions,
+		);
+	}
+
+	async containerList(
+		request: TaskContainerListRequest,
+	): Promise<TaskContainerListResponse> {
+		return await callWithRetriesOnTransientErrors(
+			() => this.callWithAuthRetry(() => this.stub.taskContainerList(request)),
+			this.retryOptions,
+		);
+	}
+
+	async containerTerminate(
+		request: TaskContainerTerminateRequest,
+	): Promise<void> {
+		await callWithRetriesOnTransientErrors(
+			() =>
+				this.callWithAuthRetry(() => this.stub.taskContainerTerminate(request)),
+			this.retryOptions,
+		);
+	}
+
+	async containerWait(
+		request: TaskContainerWaitRequest,
+	): Promise<TaskContainerWaitResponse> {
+		return await callWithRetriesOnTransientErrors(
+			() => this.callWithAuthRetry(() => this.stub.taskContainerWait(request)),
 			this.retryOptions,
 		);
 	}
@@ -366,6 +444,50 @@ export class TaskCommandRouterClientImpl {
 		);
 	}
 
+	async snapshotFilesystem(
+		request: TaskSnapshotFilesystemRequest,
+	): Promise<TaskSnapshotFilesystemResponse> {
+		return await callWithRetriesOnTransientErrors(
+			() =>
+				this.callWithAuthRetry(() => this.stub.taskSnapshotFilesystem(request)),
+			this.retryOptions,
+		);
+	}
+
+	async setNetworkAccess(request: TaskSetNetworkAccessRequest): Promise<void> {
+		await callWithRetriesOnTransientErrors(
+			() =>
+				this.callWithAuthRetry(() => this.stub.taskSetNetworkAccess(request)),
+			this.retryOptions,
+		);
+	}
+
+	async reloadVolumes(request: TaskReloadVolumesRequest): Promise<void> {
+		await callWithRetriesOnTransientErrors(
+			() => this.callWithAuthRetry(() => this.stub.taskReloadVolumes(request)),
+			this.retryOptions,
+		);
+	}
+
+	async sandboxWaitUntilReady(
+		taskId: string,
+		timeoutMs: number,
+	): Promise<SandboxWaitUntilReadyTcrResponse> {
+		return await callWithRetriesOnTransientErrors(
+			() =>
+				this.callWithAuthRetry(() =>
+					this.stub.sandboxWaitUntilReady({
+						taskId,
+						timeout: timeoutMs / 1000,
+					}),
+				),
+			{
+				...this.retryOptions,
+				deadlineMs: Date.now() + timeoutMs,
+			},
+		);
+	}
+
 	private async refreshJwt(): Promise<void> {
 		if (this.jwtRefreshPromise) {
 			return this.jwtRefreshPromise;
@@ -394,9 +516,15 @@ export class TaskCommandRouterClientImpl {
 	}
 
 	private async doRefreshJwt(): Promise<void> {
-		const resp = await this.serverClient.taskGetCommandRouterAccess(
-			TaskGetCommandRouterAccessRequest.create({ taskId: this.taskId }),
-		);
+		const resp = this.isV2
+			? await this.serverClient.sandboxGetCommandRouterAccess(
+					SandboxGetCommandRouterAccessRequest.create({
+						sandboxId: this.sandboxId,
+					}),
+				)
+			: await this.serverClient.taskGetCommandRouterAccess(
+					TaskGetCommandRouterAccessRequest.create({ taskId: this.taskId }),
+				);
 
 		if (resp.url !== this.serverUrl) {
 			throw new Error("Task router URL changed during session");

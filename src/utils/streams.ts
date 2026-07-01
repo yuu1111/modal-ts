@@ -122,7 +122,7 @@ const readMixin = {
 		} finally {
 			reader.releaseLock();
 		}
-		if (chunks.length === 1) return chunks[0] as Uint8Array;
+		if (chunks.length === 1) return new Uint8Array(chunks[0] as Uint8Array);
 		const result = new Uint8Array(totalLength);
 		let offset = 0;
 		for (const chunk of chunks) {

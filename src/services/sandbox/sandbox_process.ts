@@ -91,6 +91,18 @@ export class ContainerProcess<
 	}
 
 	/**
+	 * @description stdin ストリームを閉じる
+	 */
+	async closeStdin(): Promise<void> {
+		const writer = this.stdin.getWriter();
+		try {
+			await writer.close();
+		} finally {
+			writer.releaseLock();
+		}
+	}
+
+	/**
 	 * @description プロセスの終了を待機してexit codeを返す
 	 * @returns exit code
 	 */

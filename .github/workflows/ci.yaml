@@ -6,6 +6,13 @@ on:
       - main
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
 jobs:
   ci:
     name: Typecheck, lint, and build
@@ -16,10 +23,10 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
 
-      - run: bun install --frozen-lockfile
+      - run: bun ci
 
       - run: bun run typecheck
 
-      - run: bunx biome ci .
+      - run: bun biome ci .
 
       - run: bun run build

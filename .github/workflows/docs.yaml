@@ -8,23 +8,21 @@ on:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-
-permissions: # required for GitHub Pages
-  contents: read
-  pages: write
-  id-token: write
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   docs:
     name: TypeDoc
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
 
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4
 
       - uses: oven-sh/setup-bun@v2
 
-      - run: bun install --frozen-lockfile
+      - run: bun ci
 
       - run: bun run docs
 
@@ -39,6 +37,9 @@ jobs:
     needs: docs
     if: ${{ github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages # creates/updates the Pages env
       url: ${{ steps.deploy.outputs.page_url }}

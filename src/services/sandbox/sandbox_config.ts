@@ -10,6 +10,7 @@ import {
 	PTYInfo_PTYType,
 	Resources,
 	SandboxCreateRequest,
+	SandboxCreateV2Request,
 	SchedulerPlacement,
 	TunnelType,
 	type VolumeMount,
@@ -23,7 +24,7 @@ import type { CloudBucketMount } from "@/services/cloud_bucket_mount/cloud_bucke
 import { parseGpuConfig } from "@/services/deploy/app";
 import type { Proxy as ModalProxy } from "@/services/proxy/proxy";
 import type { Secret } from "@/services/secret/secret";
-import type { Volume } from "@/services/volume/volume";
+import { type Volume, volumeToMountProto } from "@/services/volume/volume";
 import { checkForRenamedParams } from "@/utils/validation";
 import type { Probe } from "./sandbox_probe";
 
@@ -91,11 +92,15 @@ export type SandboxCreateParams = {
 	unencryptedPorts?: number[];
 	blockNetwork?: boolean;
 	cidrAllowlist?: string[];
+	outboundCidrAllowlist?: string[];
+	outboundDomainAllowlist?: string[];
+	inboundCidrAllowlist?: string[];
 	cloud?: string;
 	regions?: string[];
 	verbose?: boolean;
 	proxy?: ModalProxy;
 	name?: string;
+	tags?: Record<string, string>;
 	experimentalOptions?: Record<string, unknown>;
 	customDomain?: string;
 	readinessProbe?: Probe;
@@ -112,6 +117,10 @@ export type SandboxListParams = {
 	appId?: string;
 	tags?: Record<string, string>;
 	environment?: string;
+};
+
+export type SandboxExperimentalListParams = {
+	appId: string;
 };
 
 /**
@@ -150,6 +159,27 @@ export type SandboxExecParams = {
  */
 export type SandboxTerminateParams = {
 	wait?: boolean;
+};
+
+export type SandboxSnapshotFilesystemParams = {
+	timeoutMs?: number;
+	ttlMs?: number | null;
+	experimentalEncryptionKey?: Uint8Array;
+};
+
+export type SandboxSnapshotDirectoryParams = {
+	timeoutMs?: number;
+	ttlMs?: number | null;
+	experimentalEncryptionKey?: Uint8Array;
+};
+
+export type SandboxMountImageParams = {
+	experimentalEncryptionKey?: Uint8Array;
+};
+
+export type SandboxUpdateNetworkPolicyParams = {
+	outboundCidrAllowlist: string[];
+	outboundDomainAllowlist: string[];
 };
 
 /**
@@ -209,6 +239,7 @@ export async function buildSandboxCreateRequestProto(
 		memoryLimit: "memoryLimitMiB",
 		timeout: "timeoutMs",
 		idleTimeout: "idleTimeoutMs",
+		cidrAllowlist: "outboundCidrAllowlist",
 	});
 
 	const gpuConfig = parseGpuConfig(params.gpu);
@@ -238,12 +269,9 @@ export async function buildSandboxCreateRequestProto(
 	}
 
 	const volumeMounts: VolumeMount[] = params.volumes
-		? Object.entries(params.volumes).map(([mountPath, volume]) => ({
-				volumeId: volume.volumeId,
-				mountPath,
-				allowBackgroundCommits: true,
-				readOnly: volume.isReadOnly,
-			}))
+		? Object.entries(params.volumes).map(([mountPath, volume]) =>
+				volumeToMountProto(mountPath, volume),
+			)
 		: [];
 
 	const cloudBucketMounts: CloudBucketMountProto[] = params.cloudBucketMounts
@@ -277,24 +305,41 @@ export async function buildSandboxCreateRequestProto(
 
 	let networkAccess: NetworkAccess;
 	if (params.blockNetwork) {
-		if (params.cidrAllowlist) {
+		if (params.cidrAllowlist || params.outboundCidrAllowlist) {
 			throw new Error(
-				"cidrAllowlist cannot be used when blockNetwork is enabled",
+				"outboundCidrAllowlist cannot be used when blockNetwork is enabled",
+			);
+		}
+		if (params.outboundDomainAllowlist) {
+			throw new Error(
+				"outboundDomainAllowlist cannot be used when blockNetwork is enabled",
+			);
+		}
+		if (params.inboundCidrAllowlist) {
+			throw new Error(
+				"inboundCidrAllowlist cannot be used when blockNetwork is enabled",
 			);
 		}
 		networkAccess = {
 			networkAccessType: NetworkAccess_NetworkAccessType.BLOCKED,
 			allowedCidrs: [],
+			allowedDomains: [],
 		};
-	} else if (params.cidrAllowlist) {
+	} else if (
+		params.cidrAllowlist ||
+		params.outboundCidrAllowlist ||
+		params.outboundDomainAllowlist
+	) {
 		networkAccess = {
 			networkAccessType: NetworkAccess_NetworkAccessType.ALLOWLIST,
-			allowedCidrs: params.cidrAllowlist,
+			allowedCidrs: params.outboundCidrAllowlist ?? params.cidrAllowlist ?? [],
+			allowedDomains: params.outboundDomainAllowlist ?? [],
 		};
 	} else {
 		networkAccess = {
 			networkAccessType: NetworkAccess_NetworkAccessType.OPEN,
 			allowedCidrs: [],
+			allowedDomains: [],
 		};
 	}
 
@@ -411,7 +456,37 @@ export async function buildSandboxCreateRequestProto(
 				readinessProbe: ProbeProto.create(params.readinessProbe.toProto()),
 			}),
 			includeOidcIdentityToken: params.includeOidcIdentityToken ?? false,
+			inboundCidrAllowlist: params.inboundCidrAllowlist ?? [],
 		},
+	});
+}
+
+/**
+ * @description SandboxCreateParamsからV2 Sandbox作成リクエストを構築する
+ * @param appId - アプリID
+ * @param imageId - コンテナイメージID
+ * @param params - Sandbox作成パラメータ
+ * @returns SandboxCreateV2Requestプロトメッセージ
+ */
+export async function buildSandboxCreateV2RequestProto(
+	appId: string,
+	imageId: string,
+	params: SandboxCreateParams = {},
+): Promise<SandboxCreateV2Request> {
+	if (params.tags && Object.keys(params.tags).length > 0) {
+		throw new Error("tags are not supported by experimentalCreate");
+	}
+	if (params.gpu) {
+		throw new Error("GPUs are not supported by experimentalCreate");
+	}
+	if (params.customDomain) {
+		throw new Error("custom domains are not supported by experimentalCreate");
+	}
+
+	const req = await buildSandboxCreateRequestProto(appId, imageId, params);
+	return SandboxCreateV2Request.create({
+		appId: req.appId,
+		definition: req.definition,
 	});
 }
 
@@ -428,6 +503,7 @@ export function buildTaskExecStartRequestProto(
 	execId: string,
 	command: string[],
 	params?: SandboxExecParams,
+	containerId?: string,
 ): TaskExecStartRequest {
 	checkForRenamedParams(params, { timeout: "timeoutMs" });
 
@@ -479,5 +555,6 @@ export function buildTaskExecStartRequestProto(
 		secretIds,
 		ptyInfo,
 		runtimeDebug: false,
+		...(containerId !== undefined && { containerId }),
 	});
 }

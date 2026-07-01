@@ -11,7 +11,14 @@ export {
 	QueueEmptyError,
 	QueueFullError,
 	RemoteError,
+	SandboxFilesystemDirectoryNotEmptyError,
 	SandboxFilesystemError,
+	SandboxFilesystemFileTooLargeError,
+	SandboxFilesystemIsADirectoryError,
+	SandboxFilesystemNotADirectoryError,
+	SandboxFilesystemNotFoundError,
+	SandboxFilesystemPathAlreadyExistsError,
+	SandboxFilesystemPermissionError,
 	SandboxTimeoutError,
 	TimeoutError,
 } from "./core/errors";
@@ -50,6 +57,9 @@ export {
 	FunctionService,
 	type FunctionStats,
 	type FunctionUpdateAutoscalerParams,
+	type FunctionWithBatchingParams,
+	type FunctionWithConcurrencyParams,
+	type FunctionWithOptionsParams,
 } from "./services/function/function";
 export {
 	FunctionCall,
@@ -61,6 +71,8 @@ export {
 	Image,
 	type ImageDeleteParams,
 	type ImageDockerfileCommandsParams,
+	type ImageFromNameParams,
+	type ImagePublishParams,
 	ImageService,
 } from "./services/image/image";
 export {
@@ -84,9 +96,14 @@ export { Sandbox, SandboxService } from "./services/sandbox/sandbox";
 export type {
 	SandboxCreateParams,
 	SandboxExecParams,
+	SandboxExperimentalListParams,
 	SandboxFromNameParams,
 	SandboxListParams,
+	SandboxMountImageParams,
+	SandboxSnapshotDirectoryParams,
+	SandboxSnapshotFilesystemParams,
 	SandboxTerminateParams,
+	SandboxUpdateNetworkPolicyParams,
 	StdioBehavior,
 	StreamMode,
 } from "./services/sandbox/sandbox_config";
@@ -94,8 +111,22 @@ export {
 	SandboxFile,
 	type SandboxFileMode,
 } from "./services/sandbox/sandbox_filesystem";
+export {
+	type FileInfo,
+	type FileType,
+	SandboxFilesystem,
+} from "./services/sandbox/sandbox_fs";
 export { Probe, type ProbeParams } from "./services/sandbox/sandbox_probe";
 export { ContainerProcess } from "./services/sandbox/sandbox_process";
+export {
+	SidecarContainer,
+	type SidecarCreateParams,
+	type SidecarExecParams,
+	type SidecarGetParams,
+	type SidecarListParams,
+	SidecarService,
+	type SidecarTerminateParams,
+} from "./services/sandbox/sandbox_sidecar";
 export {
 	type SandboxCreateConnectCredentials,
 	type SandboxCreateConnectTokenParams,
@@ -113,6 +144,7 @@ export {
 	type VolumeDeleteParams,
 	type VolumeEphemeralParams,
 	type VolumeFromNameParams,
+	type VolumeMountOptions,
 	VolumeService,
 } from "./services/volume/volume";
 export type { Logger, LogLevel } from "./utils/logger";

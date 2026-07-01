@@ -16,7 +16,7 @@ import { parseGpuConfig } from "@/services/deploy/app";
 import { Function_ } from "@/services/function/function";
 import type { Secret } from "@/services/secret/secret";
 import { mergeEnvIntoSecrets } from "@/services/secret/secret";
-import type { Volume } from "@/services/volume/volume";
+import { type Volume, volumeToMountProto } from "@/services/volume/volume";
 import { parseRetries, type Retries } from "@/utils/retries";
 import { checkForRenamedParams } from "@/utils/validation";
 
@@ -412,12 +412,9 @@ async function buildFunctionOptionsProto(
 	const secretIds = (o.secrets || []).map((s) => s.secretId);
 
 	const volumeMounts: VolumeMount[] = o.volumes
-		? Object.entries(o.volumes).map(([mountPath, volume]) => ({
-				volumeId: volume.volumeId,
-				mountPath,
-				allowBackgroundCommits: true,
-				readOnly: volume.isReadOnly,
-			}))
+		? Object.entries(o.volumes).map(([mountPath, volume]) =>
+				volumeToMountProto(mountPath, volume),
+			)
 		: [];
 
 	const parsedRetries = parseRetries(o.retries);
