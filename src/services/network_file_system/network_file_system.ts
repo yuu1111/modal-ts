@@ -219,11 +219,48 @@ export class NetworkFileSystem {
 			this.#ephemeralHbManager = ephemeralHbManager;
 	}
 
+	static async ephemeral(
+		params: NetworkFileSystemEphemeralParams = {},
+	): Promise<NetworkFileSystem> {
+		return await getDefaultClient().networkFileSystems.ephemeral(params);
+	}
+
+	static async create_deployed(
+		name: string,
+		params: NetworkFileSystemCreateParams = {},
+	): Promise<NetworkFileSystem> {
+		return await getDefaultClient().networkFileSystems.create_deployed(
+			name,
+			params,
+		);
+	}
+
+	static async createDeployed(
+		name: string,
+		params: NetworkFileSystemCreateParams = {},
+	): Promise<NetworkFileSystem> {
+		return await NetworkFileSystem.create_deployed(name, params);
+	}
+
+	static async delete(
+		name: string,
+		params: NetworkFileSystemDeleteParams = {},
+	): Promise<void> {
+		await getDefaultClient().networkFileSystems.delete(name, params);
+	}
+
 	static async from_name(
 		name: string,
 		params: NetworkFileSystemFromNameParams = {},
 	): Promise<NetworkFileSystem> {
 		return await getDefaultClient().networkFileSystems.fromName(name, params);
+	}
+
+	static async fromName(
+		name: string,
+		params: NetworkFileSystemFromNameParams = {},
+	): Promise<NetworkFileSystem> {
+		return await NetworkFileSystem.from_name(name, params);
 	}
 
 	/**

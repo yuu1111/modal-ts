@@ -288,6 +288,18 @@ export class SidecarContainer {
 		if (result !== undefined) this.#result = result;
 	}
 
+	get name(): string {
+		return this.containerName;
+	}
+
+	get object_id(): string {
+		return this.containerId;
+	}
+
+	get objectId(): string {
+		return this.object_id;
+	}
+
 	async exec(
 		command: string[],
 		params?: SidecarExecParams & { mode?: "text" },

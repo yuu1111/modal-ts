@@ -284,7 +284,9 @@ export {
 	WorkspaceMembersManager,
 	WorkspaceProxyTokenManager,
 	WorkspaceService,
+	type WorkspaceSettingName,
 	type WorkspaceSettings,
+	WorkspaceSettingsManager,
 } from "./services/workspace/workspace";
 export { FilePatternMatcher } from "./utils/file_pattern_matcher";
 export type { Logger, LogLevel } from "./utils/logger";

@@ -258,6 +258,10 @@ export class Dict {
 		return getDefaultClient().dicts;
 	}
 
+	static async ephemeral(params: DictEphemeralParams = {}): Promise<Dict> {
+		return await getDefaultClient().dicts.ephemeral(params);
+	}
+
 	static async from_name(
 		name: string,
 		params: DictFromNameParams = {},
@@ -265,8 +269,19 @@ export class Dict {
 		return await getDefaultClient().dicts.fromName(name, params);
 	}
 
+	static async fromName(
+		name: string,
+		params: DictFromNameParams = {},
+	): Promise<Dict> {
+		return await Dict.from_name(name, params);
+	}
+
 	static async from_id(dictId: string): Promise<Dict> {
 		return await getDefaultClient().dicts.fromId(dictId);
+	}
+
+	static async fromId(dictId: string): Promise<Dict> {
+		return await Dict.from_id(dictId);
 	}
 
 	/**

@@ -75,6 +75,10 @@ export class FunctionCall {
 		return new FunctionCall(getDefaultClient(), functionCallId);
 	}
 
+	static fromId(functionCallId: string): FunctionCall {
+		return FunctionCall.from_id(functionCallId);
+	}
+
 	/**
 	 * @description FunctionCallの結果を取得する(タイムアウト付き待機可)
 	 * @param params - オプションパラメータ

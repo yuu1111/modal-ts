@@ -419,6 +419,14 @@ export class Queue {
 		return Queue.#validatePartitionKey(partition);
 	}
 
+	static validatePartitionKey(partition: string | undefined): Uint8Array {
+		return Queue.validate_partition_key(partition);
+	}
+
+	static async ephemeral(params: QueueEphemeralParams = {}): Promise<Queue> {
+		return await getDefaultClient().queues.ephemeral(params);
+	}
+
 	static async from_name(
 		name: string,
 		params: QueueFromNameParams = {},
@@ -426,8 +434,19 @@ export class Queue {
 		return await getDefaultClient().queues.fromName(name, params);
 	}
 
+	static async fromName(
+		name: string,
+		params: QueueFromNameParams = {},
+	): Promise<Queue> {
+		return await Queue.from_name(name, params);
+	}
+
 	static async from_id(queueId: string): Promise<Queue> {
 		return await getDefaultClient().queues.fromId(queueId);
+	}
+
+	static async fromId(queueId: string): Promise<Queue> {
+		return await Queue.from_id(queueId);
 	}
 
 	static #validatePartitionKey(partition: string | undefined): Uint8Array {

@@ -13,6 +13,10 @@ export type WorkspaceSettings = {
 	imageBuilderVersion: string;
 };
 
+export type WorkspaceSettingName =
+	| "defaultEnvironmentName"
+	| "imageBuilderVersion";
+
 export type WorkspaceBillingReportRow = {
 	objectId: string;
 	description: string;
@@ -91,6 +95,7 @@ export class Workspace {
 	readonly billing: WorkspaceBillingManager;
 	readonly members: WorkspaceMembersManager;
 	readonly proxyTokens: WorkspaceProxyTokenManager;
+	readonly settingsManager: WorkspaceSettingsManager;
 	readonly #client: ModalClient;
 
 	/**
@@ -102,14 +107,23 @@ export class Workspace {
 		this.billing = new WorkspaceBillingManager(client);
 		this.members = new WorkspaceMembersManager(client);
 		this.proxyTokens = new WorkspaceProxyTokenManager(client);
+		this.settingsManager = new WorkspaceSettingsManager(client);
 	}
 
 	static async from_context(): Promise<Workspace> {
 		return await getDefaultClient().workspaces.fromContext();
 	}
 
+	static async fromContext(): Promise<Workspace> {
+		return await Workspace.from_context();
+	}
+
 	get proxy_tokens(): WorkspaceProxyTokenManager {
 		return this.proxyTokens;
+	}
+
+	get settings_manager(): WorkspaceSettingsManager {
+		return this.settingsManager;
 	}
 
 	/**
@@ -150,6 +164,56 @@ export class Workspace {
 			newImageBuilderVersion: version,
 		});
 		return resp.imageBuilderVersion;
+	}
+}
+
+/**
+ * @description Workspace settings 管理
+ */
+export class WorkspaceSettingsManager {
+	readonly #client: ModalClient;
+
+	/**
+	 * @internal
+	 */
+	constructor(client: ModalClient) {
+		this.#client = client;
+	}
+
+	async list(): Promise<WorkspaceSettings> {
+		const resp = await this.#client.cpClient.workspaceSettings({});
+		return {
+			defaultEnvironmentName: resp.defaultEnvironmentName,
+			imageBuilderVersion: resp.imageBuilderVersion,
+		};
+	}
+
+	async set(
+		name: WorkspaceSettingName,
+		value: string,
+	): Promise<string | undefined> {
+		switch (name) {
+			case "defaultEnvironmentName":
+				await this.#client.cpClient.workspaceSetDefaultEnvironment({
+					environmentName: value,
+				});
+				return;
+			case "imageBuilderVersion": {
+				const resp =
+					await this.#client.cpClient.workspaceSetImageBuilderVersion({
+						newImageBuilderVersion: value,
+					});
+				return resp.imageBuilderVersion;
+			}
+		}
+	}
+
+	validSettings(): WorkspaceSettingName[] {
+		return ["defaultEnvironmentName", "imageBuilderVersion"];
+	}
+
+	valid_settings(): WorkspaceSettingName[] {
+		return this.validSettings();
 	}
 }
 

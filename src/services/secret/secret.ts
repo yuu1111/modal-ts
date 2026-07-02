@@ -369,11 +369,25 @@ export class Secret {
 		return await getDefaultClient().secrets.fromName(name, params);
 	}
 
+	static async fromName(
+		name: string,
+		params?: SecretFromNameParams,
+	): Promise<Secret> {
+		return await Secret.from_name(name, params);
+	}
+
 	static async from_dict(
 		entries: Record<string, string>,
 		params?: SecretFromObjectParams,
 	): Promise<Secret> {
 		return await getDefaultClient().secrets.fromObject(entries, params);
+	}
+
+	static async fromDict(
+		entries: Record<string, string>,
+		params?: SecretFromObjectParams,
+	): Promise<Secret> {
+		return await Secret.from_dict(entries, params);
 	}
 
 	static async from_dotenv(
@@ -383,6 +397,13 @@ export class Secret {
 		return await getDefaultClient().secrets.fromDotenv(path, params);
 	}
 
+	static async fromDotenv(
+		path?: string,
+		params?: SecretFromDotenvParams,
+	): Promise<Secret> {
+		return await Secret.from_dotenv(path, params);
+	}
+
 	static async from_local_environ(
 		keys?: string[],
 		params?: SecretFromLocalEnvironParams,
@@ -390,11 +411,28 @@ export class Secret {
 		return await getDefaultClient().secrets.fromLocalEnviron(keys, params);
 	}
 
+	static async fromLocalEnviron(
+		keys?: string[],
+		params?: SecretFromLocalEnvironParams,
+	): Promise<Secret> {
+		return await Secret.from_local_environ(keys, params);
+	}
+
 	/**
 	 * @description Secret のメタデータを返す
 	 */
 	info(): SecretInfo {
 		return this.#info ?? secretInfoFromMetadata(undefined, this.name);
+	}
+
+	async update(
+		updates: Record<string, string | null>,
+		params: SecretUpdateParams = {},
+	): Promise<void> {
+		if (!this.name) {
+			throw new InvalidError("Cannot update a Secret handle without a name.");
+		}
+		await getDefaultClient().secrets.update(this.name, updates, params);
 	}
 }
 

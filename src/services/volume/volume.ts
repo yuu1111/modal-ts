@@ -347,6 +347,10 @@ export class Volume {
 		return getDefaultClient().volumes;
 	}
 
+	static async ephemeral(params: VolumeEphemeralParams = {}): Promise<Volume> {
+		return await getDefaultClient().volumes.ephemeral(params);
+	}
+
 	static async from_name(
 		name: string,
 		params?: VolumeFromNameParams,
@@ -354,8 +358,27 @@ export class Volume {
 		return await getDefaultClient().volumes.fromName(name, params);
 	}
 
+	static async fromName(
+		name: string,
+		params?: VolumeFromNameParams,
+	): Promise<Volume> {
+		return await Volume.from_name(name, params);
+	}
+
 	static async from_id(volumeId: string): Promise<Volume> {
 		return await getDefaultClient().volumes.fromId(volumeId);
+	}
+
+	static async fromId(volumeId: string): Promise<Volume> {
+		return await Volume.from_id(volumeId);
+	}
+
+	static async rename(
+		oldName: string,
+		newName: string,
+		params: VolumeRenameParams = {},
+	): Promise<void> {
+		await getDefaultClient().volumes.rename(oldName, newName, params);
 	}
 
 	/**
@@ -534,6 +557,14 @@ export class Volume {
 		const data = await this.readFile(path, params);
 		await fileobj.write(data);
 		return data.length;
+	}
+
+	async readFileIntoFileobj(
+		path: string,
+		fileobj: { write(chunk: Uint8Array): unknown },
+		params: { start?: number; length?: number } = {},
+	): Promise<number> {
+		return await this.read_file_into_fileobj(path, fileobj, params);
 	}
 
 	async writeBytes(

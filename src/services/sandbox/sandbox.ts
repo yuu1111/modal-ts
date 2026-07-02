@@ -1,7 +1,7 @@
 import { setTimeout } from "node:timers/promises";
 import { ClientError, Status } from "nice-grpc";
 import { v4 as uuidv4 } from "uuid";
-import type { ModalClient } from "@/core/client";
+import { getDefaultClient, type ModalClient } from "@/core/client";
 import {
 	ClientClosedError,
 	InvalidError,
@@ -393,6 +393,44 @@ export class Sandbox {
 			"01234567".includes(suffix[0] ?? "") &&
 			Array.from(suffix).every((ch) => ulidAlphabet.has(ch))
 		);
+	}
+
+	static async create(
+		app: App,
+		image: Image,
+		params: SandboxCreateParams = {},
+	): Promise<Sandbox> {
+		return await getDefaultClient().sandboxes.create(app, image, params);
+	}
+
+	static async fromId(sandboxId: string): Promise<Sandbox> {
+		return await getDefaultClient().sandboxes.fromId(sandboxId);
+	}
+
+	static async from_id(sandboxId: string): Promise<Sandbox> {
+		return await Sandbox.fromId(sandboxId);
+	}
+
+	static async fromName(
+		appName: string,
+		name: string,
+		params?: SandboxFromNameParams,
+	): Promise<Sandbox> {
+		return await getDefaultClient().sandboxes.fromName(appName, name, params);
+	}
+
+	static async from_name(
+		appName: string,
+		name: string,
+		params?: SandboxFromNameParams,
+	): Promise<Sandbox> {
+		return await Sandbox.fromName(appName, name, params);
+	}
+
+	static list(
+		params: SandboxListParams = {},
+	): AsyncGenerator<Sandbox, void, unknown> {
+		return getDefaultClient().sandboxes.list(params);
 	}
 
 	/**

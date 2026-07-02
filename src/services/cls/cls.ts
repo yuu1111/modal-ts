@@ -203,6 +203,10 @@ export class Cls {
 
 	static validate_construction_mechanism(): void {}
 
+	static validateConstructionMechanism(): void {
+		Cls.validate_construction_mechanism();
+	}
+
 	static from_local(
 		source: LocalClassSource,
 		params: LocalClassParams = {},
@@ -245,6 +249,14 @@ export class Cls {
 		params: ClsFromNameParams = {},
 	): Promise<Cls> {
 		return await getDefaultClient().cls.fromName(appName, name, params);
+	}
+
+	static async fromName(
+		appName: string,
+		name: string,
+		params: ClsFromNameParams = {},
+	): Promise<Cls> {
+		return await Cls.from_name(appName, name, params);
 	}
 
 	get #schema(): ClassParameterSpec[] {

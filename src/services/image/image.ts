@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { readdir, readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { parse as parseToml } from "smol-toml";
-import type { ModalClient } from "@/core/client";
+import { getDefaultClient, type ModalClient } from "@/core/client";
 import { InvalidError } from "@/core/errors";
 import { rethrowNotFound } from "@/core/grpc/errors";
 import {
@@ -608,6 +608,93 @@ export class Image {
 		];
 		this.#localMountLayers = localMountLayers ?? [];
 	}
+
+	static async fromId(imageId: string): Promise<Image> {
+		return await getDefaultClient().images.fromId(imageId);
+	}
+
+	static async from_id(imageId: string): Promise<Image> {
+		return await Image.fromId(imageId);
+	}
+
+	static async fromName(
+		name: string,
+		params: ImageFromNameParams = {},
+	): Promise<Image> {
+		return await getDefaultClient().images.fromName(name, params);
+	}
+
+	static async from_name(
+		name: string,
+		params: ImageFromNameParams = {},
+	): Promise<Image> {
+		return await Image.fromName(name, params);
+	}
+
+	static fromRegistry(tag: string, secret?: Secret): Image {
+		return getDefaultClient().images.fromRegistry(tag, secret);
+	}
+
+	static from_registry(tag: string, secret?: Secret): Image {
+		return Image.fromRegistry(tag, secret);
+	}
+
+	static fromAwsEcr(tag: string, secret: Secret): Image {
+		return getDefaultClient().images.fromAwsEcr(tag, secret);
+	}
+
+	static from_aws_ecr(tag: string, secret: Secret): Image {
+		return Image.fromAwsEcr(tag, secret);
+	}
+
+	static fromGcpArtifactRegistry(tag: string, secret: Secret): Image {
+		return getDefaultClient().images.fromGcpArtifactRegistry(tag, secret);
+	}
+
+	static from_gcp_artifact_registry(tag: string, secret: Secret): Image {
+		return Image.fromGcpArtifactRegistry(tag, secret);
+	}
+
+	static fromScratch(params: { forceBuild?: boolean } = {}): Image {
+		return getDefaultClient().images.fromScratch(params);
+	}
+
+	static from_scratch(params: { forceBuild?: boolean } = {}): Image {
+		return Image.fromScratch(params);
+	}
+
+	static debianSlim(
+		params: { pythonVersion?: string; forceBuild?: boolean } = {},
+	): Image {
+		return getDefaultClient().images.debianSlim(params);
+	}
+
+	static debian_slim(
+		params: { pythonVersion?: string; forceBuild?: boolean } = {},
+	): Image {
+		return Image.debianSlim(params);
+	}
+
+	static fromDockerfile(
+		dockerfilePath: string,
+		params: Parameters<ImageService["fromDockerfile"]>[1] = {},
+	): Image {
+		return getDefaultClient().images.fromDockerfile(dockerfilePath, params);
+	}
+
+	static from_dockerfile(
+		dockerfilePath: string,
+		params: Parameters<ImageService["fromDockerfile"]>[1] = {},
+	): Image {
+		return Image.fromDockerfile(dockerfilePath, params);
+	}
+
+	static micromamba(
+		params: { pythonVersion?: string; forceBuild?: boolean } = {},
+	): Image {
+		return getDefaultClient().images.micromamba(params);
+	}
+
 	get imageId(): string {
 		return this.#imageId;
 	}

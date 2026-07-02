@@ -219,11 +219,22 @@ export class Environment {
 		return await getDefaultClient().environments.fromContext();
 	}
 
+	static async fromContext(): Promise<Environment> {
+		return await Environment.from_context();
+	}
+
 	static async from_name(
 		name: string,
 		params: EnvironmentFromNameParams = {},
 	): Promise<Environment> {
 		return await getDefaultClient().environments.fromName(name, params);
+	}
+
+	static async fromName(
+		name: string,
+		params: EnvironmentFromNameParams = {},
+	): Promise<Environment> {
+		return await Environment.from_name(name, params);
 	}
 
 	/**

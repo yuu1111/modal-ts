@@ -545,6 +545,14 @@ export class Function_ {
 		return await getDefaultClient().functions.fromName(appName, name, params);
 	}
 
+	static async fromName(
+		appName: string,
+		name: string,
+		params: FunctionFromNameParams = {},
+	): Promise<Function_> {
+		return await Function_.from_name(appName, name, params);
+	}
+
 	/**
 	 * @description Function のタグ名
 	 */
@@ -585,6 +593,10 @@ export class Function_ {
 		return undefined;
 	}
 
+	getBuildDef(): undefined {
+		return this.get_build_def();
+	}
+
 	/**
 	 * @description generator Function かどうか
 	 */
@@ -592,11 +604,19 @@ export class Function_ {
 		return false;
 	}
 
+	isGenerator(): boolean {
+		return this.is_generator();
+	}
+
 	/**
 	 * @description raw local function はTS handleでは保持しないため undefined を返す
 	 */
 	get_raw_f(): undefined {
 		return undefined;
+	}
+
+	getRawF(): undefined {
+		return this.get_raw_f();
 	}
 
 	#checkNoWebUrl(fnName: string): void {
@@ -755,6 +775,13 @@ export class Function_ {
 		} else {
 			yield result;
 		}
+	}
+
+	async *remoteGen(
+		args: unknown[] = [],
+		kwargs: Record<string, unknown> = {},
+	): AsyncGenerator<unknown, void, unknown> {
+		yield* this.remote_gen(args, kwargs);
 	}
 
 	/**

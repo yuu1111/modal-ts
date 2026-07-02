@@ -27,6 +27,33 @@ test("Workspace fromContext settings dashboard members", async () => {
 		imageBuilderVersion: "2024.10",
 	});
 
+	mock.handleUnary("/WorkspaceSettings", () => ({
+		defaultEnvironmentName: "main",
+		imageBuilderVersion: "2024.10",
+	}));
+	expect(await workspace.settingsManager.list()).toEqual({
+		defaultEnvironmentName: "main",
+		imageBuilderVersion: "2024.10",
+	});
+	expect(workspace.settings_manager.valid_settings()).toEqual([
+		"defaultEnvironmentName",
+		"imageBuilderVersion",
+	]);
+
+	mock.handleUnary("/WorkspaceSetDefaultEnvironment", (req) => {
+		expect(req).toMatchObject({ environmentName: "prod" });
+		return {};
+	});
+	await workspace.settingsManager.set("defaultEnvironmentName", "prod");
+
+	mock.handleUnary("/WorkspaceSetImageBuilderVersion", (req) => {
+		expect(req).toMatchObject({ newImageBuilderVersion: "2025.01" });
+		return { imageBuilderVersion: "2025.01" };
+	});
+	expect(
+		await workspace.settingsManager.set("imageBuilderVersion", "2025.01"),
+	).toBe("2025.01");
+
 	mock.handleUnary("/WorkspaceMembersList", () => ({
 		members: [
 			{
