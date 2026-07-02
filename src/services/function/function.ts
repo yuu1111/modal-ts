@@ -20,6 +20,12 @@ import {
 	type VolumeMount,
 } from "@/generated/modal_proto/api";
 import { parseGpuConfig } from "@/services/deploy/app";
+import type { DeployFunctionParams } from "@/services/deploy/deploy";
+import {
+	type LocalFunctionParams,
+	type LocalFunctionSource,
+	localFunctionRuntime,
+} from "@/services/deploy/local";
 import type { SchedulerPlacement } from "@/services/scheduler_placement/scheduler_placement";
 import { mergeEnvIntoSecrets, type Secret } from "@/services/secret/secret";
 import { type Volume, volumeToMountProto } from "@/services/volume/volume";
@@ -490,12 +496,42 @@ export class Function_ {
 	}
 
 	/**
-	 * @description Python 互換の local construction marker
+	 * @description local JavaScript/TypeScript function を deployApp 用の定義に変換する
 	 */
-	static from_local(): never {
-		throw new InvalidError(
-			"Function.from_local requires a local Python function; use deploy helpers to create JavaScript functions.",
-		);
+	static from_local(
+		source: LocalFunctionSource,
+		params: LocalFunctionParams = {},
+	): DeployFunctionParams {
+		const local = localFunctionRuntime(source, params);
+		return {
+			functionName: local.functionName,
+			moduleName: local.moduleName,
+			implementationName: local.localRuntime.implementationName,
+			localRuntime: local.localRuntime,
+			...(params.image !== undefined && { image: params.image }),
+			...(params.imageId !== undefined && { imageId: params.imageId }),
+			...(params.mountIds !== undefined && { mountIds: params.mountIds }),
+			...(params.secrets !== undefined && { secrets: params.secrets }),
+			...(params.env !== undefined && { env: params.env }),
+			...(params.secretIds !== undefined && { secretIds: params.secretIds }),
+			...(params.minContainers !== undefined && {
+				minContainers: params.minContainers,
+			}),
+			...(params.schedule !== undefined && { schedule: params.schedule }),
+			...(params.schedulerPlacement !== undefined && {
+				schedulerPlacement: params.schedulerPlacement,
+			}),
+			...(params.experimentalOptions !== undefined && {
+				experimentalOptions: params.experimentalOptions,
+			}),
+		};
+	}
+
+	static fromLocal(
+		source: LocalFunctionSource,
+		params: LocalFunctionParams = {},
+	): DeployFunctionParams {
+		return Function_.from_local(source, params);
 	}
 
 	/**

@@ -74,6 +74,15 @@ export {
 	getOrCreateImage,
 	type MountFileEntry,
 } from "./services/deploy/deploy";
+export type {
+	LocalClassConstructor,
+	LocalClassParams,
+	LocalClassSource,
+	LocalFunctionHandler,
+	LocalFunctionParams,
+	LocalFunctionRuntime,
+	LocalFunctionSource,
+} from "./services/deploy/local";
 export {
 	Dict,
 	type DictCreateParams,
@@ -121,6 +130,7 @@ export {
 	type ImageDeleteParams,
 	type ImageDockerfileCommandsParams,
 	type ImageFromNameParams,
+	type ImageIgnoreMatcher,
 	type ImagePublishParams,
 	ImageService,
 } from "./services/image/image";

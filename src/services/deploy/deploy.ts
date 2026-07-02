@@ -9,9 +9,11 @@ import {
 	type WebhookConfig,
 } from "@/generated/modal_proto/api";
 import { App } from "@/services/deploy/app";
+import type { LocalFunctionRuntime } from "@/services/deploy/local";
 import type { Image } from "@/services/image/image";
 import type { Schedule } from "@/services/schedule/schedule";
 import type { SchedulerPlacement } from "@/services/scheduler_placement/scheduler_placement";
+import { mergeEnvIntoSecrets, type Secret } from "@/services/secret/secret";
 
 const textEncoder = new TextEncoder();
 
@@ -36,6 +38,8 @@ export interface DeployAppParams {
  * @property imageId - 使用するコンテナイメージID @optional
  * @property image - 使用するコンテナイメージ @optional
  * @property mountIds - アタッチするMountのID配列 @optional
+ * @property secrets - アタッチするSecret配列 @optional
+ * @property env - 環境変数として注入する値 @optional
  * @property secretIds - アタッチするSecretのID配列 @optional
  * @property minContainers - 最小コンテナ数(warm pool) @optional @default 0
  * @property schedule - 定期実行スケジュール @optional
@@ -45,10 +49,14 @@ export interface DeployAppParams {
  */
 export interface DeployFunctionParams {
 	functionName: string;
-	moduleName: string;
+	moduleName?: string;
+	implementationName?: string;
+	localRuntime?: LocalFunctionRuntime;
 	imageId?: string;
 	image?: Image;
 	mountIds?: string[];
+	secrets?: Secret[];
+	env?: Record<string, string>;
 	secretIds?: string[];
 	minContainers?: number;
 	schedule?: Schedule;
@@ -65,6 +73,8 @@ export interface DeployFunctionParams {
  * @property imageId - 使用するコンテナイメージID @optional
  * @property image - 使用するコンテナイメージ @optional
  * @property mountIds - アタッチするMountのID配列 @optional
+ * @property secrets - アタッチするSecret配列 @optional
+ * @property env - 環境変数として注入する値 @optional
  * @property secretIds - アタッチするSecretのID配列 @optional
  * @property minContainers - 最小コンテナ数(warm pool) @optional @default 0
  * @property schedulerPlacement - スケジューリング制約 @optional
@@ -72,11 +82,15 @@ export interface DeployFunctionParams {
  */
 export interface DeployClassParams {
 	className: string;
-	moduleName: string;
+	moduleName?: string;
 	methods: string[];
+	implementationName?: string;
+	localRuntime?: LocalFunctionRuntime;
 	imageId?: string;
 	image?: Image;
 	mountIds?: string[];
+	secrets?: Secret[];
+	env?: Record<string, string>;
 	secretIds?: string[];
 	minContainers?: number;
 	schedulerPlacement?: SchedulerPlacement;
@@ -226,12 +240,15 @@ async function createFunctionInternal(
 	appId: string,
 	fn: DeployFunctionParams & { isMethod?: boolean },
 ) {
+	const outputFormats = fn.localRuntime
+		? [DataFormat.DATA_FORMAT_CBOR]
+		: DEFAULT_DATA_FORMATS;
 	const precreateResp = await cpClient.functionPrecreate({
 		appId,
 		functionName: fn.functionName,
 		functionType: Function_FunctionType.FUNCTION_TYPE_FUNCTION,
 		supportedInputFormats: DEFAULT_DATA_FORMATS,
-		supportedOutputFormats: DEFAULT_DATA_FORMATS,
+		supportedOutputFormats: outputFormats,
 		webhookConfig: fn.webhookConfig
 			? buildWebhookConfig(fn.webhookConfig)
 			: undefined,
@@ -241,8 +258,9 @@ async function createFunctionInternal(
 		appId,
 		existingFunctionId: precreateResp.functionId ?? "",
 		function: {
-			moduleName: fn.moduleName,
+			moduleName: fn.moduleName ?? "",
 			functionName: fn.functionName,
+			implementationName: fn.implementationName ?? fn.functionName,
 			mountIds: fn.mountIds ?? [],
 			imageId: fn.imageId ?? "",
 			definitionType: Function_DefinitionType.DEFINITION_TYPE_FILE,
@@ -254,7 +272,7 @@ async function createFunctionInternal(
 			experimentalOptions: fn.experimentalOptions ?? {},
 			isMethod: fn.isMethod ?? false,
 			supportedInputFormats: DEFAULT_DATA_FORMATS,
-			supportedOutputFormats: DEFAULT_DATA_FORMATS,
+			supportedOutputFormats: outputFormats,
 			webhookConfig: fn.webhookConfig
 				? buildWebhookConfig(fn.webhookConfig)
 				: undefined,
@@ -326,6 +344,42 @@ export async function deployApp(
 
 	for (const fn of params.functions ?? []) {
 		const functionParams = { ...fn };
+		if (functionParams.localRuntime !== undefined) {
+			const localMountId = await createMount(
+				cpClient,
+				appId,
+				functionParams.localRuntime.mountFiles,
+			);
+			functionParams.moduleName = functionParams.localRuntime.moduleName;
+			functionParams.implementationName =
+				functionParams.localRuntime.implementationName;
+			functionParams.mountIds = [
+				...(functionParams.mountIds ?? []),
+				localMountId,
+			];
+			if (
+				functionParams.image === undefined &&
+				functionParams.imageId === undefined
+			) {
+				functionParams.image = client.images
+					.debianSlim()
+					.aptInstall(["nodejs"]);
+			}
+		}
+		if (
+			functionParams.secrets !== undefined ||
+			functionParams.env !== undefined
+		) {
+			const mergedSecrets = await mergeEnvIntoSecrets(
+				client,
+				functionParams.env,
+				functionParams.secrets,
+			);
+			functionParams.secretIds = [
+				...(functionParams.secretIds ?? []),
+				...mergedSecrets.map((secret) => secret.secretId),
+			];
+		}
 		if (functionParams.image !== undefined) {
 			await functionParams.image.build(app);
 			functionParams.imageId = functionParams.image.imageId;
@@ -347,6 +401,34 @@ export async function deployApp(
 
 	for (const cls of params.classes ?? []) {
 		const classParams = { ...cls };
+		if (classParams.localRuntime !== undefined) {
+			const localMountId = await createMount(
+				cpClient,
+				appId,
+				classParams.localRuntime.mountFiles,
+			);
+			classParams.moduleName = classParams.localRuntime.moduleName;
+			classParams.implementationName =
+				classParams.localRuntime.implementationName;
+			classParams.mountIds = [...(classParams.mountIds ?? []), localMountId];
+			if (
+				classParams.image === undefined &&
+				classParams.imageId === undefined
+			) {
+				classParams.image = client.images.debianSlim().aptInstall(["nodejs"]);
+			}
+		}
+		if (classParams.secrets !== undefined || classParams.env !== undefined) {
+			const mergedSecrets = await mergeEnvIntoSecrets(
+				client,
+				classParams.env,
+				classParams.secrets,
+			);
+			classParams.secretIds = [
+				...(classParams.secretIds ?? []),
+				...mergedSecrets.map((secret) => secret.secretId),
+			];
+		}
 		if (classParams.image !== undefined) {
 			await classParams.image.build(app);
 			classParams.imageId = classParams.image.imageId;
@@ -355,6 +437,9 @@ export async function deployApp(
 				...(await classParams.image.mountIds(app)),
 			];
 		}
+		const outputFormats = classParams.localRuntime
+			? [DataFormat.DATA_FORMAT_CBOR]
+			: DEFAULT_DATA_FORMATS;
 		const methodDefs: Record<
 			string,
 			{
@@ -369,7 +454,7 @@ export async function deployApp(
 				functionName: `${classParams.className}.${methodName}`,
 				functionType: Function_FunctionType.FUNCTION_TYPE_FUNCTION,
 				supportedInputFormats: DEFAULT_DATA_FORMATS,
-				supportedOutputFormats: DEFAULT_DATA_FORMATS,
+				supportedOutputFormats: outputFormats,
 			};
 		}
 
@@ -378,7 +463,7 @@ export async function deployApp(
 			functionName: classParams.className,
 			functionType: Function_FunctionType.FUNCTION_TYPE_FUNCTION,
 			supportedInputFormats: DEFAULT_DATA_FORMATS,
-			supportedOutputFormats: DEFAULT_DATA_FORMATS,
+			supportedOutputFormats: outputFormats,
 			methodDefinitions: methodDefs,
 		});
 
@@ -386,22 +471,24 @@ export async function deployApp(
 			appId,
 			existingFunctionId: precreateResp.functionId ?? "",
 			function: {
-				moduleName: classParams.moduleName,
+				moduleName: classParams.moduleName ?? "",
 				functionName: classParams.className,
+				implementationName:
+					classParams.implementationName ?? classParams.className,
 				mountIds: classParams.mountIds ?? [],
 				imageId: classParams.imageId ?? "",
 				definitionType: Function_DefinitionType.DEFINITION_TYPE_FILE,
 				functionType: Function_FunctionType.FUNCTION_TYPE_FUNCTION,
-				secretIds: cls.secretIds ?? [],
-				warmPoolSize: cls.minContainers ?? 0,
-				schedulerPlacement: cls.schedulerPlacement?.toProto(),
-				experimentalOptions: cls.experimentalOptions ?? {},
+				secretIds: classParams.secretIds ?? [],
+				warmPoolSize: classParams.minContainers ?? 0,
+				schedulerPlacement: classParams.schedulerPlacement?.toProto(),
+				experimentalOptions: classParams.experimentalOptions ?? {},
 				isClass: true,
 				isMethod: false,
 				methodDefinitions: methodDefs,
 				methodDefinitionsSet: true,
 				supportedInputFormats: DEFAULT_DATA_FORMATS,
-				supportedOutputFormats: DEFAULT_DATA_FORMATS,
+				supportedOutputFormats: outputFormats,
 			},
 		});
 

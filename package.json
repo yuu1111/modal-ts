@@ -71,6 +71,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@yuu1111/biome-config": "^1.0.4",
     "@yuu1111/tsconfig": "^1.0.3",
+    "esbuild": "^0.28.1",
     "grpc-tools": "^1.13.1",
     "http-server": "^14.1.1",
     "jsonwebtoken": "^9.0.3",

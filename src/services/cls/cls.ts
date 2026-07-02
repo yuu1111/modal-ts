@@ -13,6 +13,12 @@ import {
 	type VolumeMount,
 } from "@/generated/modal_proto/api";
 import { parseGpuConfig } from "@/services/deploy/app";
+import type { DeployClassParams } from "@/services/deploy/deploy";
+import {
+	type LocalClassParams,
+	type LocalClassSource,
+	localClassRuntime,
+} from "@/services/deploy/local";
 import { Function_ } from "@/services/function/function";
 import type { SchedulerPlacement } from "@/services/scheduler_placement/scheduler_placement";
 import type { Secret } from "@/services/secret/secret";
@@ -197,10 +203,40 @@ export class Cls {
 
 	static validate_construction_mechanism(): void {}
 
-	static from_local(): never {
-		throw new Error(
-			"Cls.from_local requires a local Python class; deploy or look up a class by name.",
-		);
+	static from_local(
+		source: LocalClassSource,
+		params: LocalClassParams = {},
+	): DeployClassParams {
+		const local = localClassRuntime(source, params);
+		return {
+			className: local.className,
+			moduleName: local.moduleName,
+			methods: local.methods,
+			implementationName: local.localRuntime.implementationName,
+			localRuntime: local.localRuntime,
+			...(params.image !== undefined && { image: params.image }),
+			...(params.imageId !== undefined && { imageId: params.imageId }),
+			...(params.mountIds !== undefined && { mountIds: params.mountIds }),
+			...(params.secrets !== undefined && { secrets: params.secrets }),
+			...(params.env !== undefined && { env: params.env }),
+			...(params.secretIds !== undefined && { secretIds: params.secretIds }),
+			...(params.minContainers !== undefined && {
+				minContainers: params.minContainers,
+			}),
+			...(params.schedulerPlacement !== undefined && {
+				schedulerPlacement: params.schedulerPlacement,
+			}),
+			...(params.experimentalOptions !== undefined && {
+				experimentalOptions: params.experimentalOptions,
+			}),
+		};
+	}
+
+	static fromLocal(
+		source: LocalClassSource,
+		params: LocalClassParams = {},
+	): DeployClassParams {
+		return Cls.from_local(source, params);
 	}
 
 	static async from_name(
