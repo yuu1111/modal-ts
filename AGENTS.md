@@ -11,7 +11,7 @@ bun run lint                             # Biome lint
 bun run format                           # Biome format
 bun run build                            # Build distribution (esbuild + tsc)
 bun run test                             # Run all tests (vitest)
-bun run test -- test/client.test.ts      # Single test file
+bun run test -- test/core/client.test.ts # Single test file
 bun run test -- -t "pattern"             # Filter by test name
 ```
 

@@ -3,21 +3,21 @@
 	"extends": ["@yuu1111/biome-config/biome"],
 	"files": {
 		"includes": [
+			"examples/**",
+			"scripts/**",
 			"src/**",
 			"!src/generated",
 			"test/**",
-			"examples/**",
-			"*.config.ts",
-			"scripts/**"
+			"*.config.ts"
 		]
 	},
 	"linter": {
 		"rules": {
-			"style": {
-				"useShorthandAssign": "error"
-			},
 			"performance": {
 				"noBarrelFile": "off"
+			},
+			"style": {
+				"useShorthandAssign": "error"
 			}
 		}
 	},
@@ -36,7 +36,7 @@
 			"includes": [
 				"src/services/proxy/**",
 				"src/services/sandbox/sandbox.ts",
-				"test/legacy/proxy.test.ts"
+				"test/services/proxy/proxy.test.ts"
 			],
 			"linter": {
 				"rules": {
