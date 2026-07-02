@@ -2,6 +2,7 @@ import { getDefaultClient, type ModalClient } from "@/core/client";
 import { NotFoundError } from "@/core/errors";
 import { rethrowNotFound } from "@/core/grpc/errors";
 import type { ProxyGetResponse } from "@/generated/modal_proto/api";
+import { environmentParam } from "@/utils/param_aliases";
 
 /**
  * @description {@link Proxy} を管理するサービス
@@ -24,7 +25,7 @@ export class ProxyService {
 		try {
 			resp = await this.#client.cpClient.proxyGet({
 				name,
-				environmentName: this.#client.environmentName(params?.environment),
+				environmentName: this.#client.environmentName(environmentParam(params)),
 			});
 		} catch (err) {
 			rethrowNotFound(err, `Proxy '${name}' not found`);
@@ -46,6 +47,8 @@ export class ProxyService {
  */
 export type ProxyFromNameParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 };
 
 /**

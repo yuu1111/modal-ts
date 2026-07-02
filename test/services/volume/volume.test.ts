@@ -40,8 +40,8 @@ test("Volume.withMountOptions", () => {
 	const volume = new Volume("vo-test", "test-volume");
 
 	const scoped = volume.withMountOptions({
-		readOnly: true,
-		subPath: "/users/alice",
+		read_only: true,
+		sub_path: "/users/alice",
 	});
 
 	expect(scoped.isReadOnly).toBe(true);
@@ -154,6 +154,8 @@ test("VolumeRename", async () => {
 		return {};
 	});
 
-	await mc.volumes.rename("old-volume", "new-volume", { environment: "prod" });
+	await mc.volumes.rename("old-volume", "new-volume", {
+		environment_name: "prod",
+	});
 	mock.assertExhausted();
 });

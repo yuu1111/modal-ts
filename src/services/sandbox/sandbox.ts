@@ -886,10 +886,24 @@ export class Sandbox {
 	 * @description Sandboxの終了を待機してexit codeを返す
 	 * @returns exit code
 	 */
-	async wait(): Promise<number> {
+	async wait(
+		params: {
+			raiseOnTermination?: boolean;
+			raise_on_termination?: boolean;
+		} = {},
+	): Promise<number> {
 		while (true) {
 			const resp = await this.#sandboxWait(10);
 			if (resp.result) {
+				const raiseOnTermination =
+					params.raiseOnTermination ?? params.raise_on_termination ?? false;
+				if (
+					raiseOnTermination &&
+					resp.result.status ===
+						GenericResult_GenericStatus.GENERIC_STATUS_TERMINATED
+				) {
+					throw new Error(`Sandbox ${this.sandboxId} was terminated`);
+				}
 				const returnCode = Sandbox.#getReturnCode(resp.result);
 				if (returnCode == null)
 					throw new Error("Sandbox result missing return code");

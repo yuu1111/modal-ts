@@ -1,5 +1,6 @@
 import { getDefaultClient, type ModalClient } from "@/core/client";
 import type { Function_ } from "@/services/function/function";
+import { aliasedNumber, environmentParam } from "@/utils/param_aliases";
 
 /**
  * @description Server.fromName() のオプションパラメータ
@@ -7,6 +8,8 @@ import type { Function_ } from "@/services/function/function";
  */
 export type ServerFromNameParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 	client?: ModalClient;
 };
 
@@ -15,11 +18,19 @@ export type ServerFromNameParams = {
  */
 export type ServerUpdateAutoscalerParams = {
 	targetConcurrency?: number;
+	target_concurrency?: number;
 	minContainers?: number;
+	min_containers?: number;
 	maxContainers?: number;
+	max_containers?: number;
 	bufferContainers?: number;
+	buffer_containers?: number;
 	scaleupWindowMs?: number;
+	scaleup_window?: number;
+	scaleup_window_ms?: number;
 	scaledownWindowMs?: number;
+	scaledown_window?: number;
+	scaledown_window_ms?: number;
 };
 
 /**
@@ -44,10 +55,9 @@ export class Server {
 		params: ServerFromNameParams = {},
 	): Promise<Server> {
 		const client = params.client ?? getDefaultClient();
+		const environment = environmentParam(params);
 		const fn = await client.functions.fromName(appName, name, {
-			...(params.environment !== undefined && {
-				environment: params.environment,
-			}),
+			...(environment !== undefined && { environment }),
 		});
 		return new Server(fn);
 	}
@@ -86,24 +96,48 @@ export class Server {
 	 * @description Server の autoscaler を更新する
 	 */
 	async updateAutoscaler(params: ServerUpdateAutoscalerParams): Promise<void> {
+		const minContainers = aliasedNumber(
+			params,
+			"minContainers",
+			"min_containers",
+		);
+		const maxContainers = aliasedNumber(
+			params,
+			"maxContainers",
+			"max_containers",
+		);
+		const bufferContainers = aliasedNumber(
+			params,
+			"bufferContainers",
+			"buffer_containers",
+		);
+		const targetConcurrency = aliasedNumber(
+			params,
+			"targetConcurrency",
+			"target_concurrency",
+		);
 		await this.#function.updateAutoscaler({
-			...(params.minContainers !== undefined && {
-				minContainers: params.minContainers,
-			}),
-			...(params.maxContainers !== undefined && {
-				maxContainers: params.maxContainers,
-			}),
-			...(params.bufferContainers !== undefined && {
-				bufferContainers: params.bufferContainers,
-			}),
+			...(minContainers !== undefined && { minContainers }),
+			...(maxContainers !== undefined && { maxContainers }),
+			...(bufferContainers !== undefined && { bufferContainers }),
 			...(params.scaledownWindowMs !== undefined && {
 				scaledownWindowMs: params.scaledownWindowMs,
 			}),
 			...(params.scaleupWindowMs !== undefined && {
 				scaleupWindowMs: params.scaleupWindowMs,
 			}),
-			...(params.targetConcurrency !== undefined && {
-				targetConcurrency: params.targetConcurrency,
+			...(targetConcurrency !== undefined && { targetConcurrency }),
+			...(params.scaleup_window !== undefined && {
+				scaleup_window: params.scaleup_window,
+			}),
+			...(params.scaleup_window_ms !== undefined && {
+				scaleup_window_ms: params.scaleup_window_ms,
+			}),
+			...(params.scaledown_window !== undefined && {
+				scaledown_window: params.scaledown_window,
+			}),
+			...(params.scaledown_window_ms !== undefined && {
+				scaledown_window_ms: params.scaledown_window_ms,
 			}),
 		});
 	}

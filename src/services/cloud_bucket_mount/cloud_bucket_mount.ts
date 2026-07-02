@@ -1,10 +1,26 @@
-import type { ModalClient } from "@/core/client";
+import { getDefaultClient, type ModalClient } from "@/core/client";
 import { InvalidError } from "@/core/errors";
 import {
 	CloudBucketMount_BucketType,
 	CloudBucketMount as CloudBucketMountProto,
 } from "@/generated/modal_proto/api";
 import type { Secret } from "@/services/secret/secret";
+
+export type CloudBucketMountCreateParams = {
+	secret?: Secret;
+	readOnly?: boolean;
+	read_only?: boolean;
+	requesterPays?: boolean;
+	requester_pays?: boolean;
+	bucketEndpointUrl?: string;
+	bucket_endpoint_url?: string;
+	keyPrefix?: string;
+	key_prefix?: string;
+	oidcAuthRoleArn?: string;
+	oidc_auth_role_arn?: string;
+	forcePathStyle?: boolean;
+	force_path_style?: boolean;
+};
 
 /**
  * @description {@link CloudBucketMount} の作成を管理するサービス
@@ -24,18 +40,17 @@ export class CloudBucketMountService {
 	 */
 	create(
 		bucketName: string,
-		params: {
-			secret?: Secret;
-			readOnly?: boolean;
-			requesterPays?: boolean;
-			bucketEndpointUrl?: string;
-			keyPrefix?: string;
-			oidcAuthRoleArn?: string;
-		} = {},
+		params: CloudBucketMountCreateParams = {},
 	): CloudBucketMount {
+		const bucketEndpointUrl =
+			params.bucketEndpointUrl ?? params.bucket_endpoint_url;
+		const requesterPays =
+			params.requesterPays ?? params.requester_pays ?? false;
+		const keyPrefix = params.keyPrefix ?? params.key_prefix;
+
 		let bucketType = CloudBucketMount_BucketType.S3;
-		if (params.bucketEndpointUrl) {
-			const url = new URL(params.bucketEndpointUrl);
+		if (bucketEndpointUrl) {
+			const url = new URL(bucketEndpointUrl);
 			if (url.hostname.endsWith("r2.cloudflarestorage.com")) {
 				bucketType = CloudBucketMount_BucketType.R2;
 			} else if (url.hostname.endsWith("storage.googleapis.com")) {
@@ -45,18 +60,18 @@ export class CloudBucketMountService {
 					"CloudBucketMount received unrecognized bucket endpoint URL. " +
 						"Assuming AWS S3 configuration as fallback.",
 					"bucketEndpointUrl",
-					params.bucketEndpointUrl,
+					bucketEndpointUrl,
 				);
 			}
 		}
 
-		if (params.requesterPays && !params.secret) {
+		if (requesterPays && !params.secret) {
 			throw new InvalidError(
 				"Credentials required in order to use Requester Pays.",
 			);
 		}
 
-		if (params.keyPrefix && !params.keyPrefix.endsWith("/")) {
+		if (keyPrefix && !keyPrefix.endsWith("/")) {
 			throw new InvalidError(
 				"keyPrefix will be prefixed to all object paths, so it must end in a '/'",
 			);
@@ -65,11 +80,12 @@ export class CloudBucketMountService {
 		return new CloudBucketMount({
 			bucketName,
 			secret: params.secret,
-			readOnly: params.readOnly ?? false,
-			requesterPays: params.requesterPays ?? false,
-			bucketEndpointUrl: params.bucketEndpointUrl,
-			keyPrefix: params.keyPrefix,
-			oidcAuthRoleArn: params.oidcAuthRoleArn,
+			readOnly: params.readOnly ?? params.read_only ?? false,
+			requesterPays,
+			bucketEndpointUrl,
+			keyPrefix,
+			oidcAuthRoleArn: params.oidcAuthRoleArn ?? params.oidc_auth_role_arn,
+			forcePathStyle: params.forcePathStyle ?? params.force_path_style ?? false,
 			bucketType,
 		});
 	}
@@ -86,6 +102,7 @@ export class CloudBucketMount {
 	readonly bucketEndpointUrl?: string;
 	readonly keyPrefix?: string;
 	readonly oidcAuthRoleArn?: string;
+	readonly forcePathStyle: boolean;
 	readonly #bucketType: CloudBucketMount_BucketType;
 
 	/** @internal */
@@ -97,6 +114,7 @@ export class CloudBucketMount {
 		bucketEndpointUrl: string | undefined;
 		keyPrefix: string | undefined;
 		oidcAuthRoleArn: string | undefined;
+		forcePathStyle: boolean;
 		bucketType: CloudBucketMount_BucketType;
 	}) {
 		this.bucketName = opts.bucketName;
@@ -108,7 +126,43 @@ export class CloudBucketMount {
 		if (opts.keyPrefix !== undefined) this.keyPrefix = opts.keyPrefix;
 		if (opts.oidcAuthRoleArn !== undefined)
 			this.oidcAuthRoleArn = opts.oidcAuthRoleArn;
+		this.forcePathStyle = opts.forcePathStyle;
 		this.#bucketType = opts.bucketType;
+	}
+
+	static create(
+		bucketName: string,
+		params: CloudBucketMountCreateParams = {},
+	): CloudBucketMount {
+		return getDefaultClient().cloudBucketMounts.create(bucketName, params);
+	}
+
+	get bucket_name(): string {
+		return this.bucketName;
+	}
+
+	get read_only(): boolean {
+		return this.readOnly;
+	}
+
+	get requester_pays(): boolean {
+		return this.requesterPays;
+	}
+
+	get bucket_endpoint_url(): string | undefined {
+		return this.bucketEndpointUrl;
+	}
+
+	get key_prefix(): string | undefined {
+		return this.keyPrefix;
+	}
+
+	get oidc_auth_role_arn(): string | undefined {
+		return this.oidcAuthRoleArn;
+	}
+
+	get force_path_style(): boolean {
+		return this.forcePathStyle;
 	}
 
 	/** @internal */
@@ -123,6 +177,7 @@ export class CloudBucketMount {
 			bucketEndpointUrl: this.bucketEndpointUrl,
 			keyPrefix: this.keyPrefix,
 			oidcAuthRoleArn: this.oidcAuthRoleArn,
+			forcePathStyle: this.forcePathStyle,
 		});
 	}
 }

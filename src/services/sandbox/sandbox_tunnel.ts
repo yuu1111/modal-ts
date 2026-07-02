@@ -30,6 +30,14 @@ export class Tunnel {
 		public unencryptedPort?: number,
 	) {}
 
+	get unencrypted_host(): string | undefined {
+		return this.unencryptedHost;
+	}
+
+	get unencrypted_port(): number | undefined {
+		return this.unencryptedPort;
+	}
+
 	/**
 	 * @description フォワードされたポートの公開 HTTPS URL を取得する
 	 */

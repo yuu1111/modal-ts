@@ -20,7 +20,7 @@ test("FilePatternMatcher fromFile", () => {
 	writeFileSync(file, "*.ts\n");
 
 	try {
-		const matcher = FilePatternMatcher.fromFile(file);
+		const matcher = FilePatternMatcher.from_file(file);
 		expect(matcher.matches("index.ts")).toBe(true);
 		expect(matcher.matches("index.js")).toBe(false);
 	} finally {
@@ -35,4 +35,5 @@ test("FilePatternMatcher double-star slash also matches top-level files", () => 
 	expect(matcher.matches("pkg/main.py")).toBe(true);
 	expect(matcher.matches("pkg/nested/main.py")).toBe(true);
 	expect(matcher.matches("main.ts")).toBe(false);
+	expect(matcher.can_prune_directories()).toBe(true);
 });

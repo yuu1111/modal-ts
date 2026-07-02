@@ -29,6 +29,8 @@ test("forward starts and stops tunnel", async () => {
 			expect(tunnel.tcpSocket).toEqual(["tcp.example.modal.run", 32000]);
 			expect(tunnel.tcp_socket).toEqual(["tcp.example.modal.run", 32000]);
 			expect(tunnel.tls_socket).toEqual(["example.modal.run", 443]);
+			expect(tunnel.unencrypted_host).toBe("tcp.example.modal.run");
+			expect(tunnel.unencrypted_port).toBe(32000);
 			return tunnel.url;
 		},
 		{ client: mc, unencrypted: true },

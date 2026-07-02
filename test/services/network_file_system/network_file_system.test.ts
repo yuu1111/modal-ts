@@ -9,6 +9,8 @@ test("NetworkFileSystemService.fromName and file operations", async () => {
 
 	mock.handleUnary("/SharedVolumeGetOrCreate", (req) => {
 		expect(req.deploymentName).toBe("test-nfs");
+		expect(req.environmentName).toBe("dev");
+		expect(req.objectCreationType).toBe(1);
 		return { sharedVolumeId: "sv-test" };
 	});
 
@@ -36,7 +38,10 @@ test("NetworkFileSystemService.fromName and file operations", async () => {
 		return { downloadUrl: "https://blob.test/large.bin" };
 	});
 
-	const nfs = await mc.networkFileSystems.fromName("test-nfs");
+	const nfs = await mc.networkFileSystems.fromName("test-nfs", {
+		create_if_missing: true,
+		environment_name: "dev",
+	});
 	await nfs.writeFile("/hello.txt", new TextEncoder().encode("hi"));
 	expect(new TextDecoder().decode(await nfs.readFile("/hello.txt"))).toBe("hi");
 	const originalFetch = globalThis.fetch;

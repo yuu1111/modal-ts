@@ -30,6 +30,26 @@ test("SecretFromNameWithRequiredKeys", async () => {
 	);
 });
 
+test("Secret fromName accepts Python-style parameter aliases", async () => {
+	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
+
+	mock.handleUnary("/SecretGetOrCreate", (req) => {
+		expect(req).toMatchObject({
+			deploymentName: "snake-secret",
+			environmentName: "dev",
+			requiredKeys: ["a", "b"],
+		});
+		return { secretId: "st-test-123" };
+	});
+
+	const secret = await mc.secrets.fromName("snake-secret", {
+		environment_name: "dev",
+		required_keys: ["a", "b"],
+	});
+	expect(secret.secretId).toBe("st-test-123");
+	mock.assertExhausted();
+});
+
 test("SecretFromObject", async () => {
 	const secret = await tc.secrets.fromObject({ key: "value" });
 	expect(secret.secretId).toMatch(/^st-/);

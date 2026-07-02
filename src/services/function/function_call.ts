@@ -1,4 +1,5 @@
 import { getDefaultClient, type ModalClient } from "@/core/client";
+import { aliasedBoolean } from "@/utils/param_aliases";
 import { checkForRenamedParams } from "@/utils/validation";
 import { ControlPlaneInvocation } from "./invocation";
 
@@ -49,6 +50,7 @@ export type FunctionCallGetParams = {
  */
 export type FunctionCallCancelParams = {
 	terminateContainers?: boolean;
+	terminate_containers?: boolean;
 };
 
 /**
@@ -177,12 +179,15 @@ export class FunctionCall {
 	 */
 	async cancel(params: FunctionCallCancelParams = {}) {
 		const cpClient = this.#client?.cpClient || getDefaultClient().cpClient;
+		const terminateContainers = aliasedBoolean(
+			params,
+			"terminateContainers",
+			"terminate_containers",
+		);
 
 		await cpClient.functionCallCancel({
 			functionCallId: this.functionCallId,
-			...(params.terminateContainers !== undefined && {
-				terminateContainers: params.terminateContainers,
-			}),
+			...(terminateContainers !== undefined && { terminateContainers }),
 		});
 	}
 }

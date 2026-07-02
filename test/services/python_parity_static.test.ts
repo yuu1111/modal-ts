@@ -1,4 +1,6 @@
 import { expect, test } from "vitest";
+import { CloudBucketMount } from "../../src/services/cloud_bucket_mount/cloud_bucket_mount";
+import { App } from "../../src/services/deploy/app";
 import { Dict } from "../../src/services/dict/dict";
 import { Image } from "../../src/services/image/image";
 import { NetworkFileSystem } from "../../src/services/network_file_system/network_file_system";
@@ -16,6 +18,9 @@ test("Python-style static Image factories are available", () => {
 });
 
 test("Python-style static resource helpers are available", () => {
+	expect(App.from_name).toBeTypeOf("function");
+	expect(App.fromName).toBeTypeOf("function");
+	expect(CloudBucketMount.create).toBeTypeOf("function");
 	expect(Sandbox.create).toBeTypeOf("function");
 	expect(Sandbox.from_id).toBeTypeOf("function");
 	expect(Sandbox.from_name).toBeTypeOf("function");

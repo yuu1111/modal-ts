@@ -9,9 +9,13 @@ import {
 	type QueueNextItemsRequest,
 } from "@/generated/modal_proto/api";
 import { EphemeralHeartbeatManager } from "@/utils/ephemeral";
+import {
+	aliasedBoolean,
+	aliasedNumber,
+	environmentParam,
+} from "@/utils/param_aliases";
 import { loads as pickleDecode, dumps as pickleEncode } from "@/utils/pickle";
 import { encodeIfString } from "@/utils/streams";
-import { checkForRenamedParams } from "@/utils/validation";
 
 /**
  * @description put 操作の初期バックオフ時間(ミリ秒)
@@ -30,7 +34,10 @@ const queueDefaultPartitionTtlMs = 24 * 3600 * 1000;
  */
 export type QueueFromNameParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 	createIfMissing?: boolean;
+	create_if_missing?: boolean;
 };
 
 /**
@@ -40,7 +47,10 @@ export type QueueFromNameParams = {
  */
 export type QueueCreateParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 	allowExisting?: boolean;
+	allow_existing?: boolean;
 };
 
 /**
@@ -51,8 +61,12 @@ export type QueueCreateParams = {
  */
 export type QueueListParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 	maxObjects?: number;
+	max_objects?: number;
 	createdBefore?: number;
+	created_before?: number;
 };
 
 /**
@@ -62,7 +76,10 @@ export type QueueListParams = {
  */
 export type QueueDeleteParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 	allowMissing?: boolean;
+	allow_missing?: boolean;
 };
 
 /**
@@ -71,6 +88,8 @@ export type QueueDeleteParams = {
  */
 export type QueueEphemeralParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 };
 
 /**
@@ -96,7 +115,7 @@ export class QueueService {
 	async ephemeral(params: QueueEphemeralParams = {}): Promise<Queue> {
 		const resp = await this.#client.cpClient.queueGetOrCreate({
 			objectCreationType: ObjectCreationType.OBJECT_CREATION_TYPE_EPHEMERAL,
-			environmentName: this.#client.environmentName(params.environment),
+			environmentName: this.#client.environmentName(environmentParam(params)),
 		});
 
 		this.#client.logger.debug(
@@ -120,10 +139,14 @@ export class QueueService {
 	async create(name: string, params: QueueCreateParams = {}): Promise<void> {
 		await this.#client.cpClient.queueGetOrCreate({
 			deploymentName: name,
-			objectCreationType: params.allowExisting
+			objectCreationType: aliasedBoolean(
+				params,
+				"allowExisting",
+				"allow_existing",
+			)
 				? ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_IF_MISSING
 				: ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_FAIL_IF_EXISTS,
-			environmentName: this.#client.environmentName(params.environment),
+			environmentName: this.#client.environmentName(environmentParam(params)),
 		});
 	}
 
@@ -163,11 +186,11 @@ export class QueueService {
 		try {
 			const resp = await this.#client.cpClient.queueGetOrCreate({
 				deploymentName: name,
-				...(params.createIfMissing && {
+				...(aliasedBoolean(params, "createIfMissing", "create_if_missing") && {
 					objectCreationType:
 						ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_IF_MISSING,
 				}),
-				environmentName: this.#client.environmentName(params.environment),
+				environmentName: this.#client.environmentName(environmentParam(params)),
 			});
 			this.#client.logger.debug(
 				"Retrieved Queue",
@@ -194,22 +217,21 @@ export class QueueService {
 	 * @param params - オプションパラメータ
 	 */
 	async list(params: QueueListParams = {}): Promise<Queue[]> {
-		if (params.maxObjects !== undefined && params.maxObjects < 0) {
+		const maxObjects = aliasedNumber(params, "maxObjects", "max_objects");
+		if (maxObjects !== undefined && maxObjects < 0) {
 			throw new InvalidError("maxObjects cannot be negative");
 		}
 
 		const queues: Queue[] = [];
-		let createdBefore = params.createdBefore ?? 0;
-		while (
-			params.maxObjects === undefined ||
-			queues.length < params.maxObjects
-		) {
+		let createdBefore =
+			aliasedNumber(params, "createdBefore", "created_before") ?? 0;
+		while (maxObjects === undefined || queues.length < maxObjects) {
 			const maxPageSize =
-				params.maxObjects === undefined
+				maxObjects === undefined
 					? 100
-					: Math.min(100, params.maxObjects - queues.length);
+					: Math.min(100, maxObjects - queues.length);
 			const resp = await this.#client.cpClient.queueList({
-				environmentName: this.#client.environmentName(params.environment),
+				environmentName: this.#client.environmentName(environmentParam(params)),
 				pagination: { maxObjects: maxPageSize, createdBefore },
 			});
 
@@ -243,10 +265,9 @@ export class QueueService {
 	 */
 	async delete(name: string, params: QueueDeleteParams = {}): Promise<void> {
 		try {
+			const environment = environmentParam(params);
 			const queue = await this.fromName(name, {
-				...(params.environment !== undefined && {
-					environment: params.environment,
-				}),
+				...(environment !== undefined && { environment }),
 				createIfMissing: false,
 			});
 			await this.#client.cpClient.queueDelete({ queueId: queue.queueId });
@@ -258,7 +279,10 @@ export class QueueService {
 				queue.queueId,
 			);
 		} catch (err) {
-			suppressNotFound(err, params.allowMissing);
+			suppressNotFound(
+				err,
+				aliasedBoolean(params, "allowMissing", "allow_missing"),
+			);
 		}
 	}
 }
@@ -295,6 +319,7 @@ export type QueueGetParams = {
 	 * @description Queue が空の場合の待機時間(ミリ秒)。デフォルトは無期限
 	 */
 	timeoutMs?: number;
+	timeout?: number;
 
 	/**
 	 * @description 値を取得するパーティション。未設定ならデフォルトパーティションを使用
@@ -323,6 +348,7 @@ export type QueuePutParams = {
 	 * @description Queue が満杯の場合の待機時間(ミリ秒)。デフォルトは無期限
 	 */
 	timeoutMs?: number;
+	timeout?: number;
 
 	/**
 	 * @description アイテムを追加するパーティション。未設定ならデフォルトパーティションを使用
@@ -333,6 +359,8 @@ export type QueuePutParams = {
 	 * @description パーティションの TTL(ミリ秒) @defaultValue 86400000
 	 */
 	partitionTtlMs?: number;
+	partitionTtl?: number;
+	partition_ttl?: number;
 };
 
 /**
@@ -367,6 +395,8 @@ export type QueueIterateParams = {
 	 * @description 次のアイテムまでの待機時間(ミリ秒)。超過するとイテレーション終了 @defaultValue 0
 	 */
 	itemPollTimeoutMs?: number;
+	itemPollTimeout?: number;
+	item_poll_timeout?: number;
 
 	/**
 	 * @description イテレートするパーティション。未設定ならデフォルトパーティションを使用
@@ -566,12 +596,15 @@ export class Queue {
 	 * @throws timeoutMs 設定時、タイムアウト内にアイテムがなければ QueueEmptyError
 	 */
 	async get(params: QueueGetParams = {}): Promise<unknown | null> {
-		checkForRenamedParams(params, { timeout: "timeoutMs" });
+		const timeoutSeconds = aliasedNumber(params, "timeout", "timeout_s");
+		const timeoutMs =
+			params.timeoutMs ??
+			(timeoutSeconds !== undefined ? timeoutSeconds * 1000 : undefined);
 
 		const values =
 			params.block === false
 				? await this.#getNonblocking(1, params.partition)
-				: await this.#get(1, params.partition, params.timeoutMs);
+				: await this.#get(1, params.partition, timeoutMs);
 		return values.length > 0 ? values[0] : null;
 	}
 
@@ -586,11 +619,14 @@ export class Queue {
 		n: number,
 		params: QueueGetManyParams = {},
 	): Promise<unknown[]> {
-		checkForRenamedParams(params, { timeout: "timeoutMs" });
+		const timeoutSeconds = aliasedNumber(params, "timeout", "timeout_s");
+		const timeoutMs =
+			params.timeoutMs ??
+			(timeoutSeconds !== undefined ? timeoutSeconds * 1000 : undefined);
 
 		return params.block === false
 			? await this.#getNonblocking(n, params.partition)
-			: await this.#get(n, params.partition, params.timeoutMs);
+			: await this.#get(n, params.partition, timeoutMs);
 	}
 
 	async get_many(
@@ -649,16 +685,26 @@ export class Queue {
 	 * @throws タイムアウト後も満杯の場合 {@link QueueFullError}
 	 */
 	async put(v: unknown, params: QueuePutParams = {}): Promise<void> {
-		checkForRenamedParams(params, {
-			timeout: "timeoutMs",
-			partitionTtl: "partitionTtlMs",
-		});
+		const timeoutSeconds = aliasedNumber(params, "timeout", "timeout_s");
+		const partitionTtlSeconds = aliasedNumber(
+			params,
+			"partitionTtl",
+			"partition_ttl",
+		);
+		const timeoutMs =
+			params.timeoutMs ??
+			(timeoutSeconds !== undefined ? timeoutSeconds * 1000 : undefined);
+		const partitionTtlMs =
+			params.partitionTtlMs ??
+			(partitionTtlSeconds !== undefined
+				? partitionTtlSeconds * 1000
+				: undefined);
 
 		await this.#put(
 			[v],
-			params.timeoutMs,
+			timeoutMs,
 			params.partition,
-			params.partitionTtlMs,
+			partitionTtlMs,
 			params.block ?? true,
 		);
 	}
@@ -673,16 +719,26 @@ export class Queue {
 		values: unknown[],
 		params: QueuePutManyParams = {},
 	): Promise<void> {
-		checkForRenamedParams(params, {
-			timeout: "timeoutMs",
-			partitionTtl: "partitionTtlMs",
-		});
+		const timeoutSeconds = aliasedNumber(params, "timeout", "timeout_s");
+		const partitionTtlSeconds = aliasedNumber(
+			params,
+			"partitionTtl",
+			"partition_ttl",
+		);
+		const timeoutMs =
+			params.timeoutMs ??
+			(timeoutSeconds !== undefined ? timeoutSeconds * 1000 : undefined);
+		const partitionTtlMs =
+			params.partitionTtlMs ??
+			(partitionTtlSeconds !== undefined
+				? partitionTtlSeconds * 1000
+				: undefined);
 
 		await this.#put(
 			values,
-			params.timeoutMs,
+			timeoutMs,
 			params.partition,
-			params.partitionTtlMs,
+			partitionTtlMs,
 			params.block ?? true,
 		);
 	}
@@ -720,9 +776,18 @@ export class Queue {
 	async *iterate(
 		params: QueueIterateParams = {},
 	): AsyncGenerator<unknown, void, unknown> {
-		checkForRenamedParams(params, { itemPollTimeout: "itemPollTimeoutMs" });
-
-		const { partition, itemPollTimeoutMs = 0 } = params;
+		const { partition } = params;
+		const itemPollTimeoutSeconds = aliasedNumber(
+			params,
+			"itemPollTimeout",
+			"item_poll_timeout",
+		);
+		const itemPollTimeoutMs =
+			params.itemPollTimeoutMs ??
+			(itemPollTimeoutSeconds !== undefined
+				? itemPollTimeoutSeconds * 1000
+				: undefined) ??
+			0;
 
 		let lastEntryId: string | undefined;
 		const validatedPartitionKey = Queue.#validatePartitionKey(partition);

@@ -8,6 +8,7 @@ import {
 	ObjectCreationType,
 } from "@/generated/modal_proto/api";
 import { EphemeralHeartbeatManager } from "@/utils/ephemeral";
+import { aliasedBoolean, environmentParam } from "@/utils/param_aliases";
 
 /**
  * @description {@link NetworkFileSystemService#fromName client.networkFileSystems.fromName()} のオプションパラメータ
@@ -16,7 +17,10 @@ import { EphemeralHeartbeatManager } from "@/utils/ephemeral";
  */
 export type NetworkFileSystemFromNameParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 	createIfMissing?: boolean;
+	create_if_missing?: boolean;
 };
 
 /**
@@ -26,7 +30,10 @@ export type NetworkFileSystemFromNameParams = {
  */
 export type NetworkFileSystemCreateParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 	allowExisting?: boolean;
+	allow_existing?: boolean;
 };
 
 /**
@@ -35,6 +42,8 @@ export type NetworkFileSystemCreateParams = {
  */
 export type NetworkFileSystemListParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 };
 
 /**
@@ -44,7 +53,10 @@ export type NetworkFileSystemListParams = {
  */
 export type NetworkFileSystemDeleteParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 	allowMissing?: boolean;
+	allow_missing?: boolean;
 };
 
 /**
@@ -53,6 +65,8 @@ export type NetworkFileSystemDeleteParams = {
  */
 export type NetworkFileSystemEphemeralParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 };
 
 /**
@@ -84,8 +98,12 @@ export class NetworkFileSystemService {
 	): Promise<void> {
 		await this.#client.cpClient.sharedVolumeGetOrCreate({
 			deploymentName: name,
-			environmentName: this.#client.environmentName(params.environment),
-			objectCreationType: params.allowExisting
+			environmentName: this.#client.environmentName(environmentParam(params)),
+			objectCreationType: aliasedBoolean(
+				params,
+				"allowExisting",
+				"allow_existing",
+			)
 				? ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_IF_MISSING
 				: ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_FAIL_IF_EXISTS,
 		});
@@ -98,7 +116,7 @@ export class NetworkFileSystemService {
 		params: NetworkFileSystemEphemeralParams = {},
 	): Promise<NetworkFileSystem> {
 		const resp = await this.#client.cpClient.sharedVolumeGetOrCreate({
-			environmentName: this.#client.environmentName(params.environment),
+			environmentName: this.#client.environmentName(environmentParam(params)),
 			objectCreationType: ObjectCreationType.OBJECT_CREATION_TYPE_EPHEMERAL,
 		});
 		const ephemeralHbManager = new EphemeralHeartbeatManager(() =>
@@ -124,8 +142,12 @@ export class NetworkFileSystemService {
 		try {
 			const resp = await this.#client.cpClient.sharedVolumeGetOrCreate({
 				deploymentName: name,
-				environmentName: this.#client.environmentName(params.environment),
-				objectCreationType: params.createIfMissing
+				environmentName: this.#client.environmentName(environmentParam(params)),
+				objectCreationType: aliasedBoolean(
+					params,
+					"createIfMissing",
+					"create_if_missing",
+				)
 					? ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_IF_MISSING
 					: ObjectCreationType.OBJECT_CREATION_TYPE_UNSPECIFIED,
 			});
@@ -147,10 +169,9 @@ export class NetworkFileSystemService {
 		params: NetworkFileSystemCreateParams = {},
 	): Promise<NetworkFileSystem> {
 		await this.create(name, params);
+		const environment = environmentParam(params);
 		return await this.fromName(name, {
-			...(params.environment !== undefined && {
-				environment: params.environment,
-			}),
+			...(environment !== undefined && { environment }),
 			createIfMissing: false,
 		});
 	}
@@ -162,7 +183,7 @@ export class NetworkFileSystemService {
 		params: NetworkFileSystemListParams = {},
 	): Promise<NetworkFileSystem[]> {
 		const resp = await this.#client.cpClient.sharedVolumeList({
-			environmentName: this.#client.environmentName(params.environment),
+			environmentName: this.#client.environmentName(environmentParam(params)),
 		});
 		return (resp.items ?? []).map(
 			(item) =>
@@ -182,16 +203,18 @@ export class NetworkFileSystemService {
 		params: NetworkFileSystemDeleteParams = {},
 	): Promise<void> {
 		try {
+			const environment = environmentParam(params);
 			const nfs = await this.fromName(name, {
-				...(params.environment !== undefined && {
-					environment: params.environment,
-				}),
+				...(environment !== undefined && { environment }),
 			});
 			await this.#client.cpClient.sharedVolumeDelete({
 				sharedVolumeId: nfs.networkFileSystemId,
 			});
 		} catch (err) {
-			suppressNotFound(err, params.allowMissing);
+			suppressNotFound(
+				err,
+				aliasedBoolean(params, "allowMissing", "allow_missing"),
+			);
 		}
 	}
 }

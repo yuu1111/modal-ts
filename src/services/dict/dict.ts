@@ -6,6 +6,11 @@ import {
 	ObjectCreationType,
 } from "@/generated/modal_proto/api";
 import { EphemeralHeartbeatManager } from "@/utils/ephemeral";
+import {
+	aliasedBoolean,
+	aliasedNumber,
+	environmentParam,
+} from "@/utils/param_aliases";
 import { loads as pickleDecode, dumps as pickleEncode } from "@/utils/pickle";
 
 /**
@@ -15,7 +20,10 @@ import { loads as pickleDecode, dumps as pickleEncode } from "@/utils/pickle";
  */
 export type DictFromNameParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 	createIfMissing?: boolean;
+	create_if_missing?: boolean;
 };
 
 /**
@@ -25,7 +33,10 @@ export type DictFromNameParams = {
  */
 export type DictCreateParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 	allowExisting?: boolean;
+	allow_existing?: boolean;
 };
 
 /**
@@ -36,8 +47,12 @@ export type DictCreateParams = {
  */
 export type DictListParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 	maxObjects?: number;
+	max_objects?: number;
 	createdBefore?: number;
+	created_before?: number;
 };
 
 /**
@@ -47,7 +62,10 @@ export type DictListParams = {
  */
 export type DictDeleteParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 	allowMissing?: boolean;
+	allow_missing?: boolean;
 };
 
 /**
@@ -56,6 +74,8 @@ export type DictDeleteParams = {
  */
 export type DictEphemeralParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 };
 
 /**
@@ -85,8 +105,12 @@ export class DictService {
 	async create(name: string, params: DictCreateParams = {}): Promise<void> {
 		await this.#client.cpClient.dictGetOrCreate({
 			deploymentName: name,
-			environmentName: this.#client.environmentName(params.environment),
-			objectCreationType: params.allowExisting
+			environmentName: this.#client.environmentName(environmentParam(params)),
+			objectCreationType: aliasedBoolean(
+				params,
+				"allowExisting",
+				"allow_existing",
+			)
 				? ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_IF_MISSING
 				: ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_FAIL_IF_EXISTS,
 		});
@@ -98,7 +122,7 @@ export class DictService {
 	 */
 	async ephemeral(params: DictEphemeralParams = {}): Promise<Dict> {
 		const resp = await this.#client.cpClient.dictGetOrCreate({
-			environmentName: this.#client.environmentName(params.environment),
+			environmentName: this.#client.environmentName(environmentParam(params)),
 			objectCreationType: ObjectCreationType.OBJECT_CREATION_TYPE_EPHEMERAL,
 		});
 
@@ -140,8 +164,12 @@ export class DictService {
 		try {
 			const resp = await this.#client.cpClient.dictGetOrCreate({
 				deploymentName: name,
-				environmentName: this.#client.environmentName(params.environment),
-				objectCreationType: params.createIfMissing
+				environmentName: this.#client.environmentName(environmentParam(params)),
+				objectCreationType: aliasedBoolean(
+					params,
+					"createIfMissing",
+					"create_if_missing",
+				)
 					? ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_IF_MISSING
 					: ObjectCreationType.OBJECT_CREATION_TYPE_UNSPECIFIED,
 			});
@@ -169,22 +197,21 @@ export class DictService {
 	 * @param params - オプションパラメータ
 	 */
 	async list(params: DictListParams = {}): Promise<Dict[]> {
-		if (params.maxObjects !== undefined && params.maxObjects < 0) {
+		const maxObjects = aliasedNumber(params, "maxObjects", "max_objects");
+		if (maxObjects !== undefined && maxObjects < 0) {
 			throw new InvalidError("maxObjects cannot be negative");
 		}
 
 		const dicts: Dict[] = [];
-		let createdBefore = params.createdBefore ?? 0;
-		while (
-			params.maxObjects === undefined ||
-			dicts.length < params.maxObjects
-		) {
+		let createdBefore =
+			aliasedNumber(params, "createdBefore", "created_before") ?? 0;
+		while (maxObjects === undefined || dicts.length < maxObjects) {
 			const maxPageSize =
-				params.maxObjects === undefined
+				maxObjects === undefined
 					? 100
-					: Math.min(100, params.maxObjects - dicts.length);
+					: Math.min(100, maxObjects - dicts.length);
 			const resp = await this.#client.cpClient.dictList({
-				environmentName: this.#client.environmentName(params.environment),
+				environmentName: this.#client.environmentName(environmentParam(params)),
 				pagination: { maxObjects: maxPageSize, createdBefore },
 			});
 			if (!resp.dicts || resp.dicts.length === 0) break;
@@ -216,14 +243,16 @@ export class DictService {
 	 */
 	async delete(name: string, params: DictDeleteParams = {}): Promise<void> {
 		try {
+			const environment = environmentParam(params);
 			const dict = await this.fromName(name, {
-				...(params.environment !== undefined && {
-					environment: params.environment,
-				}),
+				...(environment !== undefined && { environment }),
 			});
 			await this.#client.cpClient.dictDelete({ dictId: dict.dictId });
 		} catch (err) {
-			suppressNotFound(err, params.allowMissing);
+			suppressNotFound(
+				err,
+				aliasedBoolean(params, "allowMissing", "allow_missing"),
+			);
 		}
 	}
 }
@@ -362,8 +391,20 @@ export class Dict {
 	 * @param key - key
 	 * @param value - value
 	 */
-	async put(key: unknown, value: unknown): Promise<void> {
-		await this.update([[key, value]]);
+	async put(
+		key: unknown,
+		value: unknown,
+		params: { skipIfExists?: boolean; skip_if_exists?: boolean } = {},
+	): Promise<void> {
+		const ifNotExists = aliasedBoolean(
+			params,
+			"skipIfExists",
+			"skip_if_exists",
+		);
+		await this.update(
+			[[key, value]],
+			ifNotExists === undefined ? {} : { ifNotExists },
+		);
 	}
 
 	/**

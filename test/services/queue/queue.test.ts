@@ -81,6 +81,35 @@ test("QueueNonBlocking", async () => {
 	expect(await queue.get({ timeoutMs: 0 })).toBe(123);
 });
 
+test("Queue fromName accepts Python-style parameter aliases", async () => {
+	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
+
+	mock.handleUnary("/QueueGetOrCreate", (req) => {
+		expect(req).toMatchObject({
+			deploymentName: "snake-queue",
+			environmentName: "dev",
+			objectCreationType: 1,
+		});
+		return { queueId: "qu-test", metadata: { name: "snake-queue" } };
+	});
+
+	const queue = await mc.queues.fromName("snake-queue", {
+		create_if_missing: true,
+		environment_name: "dev",
+	});
+	expect(queue.queueId).toBe("qu-test");
+
+	mock.handleUnary("/QueuePut", (req) => {
+		expect(req).toMatchObject({
+			queueId: "qu-test",
+			partitionTtlSeconds: 60,
+		});
+		return {};
+	});
+	await queue.put("value", { partition_ttl: 60 });
+	mock.assertExhausted();
+});
+
 test("Queue block=false get returns immediately", async () => {
 	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
 

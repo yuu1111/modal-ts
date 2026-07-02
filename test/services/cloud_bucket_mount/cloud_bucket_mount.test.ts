@@ -141,3 +141,30 @@ test("cloudBucketMount.toProto() with all options", () => {
 	expect(proto.keyPrefix).toBe("prefix/");
 	expect(proto.oidcAuthRoleArn).toBe("arn:aws:iam::123456789:role/MyRole");
 });
+
+test("CloudBucketMount supports Python-style snake_case params", () => {
+	const mount = tc.cloudBucketMounts.create("bucket", {
+		read_only: true,
+		requester_pays: false,
+		bucket_endpoint_url: "https://storage.googleapis.com",
+		key_prefix: "prefix/",
+		oidc_auth_role_arn: "arn:aws:iam::123456789012:role/test",
+		force_path_style: true,
+	});
+
+	expect(mount.bucket_name).toBe("bucket");
+	expect(mount.read_only).toBe(true);
+	expect(mount.bucket_endpoint_url).toBe("https://storage.googleapis.com");
+	expect(mount.key_prefix).toBe("prefix/");
+	expect(mount.oidc_auth_role_arn).toBe("arn:aws:iam::123456789012:role/test");
+	expect(mount.force_path_style).toBe(true);
+	expect(mount.toProto("/mnt")).toMatchObject({
+		bucketName: "bucket",
+		mountPath: "/mnt",
+		readOnly: true,
+		bucketEndpointUrl: "https://storage.googleapis.com",
+		keyPrefix: "prefix/",
+		oidcAuthRoleArn: "arn:aws:iam::123456789012:role/test",
+		forcePathStyle: true,
+	});
+});

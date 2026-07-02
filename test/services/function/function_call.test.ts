@@ -125,3 +125,19 @@ test("FunctionCallGet0", async () => {
 
 	mock.assertExhausted();
 });
+
+test("FunctionCall cancel accepts Python-style parameter aliases", async () => {
+	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
+	const call = await mc.functionCalls.fromId("fc-test");
+
+	mock.handleUnary("/FunctionCallCancel", (req) => {
+		expect(req).toMatchObject({
+			functionCallId: "fc-test",
+			terminateContainers: true,
+		});
+		return {};
+	});
+
+	await call.cancel({ terminate_containers: true });
+	mock.assertExhausted();
+});

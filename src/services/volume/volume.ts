@@ -11,6 +11,12 @@ import {
 	type VolumePutFiles2Request_Block,
 } from "@/generated/modal_proto/api";
 import { EphemeralHeartbeatManager } from "@/utils/ephemeral";
+import {
+	aliasedBoolean,
+	aliasedNumber,
+	aliasedString,
+	environmentParam,
+} from "@/utils/param_aliases";
 
 const VOLUME_BLOCK_SIZE = 8 * 1024 * 1024;
 
@@ -21,18 +27,28 @@ const VOLUME_BLOCK_SIZE = 8 * 1024 * 1024;
  */
 export type VolumeFromNameParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 	createIfMissing?: boolean;
+	create_if_missing?: boolean;
 };
 
 export type VolumeCreateParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 	allowExisting?: boolean;
+	allow_existing?: boolean;
 };
 
 export type VolumeListParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 	maxObjects?: number;
+	max_objects?: number;
 	createdBefore?: number;
+	created_before?: number;
 };
 
 /**
@@ -41,6 +57,8 @@ export type VolumeListParams = {
  */
 export type VolumeEphemeralParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 };
 
 /**
@@ -50,7 +68,10 @@ export type VolumeEphemeralParams = {
  */
 export type VolumeDeleteParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 	allowMissing?: boolean;
+	allow_missing?: boolean;
 };
 
 /**
@@ -59,6 +80,8 @@ export type VolumeDeleteParams = {
  */
 export type VolumeRenameParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 };
 
 /**
@@ -68,7 +91,9 @@ export type VolumeRenameParams = {
  */
 export type VolumeMountOptions = {
 	readOnly?: boolean;
+	read_only?: boolean;
 	subPath?: string;
+	sub_path?: string;
 };
 
 type ResolvedMountOptions = {
@@ -106,8 +131,12 @@ export class VolumeService {
 		try {
 			const resp = await this.#client.cpClient.volumeGetOrCreate({
 				deploymentName: name,
-				environmentName: this.#client.environmentName(params?.environment),
-				objectCreationType: params?.createIfMissing
+				environmentName: this.#client.environmentName(environmentParam(params)),
+				objectCreationType: aliasedBoolean(
+					params,
+					"createIfMissing",
+					"create_if_missing",
+				)
 					? ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_IF_MISSING
 					: ObjectCreationType.OBJECT_CREATION_TYPE_UNSPECIFIED,
 			});
@@ -141,8 +170,12 @@ export class VolumeService {
 	async create(name: string, params: VolumeCreateParams = {}): Promise<void> {
 		await this.#client.cpClient.volumeGetOrCreate({
 			deploymentName: name,
-			environmentName: this.#client.environmentName(params.environment),
-			objectCreationType: params.allowExisting
+			environmentName: this.#client.environmentName(environmentParam(params)),
+			objectCreationType: aliasedBoolean(
+				params,
+				"allowExisting",
+				"allow_existing",
+			)
 				? ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_IF_MISSING
 				: ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_FAIL_IF_EXISTS,
 		});
@@ -169,22 +202,21 @@ export class VolumeService {
 	}
 
 	async list(params: VolumeListParams = {}): Promise<Volume[]> {
-		if (params.maxObjects !== undefined && params.maxObjects < 0) {
+		const maxObjects = aliasedNumber(params, "maxObjects", "max_objects");
+		if (maxObjects !== undefined && maxObjects < 0) {
 			throw new InvalidError("maxObjects cannot be negative");
 		}
 
 		const volumes: Volume[] = [];
-		let createdBefore = params.createdBefore ?? 0;
-		while (
-			params.maxObjects === undefined ||
-			volumes.length < params.maxObjects
-		) {
+		let createdBefore =
+			aliasedNumber(params, "createdBefore", "created_before") ?? 0;
+		while (maxObjects === undefined || volumes.length < maxObjects) {
 			const maxPageSize =
-				params.maxObjects === undefined
+				maxObjects === undefined
 					? 100
-					: Math.min(100, params.maxObjects - volumes.length);
+					: Math.min(100, maxObjects - volumes.length);
 			const resp = await this.#client.cpClient.volumeList({
-				environmentName: this.#client.environmentName(params.environment),
+				environmentName: this.#client.environmentName(environmentParam(params)),
 				pagination: { maxObjects: maxPageSize, createdBefore },
 			});
 			if (!resp.items || resp.items.length === 0) break;
@@ -218,7 +250,7 @@ export class VolumeService {
 	async ephemeral(params: VolumeEphemeralParams = {}): Promise<Volume> {
 		const resp = await this.#client.cpClient.volumeGetOrCreate({
 			objectCreationType: ObjectCreationType.OBJECT_CREATION_TYPE_EPHEMERAL,
-			environmentName: this.#client.environmentName(params.environment),
+			environmentName: this.#client.environmentName(environmentParam(params)),
 		});
 
 		this.#client.logger.debug(
@@ -247,10 +279,9 @@ export class VolumeService {
 	 */
 	async delete(name: string, params?: VolumeDeleteParams): Promise<void> {
 		try {
+			const environment = environmentParam(params);
 			const volume = await this.fromName(name, {
-				...(params?.environment !== undefined && {
-					environment: params.environment,
-				}),
+				...(environment !== undefined && { environment }),
 				createIfMissing: false,
 			});
 			await this.#client.cpClient.volumeDelete({
@@ -264,7 +295,10 @@ export class VolumeService {
 				volume.volumeId,
 			);
 		} catch (err) {
-			suppressNotFound(err, params?.allowMissing);
+			suppressNotFound(
+				err,
+				aliasedBoolean(params, "allowMissing", "allow_missing"),
+			);
 		}
 	}
 
@@ -279,10 +313,9 @@ export class VolumeService {
 		newName: string,
 		params: VolumeRenameParams = {},
 	): Promise<void> {
+		const environment = environmentParam(params);
 		const volume = await this.fromName(oldName, {
-			...(params.environment !== undefined && {
-				environment: params.environment,
-			}),
+			...(environment !== undefined && { environment }),
 			createIfMissing: false,
 		});
 		await this.#client.cpClient.volumeRename({
@@ -418,12 +451,14 @@ export class Volume {
 	 */
 	withMountOptions(params: VolumeMountOptions = {}): Volume {
 		let subPath = this._mountOptions.subPath;
-		if (params.subPath !== undefined) {
-			subPath = params.subPath === "/" ? undefined : params.subPath;
+		const nextSubPath = aliasedString(params, "subPath", "sub_path");
+		if (nextSubPath !== undefined) {
+			subPath = nextSubPath === "/" ? undefined : nextSubPath;
 		}
+		const readOnly = aliasedBoolean(params, "readOnly", "read_only");
 
 		const nextOptions = {
-			readOnly: params.readOnly ?? this._mountOptions.readOnly,
+			readOnly: readOnly ?? this._mountOptions.readOnly,
 			subPath,
 		};
 		return this.#client

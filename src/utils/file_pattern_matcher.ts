@@ -23,6 +23,10 @@ export class FilePatternMatcher {
 		return matcher;
 	}
 
+	static from_file(filePath: string): FilePatternMatcher {
+		return FilePatternMatcher.fromFile(filePath);
+	}
+
 	/**
 	 * @description matcher を反転する
 	 */
@@ -44,6 +48,10 @@ export class FilePatternMatcher {
 		return (
 			!this.#load().some((pattern) => pattern.exclusion) && !this.#inverted
 		);
+	}
+
+	can_prune_directories(): boolean {
+		return this.canPruneDirectories();
 	}
 
 	/**

@@ -28,6 +28,11 @@ import type { Proxy as ModalProxy } from "@/services/proxy/proxy";
 import type { SchedulerPlacement } from "@/services/scheduler_placement/scheduler_placement";
 import type { Secret } from "@/services/secret/secret";
 import { type Volume, volumeToMountProto } from "@/services/volume/volume";
+import {
+	aliasedBoolean,
+	aliasedNumber,
+	aliasedValue,
+} from "@/utils/param_aliases";
 import { checkForRenamedParams } from "@/utils/validation";
 import type { Probe } from "./sandbox_probe";
 
@@ -83,7 +88,10 @@ export type SandboxCreateParams = {
 	memoryLimitMiB?: number;
 	gpu?: string;
 	timeoutMs?: number;
+	timeout?: number;
 	idleTimeoutMs?: number;
+	idle_timeout?: number;
+	idle_timeout_ms?: number;
 	workdir?: string;
 	command?: string[];
 	env?: Record<string, string>;
@@ -91,16 +99,25 @@ export type SandboxCreateParams = {
 	mountIds?: string[];
 	volumes?: Record<string, Volume>;
 	networkFileSystems?: Record<string, NetworkFileSystem>;
+	network_file_systems?: Record<string, NetworkFileSystem>;
 	cloudBucketMounts?: Record<string, CloudBucketMount>;
 	pty?: boolean;
 	encryptedPorts?: number[];
+	encrypted_ports?: number[];
 	h2Ports?: number[];
+	h2_ports?: number[];
 	unencryptedPorts?: number[];
+	unencrypted_ports?: number[];
 	blockNetwork?: boolean;
+	block_network?: boolean;
 	cidrAllowlist?: string[];
+	cidr_allowlist?: string[];
 	outboundCidrAllowlist?: string[];
+	outbound_cidr_allowlist?: string[];
 	outboundDomainAllowlist?: string[];
+	outbound_domain_allowlist?: string[];
 	inboundCidrAllowlist?: string[];
+	inbound_cidr_allowlist?: string[];
 	cloud?: string;
 	regions?: string[];
 	schedulerPlacement?: SchedulerPlacement;
@@ -109,9 +126,13 @@ export type SandboxCreateParams = {
 	name?: string;
 	tags?: Record<string, string>;
 	experimentalOptions?: Record<string, unknown>;
+	experimental_options?: Record<string, unknown>;
 	customDomain?: string;
+	custom_domain?: string;
 	readinessProbe?: Probe;
+	readiness_probe?: Probe;
 	includeOidcIdentityToken?: boolean;
+	include_oidc_identity_token?: boolean;
 };
 
 /**
@@ -155,6 +176,7 @@ export type SandboxExecParams = {
 	stderr?: StdioBehavior;
 	workdir?: string;
 	timeoutMs?: number;
+	timeout?: number;
 	env?: Record<string, string>;
 	secrets?: Secret[];
 	pty?: boolean;
@@ -229,6 +251,20 @@ export function validateExecArgs(args: string[]): void {
 	}
 }
 
+function secondsAliasToMs(
+	params: Record<string, unknown> | undefined,
+	msName: string,
+	secondsName: string,
+): number | undefined {
+	const ms =
+		aliasedNumber(params, msName, `${secondsName}_ms`) ??
+		aliasedNumber(params, secondsName);
+	if (ms === undefined) return undefined;
+	return params && (msName in params || `${secondsName}_ms` in params)
+		? ms
+		: ms * 1000;
+}
+
 /**
  * @description SandboxCreateParamsからgRPCリクエストを構築する
  * @param appId - アプリID
@@ -250,24 +286,86 @@ export async function buildSandboxCreateRequestProto(
 	});
 
 	const gpuConfig = parseGpuConfig(params.gpu);
+	const timeoutMs = secondsAliasToMs(params, "timeoutMs", "timeout");
+	const idleTimeoutMs = secondsAliasToMs(
+		params,
+		"idleTimeoutMs",
+		"idle_timeout",
+	);
+	const networkFileSystems = aliasedValue<Record<string, NetworkFileSystem>>(
+		params,
+		"networkFileSystems",
+		"network_file_systems",
+	);
+	const encryptedPorts = aliasedValue<number[]>(
+		params,
+		"encryptedPorts",
+		"encrypted_ports",
+	);
+	const h2Ports = aliasedValue<number[]>(params, "h2Ports", "h2_ports");
+	const unencryptedPorts = aliasedValue<number[]>(
+		params,
+		"unencryptedPorts",
+		"unencrypted_ports",
+	);
+	const blockNetwork =
+		aliasedBoolean(params, "blockNetwork", "block_network") ?? false;
+	const cidrAllowlist = aliasedValue<string[]>(
+		params,
+		"cidrAllowlist",
+		"cidr_allowlist",
+	);
+	const outboundCidrAllowlist = aliasedValue<string[]>(
+		params,
+		"outboundCidrAllowlist",
+		"outbound_cidr_allowlist",
+	);
+	const outboundDomainAllowlist = aliasedValue<string[]>(
+		params,
+		"outboundDomainAllowlist",
+		"outbound_domain_allowlist",
+	);
+	const inboundCidrAllowlist =
+		aliasedValue<string[]>(
+			params,
+			"inboundCidrAllowlist",
+			"inbound_cidr_allowlist",
+		) ?? [];
+	const experimentalOptions = aliasedValue<Record<string, unknown>>(
+		params,
+		"experimentalOptions",
+		"experimental_options",
+	);
+	const customDomain = aliasedValue<string>(
+		params,
+		"customDomain",
+		"custom_domain",
+	);
+	const readinessProbe = aliasedValue<Probe>(
+		params,
+		"readinessProbe",
+		"readiness_probe",
+	);
+	const includeOidcIdentityToken =
+		aliasedBoolean(
+			params,
+			"includeOidcIdentityToken",
+			"include_oidc_identity_token",
+		) ?? false;
 
 	// gRPC API は秒単位の整数値のみ受け付ける
-	if (params.timeoutMs !== undefined && params.timeoutMs <= 0) {
-		throw new Error(`timeoutMs must be positive, got ${params.timeoutMs}`);
+	if (timeoutMs !== undefined && timeoutMs <= 0) {
+		throw new Error(`timeoutMs must be positive, got ${timeoutMs}`);
 	}
-	if (params.timeoutMs && params.timeoutMs % 1000 !== 0) {
-		throw new Error(
-			`timeoutMs must be a multiple of 1000ms, got ${params.timeoutMs}`,
-		);
+	if (timeoutMs && timeoutMs % 1000 !== 0) {
+		throw new Error(`timeoutMs must be a multiple of 1000ms, got ${timeoutMs}`);
 	}
-	if (params.idleTimeoutMs !== undefined && params.idleTimeoutMs <= 0) {
-		throw new Error(
-			`idleTimeoutMs must be positive, got ${params.idleTimeoutMs}`,
-		);
+	if (idleTimeoutMs !== undefined && idleTimeoutMs <= 0) {
+		throw new Error(`idleTimeoutMs must be positive, got ${idleTimeoutMs}`);
 	}
-	if (params.idleTimeoutMs && params.idleTimeoutMs % 1000 !== 0) {
+	if (idleTimeoutMs && idleTimeoutMs % 1000 !== 0) {
 		throw new Error(
-			`idleTimeoutMs must be a multiple of 1000ms, got ${params.idleTimeoutMs}`,
+			`idleTimeoutMs must be a multiple of 1000ms, got ${idleTimeoutMs}`,
 		);
 	}
 
@@ -281,8 +379,8 @@ export async function buildSandboxCreateRequestProto(
 			)
 		: [];
 
-	const nfsMounts: SharedVolumeMount[] = params.networkFileSystems
-		? Object.entries(params.networkFileSystems).map(([mountPath, nfs]) => ({
+	const nfsMounts: SharedVolumeMount[] = networkFileSystems
+		? Object.entries(networkFileSystems).map(([mountPath, nfs]) => ({
 				mountPath,
 				sharedVolumeId: nfs.networkFileSystemId,
 				cloudProvider: 0,
@@ -312,25 +410,25 @@ export async function buildSandboxCreateRequestProto(
 			);
 		}
 	};
-	addPorts(params.encryptedPorts, false);
-	addPorts(params.h2Ports, false, TunnelType.TUNNEL_TYPE_H2);
-	addPorts(params.unencryptedPorts, true);
+	addPorts(encryptedPorts, false);
+	addPorts(h2Ports, false, TunnelType.TUNNEL_TYPE_H2);
+	addPorts(unencryptedPorts, true);
 
 	const secretIds = (params.secrets || []).map((secret) => secret.secretId);
 
 	let networkAccess: NetworkAccess;
-	if (params.blockNetwork) {
-		if (params.cidrAllowlist || params.outboundCidrAllowlist) {
+	if (blockNetwork) {
+		if (cidrAllowlist || outboundCidrAllowlist) {
 			throw new Error(
 				"outboundCidrAllowlist cannot be used when blockNetwork is enabled",
 			);
 		}
-		if (params.outboundDomainAllowlist) {
+		if (outboundDomainAllowlist) {
 			throw new Error(
 				"outboundDomainAllowlist cannot be used when blockNetwork is enabled",
 			);
 		}
-		if (params.inboundCidrAllowlist) {
+		if (inboundCidrAllowlist.length > 0) {
 			throw new Error(
 				"inboundCidrAllowlist cannot be used when blockNetwork is enabled",
 			);
@@ -341,14 +439,14 @@ export async function buildSandboxCreateRequestProto(
 			allowedDomains: [],
 		};
 	} else if (
-		params.cidrAllowlist ||
-		params.outboundCidrAllowlist ||
-		params.outboundDomainAllowlist
+		cidrAllowlist ||
+		outboundCidrAllowlist ||
+		outboundDomainAllowlist
 	) {
 		networkAccess = {
 			networkAccessType: NetworkAccess_NetworkAccessType.ALLOWLIST,
-			allowedCidrs: params.outboundCidrAllowlist ?? params.cidrAllowlist ?? [],
-			allowedDomains: params.outboundDomainAllowlist ?? [],
+			allowedCidrs: outboundCidrAllowlist ?? cidrAllowlist ?? [],
+			allowedDomains: outboundDomainAllowlist ?? [],
 		};
 	} else {
 		networkAccess = {
@@ -417,21 +515,20 @@ export async function buildSandboxCreateRequestProto(
 
 	// 公開インターフェースは将来の拡張のため Record<string, any> だが、
 	// 現在の proto は Record<string, boolean> のみサポートするためここで検証する
-	const protoExperimentalOptions: Record<string, boolean> =
-		params.experimentalOptions
-			? Object.entries(params.experimentalOptions).reduce(
-					(acc, [name, value]) => {
-						if (typeof value !== "boolean") {
-							throw new Error(
-								`experimental option '${name}' must be a boolean, got ${value}`,
-							);
-						}
-						acc[name] = Boolean(value);
-						return acc;
-					},
-					{} as Record<string, boolean>,
-				)
-			: {};
+	const protoExperimentalOptions: Record<string, boolean> = experimentalOptions
+		? Object.entries(experimentalOptions).reduce(
+				(acc, [name, value]) => {
+					if (typeof value !== "boolean") {
+						throw new Error(
+							`experimental option '${name}' must be a boolean, got ${value}`,
+						);
+					}
+					acc[name] = Boolean(value);
+					return acc;
+				},
+				{} as Record<string, boolean>,
+			)
+		: {};
 
 	return SandboxCreateRequest.create({
 		appId,
@@ -439,10 +536,9 @@ export async function buildSandboxCreateRequestProto(
 			entrypointArgs: params.command ?? [],
 			mountIds: params.mountIds ?? [],
 			imageId,
-			timeoutSecs:
-				params.timeoutMs !== undefined ? params.timeoutMs / 1000 : 300,
-			...(params.idleTimeoutMs !== undefined && {
-				idleTimeoutSecs: params.idleTimeoutMs / 1000,
+			timeoutSecs: timeoutMs !== undefined ? timeoutMs / 1000 : 300,
+			...(idleTimeoutMs !== undefined && {
+				idleTimeoutSecs: idleTimeoutMs / 1000,
 			}),
 			...(params.workdir !== undefined && { workdir: params.workdir }),
 			networkAccess,
@@ -467,14 +563,14 @@ export async function buildSandboxCreateRequestProto(
 			}),
 			...(params.name !== undefined && { name: params.name }),
 			experimentalOptions: protoExperimentalOptions,
-			...(params.customDomain !== undefined && {
-				customDomain: params.customDomain,
+			...(customDomain !== undefined && {
+				customDomain,
 			}),
-			...(params.readinessProbe !== undefined && {
-				readinessProbe: ProbeProto.create(params.readinessProbe.toProto()),
+			...(readinessProbe !== undefined && {
+				readinessProbe: ProbeProto.create(readinessProbe.toProto()),
 			}),
-			includeOidcIdentityToken: params.includeOidcIdentityToken ?? false,
-			inboundCidrAllowlist: params.inboundCidrAllowlist ?? [],
+			includeOidcIdentityToken,
+			inboundCidrAllowlist,
 		},
 	});
 }
@@ -497,7 +593,7 @@ export async function buildSandboxCreateV2RequestProto(
 	if (params.gpu) {
 		throw new Error("GPUs are not supported by experimentalCreate");
 	}
-	if (params.customDomain) {
+	if (aliasedValue<string>(params, "customDomain", "custom_domain")) {
 		throw new Error("custom domains are not supported by experimentalCreate");
 	}
 
@@ -523,15 +619,13 @@ export function buildTaskExecStartRequestProto(
 	params?: SandboxExecParams,
 	containerId?: string,
 ): TaskExecStartRequest {
-	checkForRenamedParams(params, { timeout: "timeoutMs" });
+	const timeoutMs = secondsAliasToMs(params, "timeoutMs", "timeout");
 
-	if (params?.timeoutMs !== undefined && params.timeoutMs <= 0) {
-		throw new Error(`timeoutMs must be positive, got ${params.timeoutMs}`);
+	if (timeoutMs !== undefined && timeoutMs <= 0) {
+		throw new Error(`timeoutMs must be positive, got ${timeoutMs}`);
 	}
-	if (params?.timeoutMs && params.timeoutMs % 1000 !== 0) {
-		throw new Error(
-			`timeoutMs must be a multiple of 1000ms, got ${params.timeoutMs}`,
-		);
+	if (timeoutMs && timeoutMs % 1000 !== 0) {
+		throw new Error(`timeoutMs must be a multiple of 1000ms, got ${timeoutMs}`);
 	}
 
 	const secretIds = (params?.secrets || []).map((secret) => secret.secretId);
@@ -568,7 +662,7 @@ export function buildTaskExecStartRequestProto(
 		commandArgs: command,
 		stdoutConfig,
 		stderrConfig,
-		timeoutSecs: params?.timeoutMs ? params.timeoutMs / 1000 : undefined,
+		timeoutSecs: timeoutMs ? timeoutMs / 1000 : undefined,
 		workdir: params?.workdir,
 		secretIds,
 		ptyInfo,

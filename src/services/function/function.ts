@@ -29,6 +29,7 @@ import {
 import type { SchedulerPlacement } from "@/services/scheduler_placement/scheduler_placement";
 import { mergeEnvIntoSecrets, type Secret } from "@/services/secret/secret";
 import { type Volume, volumeToMountProto } from "@/services/volume/volume";
+import { aliasedNumber, environmentParam } from "@/utils/param_aliases";
 import { parseRetries, type Retries } from "@/utils/retries";
 import { cborEncode } from "@/utils/serialization";
 import { checkForRenamedParams } from "@/utils/validation";
@@ -56,7 +57,10 @@ const maxSystemRetries = 8;
  */
 export type FunctionFromNameParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 	createIfMissing?: boolean;
+	create_if_missing?: boolean;
 };
 
 /**
@@ -97,7 +101,7 @@ export class FunctionService {
 			const resp = await this.#client.cpClient.functionGet({
 				appName,
 				objectTag: name,
-				environmentName: this.#client.environmentName(params.environment),
+				environmentName: this.#client.environmentName(environmentParam(params)),
 			});
 			this.#client.logger.debug(
 				"Retrieved Function",
@@ -141,11 +145,19 @@ export interface FunctionStats {
  */
 export interface FunctionUpdateAutoscalerParams {
 	minContainers?: number;
+	min_containers?: number;
 	maxContainers?: number;
+	max_containers?: number;
 	bufferContainers?: number;
+	buffer_containers?: number;
 	targetConcurrency?: number;
+	target_concurrency?: number;
 	scaleupWindowMs?: number;
+	scaleup_window?: number;
+	scaleup_window_ms?: number;
 	scaledownWindowMs?: number;
+	scaledown_window?: number;
+	scaledown_window_ms?: number;
 }
 
 /**
@@ -176,8 +188,12 @@ export type FunctionWithOptionsParams = {
 	volumes?: Record<string, Volume>;
 	retries?: number | Retries;
 	maxContainers?: number;
+	max_containers?: number;
 	bufferContainers?: number;
+	buffer_containers?: number;
 	scaledownWindowMs?: number;
+	scaledown_window?: number;
+	scaledown_window_ms?: number;
 	timeoutMs?: number;
 	schedulerPlacement?: SchedulerPlacement;
 };
@@ -188,8 +204,10 @@ export type FunctionWithOptionsParams = {
  * @property targetInputs - 目標同時入力数 @optional
  */
 export type FunctionWithConcurrencyParams = {
-	maxInputs: number;
+	maxInputs?: number;
+	max_inputs?: number;
 	targetInputs?: number;
+	target_inputs?: number;
 };
 
 /**
@@ -198,8 +216,10 @@ export type FunctionWithConcurrencyParams = {
  * @property waitMs - バッチ待機時間(ミリ秒)
  */
 export type FunctionWithBatchingParams = {
-	maxBatchSize: number;
-	waitMs: number;
+	maxBatchSize?: number;
+	max_batch_size?: number;
+	waitMs?: number;
+	wait_ms?: number;
 };
 
 /**
@@ -207,9 +227,13 @@ export type FunctionWithBatchingParams = {
  */
 export type FunctionOptions = FunctionWithOptionsParams & {
 	maxConcurrentInputs?: number;
+	max_concurrent_inputs?: number;
 	targetConcurrentInputs?: number;
+	target_concurrent_inputs?: number;
 	batchMaxSize?: number;
+	batch_max_size?: number;
 	batchWaitMs?: number;
+	batch_wait_ms?: number;
 };
 
 /**
@@ -230,6 +254,66 @@ export function mergeServiceOptions(
 	return Object.keys(merged).length === 0 ? undefined : merged;
 }
 
+function secondsAliasToMs(
+	params: object,
+	msName: string,
+	secondsName: string,
+): number | undefined {
+	const ms =
+		aliasedNumber(params, msName, `${secondsName}_ms`) ??
+		aliasedNumber(params, secondsName);
+	if (ms === undefined) return undefined;
+	return msName in params || `${secondsName}_ms` in params ? ms : ms * 1000;
+}
+
+function normalizeFunctionOptions(options: FunctionOptions): FunctionOptions {
+	const normalized: FunctionOptions = {
+		...options,
+	};
+	const maxContainers = aliasedNumber(
+		options,
+		"maxContainers",
+		"max_containers",
+	);
+	if (maxContainers !== undefined) normalized.maxContainers = maxContainers;
+	const bufferContainers = aliasedNumber(
+		options,
+		"bufferContainers",
+		"buffer_containers",
+	);
+	if (bufferContainers !== undefined)
+		normalized.bufferContainers = bufferContainers;
+	const scaledownWindowMs =
+		secondsAliasToMs(options, "scaledownWindowMs", "scaledown_window") ??
+		options.scaledownWindowMs;
+	if (scaledownWindowMs !== undefined)
+		normalized.scaledownWindowMs = scaledownWindowMs;
+	const timeoutMs =
+		secondsAliasToMs(options, "timeoutMs", "timeout") ?? options.timeoutMs;
+	if (timeoutMs !== undefined) normalized.timeoutMs = timeoutMs;
+	const maxConcurrentInputs = aliasedNumber(
+		options,
+		"maxConcurrentInputs",
+		"max_concurrent_inputs",
+	);
+	if (maxConcurrentInputs !== undefined)
+		normalized.maxConcurrentInputs = maxConcurrentInputs;
+	const targetConcurrentInputs = aliasedNumber(
+		options,
+		"targetConcurrentInputs",
+		"target_concurrent_inputs",
+	);
+	if (targetConcurrentInputs !== undefined)
+		normalized.targetConcurrentInputs = targetConcurrentInputs;
+	const batchMaxSize = aliasedNumber(options, "batchMaxSize", "batch_max_size");
+	if (batchMaxSize !== undefined) normalized.batchMaxSize = batchMaxSize;
+	const batchWaitMs =
+		secondsAliasToMs(options, "batchWaitMs", "batch_wait") ??
+		options.batchWaitMs;
+	if (batchWaitMs !== undefined) normalized.batchWaitMs = batchWaitMs;
+	return normalized;
+}
+
 /**
  * @description FunctionOptions から gRPC FunctionOptions プロトコルバッファを構築する
  * @param options - Function オプション
@@ -240,7 +324,7 @@ export async function buildFunctionOptionsProto(
 	options?: FunctionOptions,
 ): Promise<FunctionOptionsProto | undefined> {
 	if (!options) return undefined;
-	const o = options;
+	const o = normalizeFunctionOptions(options);
 
 	checkForRenamedParams(o, {
 		memory: "memoryMiB",
@@ -652,17 +736,17 @@ export class Function_ {
 	 * @returns 同時実行設定が適用された Function
 	 */
 	withConcurrency(params: FunctionWithConcurrencyParams): Function_ {
+		const maxInputs = aliasedNumber(params, "maxInputs", "max_inputs");
+		const targetInputs = aliasedNumber(params, "targetInputs", "target_inputs");
+		const diff: Partial<FunctionOptions> = {};
+		if (maxInputs !== undefined) diff.maxConcurrentInputs = maxInputs;
+		if (targetInputs !== undefined) diff.targetConcurrentInputs = targetInputs;
 		return new Function_(
 			this.#client,
 			this.functionId,
 			this.methodName,
 			this.#handleMetadata,
-			mergeServiceOptions(this.#options, {
-				maxConcurrentInputs: params.maxInputs,
-				...(params.targetInputs !== undefined && {
-					targetConcurrentInputs: params.targetInputs,
-				}),
-			}),
+			mergeServiceOptions(this.#options, diff),
 		);
 	}
 
@@ -676,15 +760,21 @@ export class Function_ {
 	 * @returns バッチング設定が適用された Function
 	 */
 	withBatching(params: FunctionWithBatchingParams): Function_ {
+		const maxBatchSize = aliasedNumber(
+			params,
+			"maxBatchSize",
+			"max_batch_size",
+		);
+		const waitMs = aliasedNumber(params, "waitMs", "wait_ms");
+		const diff: Partial<FunctionOptions> = {};
+		if (maxBatchSize !== undefined) diff.batchMaxSize = maxBatchSize;
+		if (waitMs !== undefined) diff.batchWaitMs = waitMs;
 		return new Function_(
 			this.#client,
 			this.functionId,
 			this.methodName,
 			this.#handleMetadata,
-			mergeServiceOptions(this.#options, {
-				batchMaxSize: params.maxBatchSize,
-				batchWaitMs: params.waitMs,
-			}),
+			mergeServiceOptions(this.#options, diff),
 		);
 	}
 
@@ -908,23 +998,40 @@ export class Function_ {
 	async updateAutoscaler(
 		params: FunctionUpdateAutoscalerParams,
 	): Promise<void> {
-		checkForRenamedParams(params, { scaledownWindow: "scaledownWindowMs" });
+		const scaleupWindowMs = secondsAliasToMs(
+			params,
+			"scaleupWindowMs",
+			"scaleup_window",
+		);
+		const scaledownWindowMs = secondsAliasToMs(
+			params,
+			"scaledownWindowMs",
+			"scaledown_window",
+		);
 
 		await this.#client.cpClient.functionUpdateSchedulingParams({
 			functionId: this.functionId,
 			warmPoolSizeOverride: 0, // Deprecated field, always set to 0
 			settings: {
-				minContainers: params.minContainers,
-				maxContainers: params.maxContainers,
-				bufferContainers: params.bufferContainers,
-				targetConcurrency: params.targetConcurrency,
+				minContainers: aliasedNumber(params, "minContainers", "min_containers"),
+				maxContainers: aliasedNumber(params, "maxContainers", "max_containers"),
+				bufferContainers: aliasedNumber(
+					params,
+					"bufferContainers",
+					"buffer_containers",
+				),
+				targetConcurrency: aliasedNumber(
+					params,
+					"targetConcurrency",
+					"target_concurrency",
+				),
 				scaleupWindow:
-					params.scaleupWindowMs !== undefined
-						? Math.trunc(params.scaleupWindowMs / 1000)
+					scaleupWindowMs !== undefined
+						? Math.trunc(scaleupWindowMs / 1000)
 						: undefined,
 				scaledownWindow:
-					params.scaledownWindowMs !== undefined
-						? Math.trunc(params.scaledownWindowMs / 1000)
+					scaledownWindowMs !== undefined
+						? Math.trunc(scaledownWindowMs / 1000)
 						: undefined,
 			},
 		});

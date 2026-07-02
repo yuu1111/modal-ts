@@ -25,6 +25,7 @@ export class ContainerProcess<
 	readonly #execId: string;
 	readonly #commandRouterClient: TaskCommandRouterClientImpl;
 	readonly #deadline: number | null;
+	#returncode: number | undefined;
 
 	/** @internal */
 	constructor(
@@ -107,17 +108,47 @@ export class ContainerProcess<
 	 * @returns exit code
 	 */
 	async wait(): Promise<number> {
+		if (this.#returncode !== undefined) return this.#returncode;
 		const resp = await this.#commandRouterClient.execWait(
 			this.#taskId,
 			this.#execId,
 			this.#deadline,
 		);
 		if (resp.code !== undefined) {
-			return resp.code;
+			this.#returncode = resp.code;
+			return this.#returncode;
 		} else if (resp.signal !== undefined) {
-			return 128 + resp.signal;
+			this.#returncode = 128 + resp.signal;
+			return this.#returncode;
 		} else {
 			throw new InvalidError("Unexpected exit status");
 		}
+	}
+
+	async poll(): Promise<number | null> {
+		if (this.#returncode !== undefined) return this.#returncode;
+		const resp = await this.#commandRouterClient.execPoll(
+			this.#taskId,
+			this.#execId,
+			this.#deadline,
+		);
+		if (resp.code !== undefined) {
+			this.#returncode = resp.code;
+			return this.#returncode;
+		}
+		if (resp.signal !== undefined) {
+			this.#returncode = 128 + resp.signal;
+			return this.#returncode;
+		}
+		return null;
+	}
+
+	get returncode(): number {
+		if (this.#returncode === undefined) {
+			throw new InvalidError(
+				"You must call wait() before accessing the returncode. To poll for the status of a running process, use poll() instead.",
+			);
+		}
+		return this.#returncode;
 	}
 }

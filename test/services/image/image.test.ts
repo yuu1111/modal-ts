@@ -567,6 +567,7 @@ test("DockerfileCommandsWithOptions", async () => {
 				secretIds: [],
 				baseImages: [{ dockerTag: "base", imageId: "im-layer2" }],
 				gpuConfig: undefined,
+				buildArgs: { HELLO: "world" },
 			},
 			forceBuild: true,
 		});
@@ -579,10 +580,11 @@ test("DockerfileCommandsWithOptions", async () => {
 		.dockerfileCommands(["RUN echo layer2"], {
 			secrets: [new Secret("sc-test", "test_secret")],
 			gpu: "A100",
-			forceBuild: true,
+			force_build: true,
 		})
 		.dockerfileCommands(["RUN echo layer3"], {
-			forceBuild: true,
+			build_args: { HELLO: "world" },
+			force_build: true,
 		})
 		.build(new App("ap-test", "libmodal-test"));
 

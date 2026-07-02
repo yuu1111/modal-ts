@@ -47,6 +47,7 @@ export {
 } from "./runtime/execution_context";
 export {
 	CloudBucketMount,
+	type CloudBucketMountCreateParams,
 	CloudBucketMountService,
 } from "./services/cloud_bucket_mount/cloud_bucket_mount";
 export {

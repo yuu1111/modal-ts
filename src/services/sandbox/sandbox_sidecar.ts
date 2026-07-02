@@ -335,12 +335,26 @@ export class SidecarContainer {
 	/**
 	 * @description sidecar container の終了を待ち exit code を返す
 	 */
-	async wait(): Promise<number> {
+	async wait(
+		params: {
+			raiseOnTermination?: boolean;
+			raise_on_termination?: boolean;
+		} = {},
+	): Promise<number> {
 		if (
 			this.#result &&
 			this.#result.status !==
 				GenericResult_GenericStatus.GENERIC_STATUS_UNSPECIFIED
 		) {
+			const raiseOnTermination =
+				params.raiseOnTermination ?? params.raise_on_termination ?? false;
+			if (
+				raiseOnTermination &&
+				this.#result.status ===
+					GenericResult_GenericStatus.GENERIC_STATUS_TERMINATED
+			) {
+				throw new Error(`Sidecar container ${this.containerId} was terminated`);
+			}
 			return getReturnCode(this.#result) ?? 0;
 		}
 
@@ -361,6 +375,14 @@ export class SidecarContainer {
 				continue;
 			}
 			this.#result = result;
+			const raiseOnTermination =
+				params.raiseOnTermination ?? params.raise_on_termination ?? false;
+			if (
+				raiseOnTermination &&
+				result.status === GenericResult_GenericStatus.GENERIC_STATUS_TERMINATED
+			) {
+				throw new Error(`Sidecar container ${this.containerId} was terminated`);
+			}
 			return getReturnCode(result) ?? 0;
 		}
 	}

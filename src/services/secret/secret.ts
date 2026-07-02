@@ -10,6 +10,11 @@ import {
 	ObjectCreationType,
 	type SecretMetadata,
 } from "@/generated/modal_proto/api";
+import {
+	aliasedBoolean,
+	aliasedNumber,
+	environmentParam,
+} from "@/utils/param_aliases";
 
 /**
  * @description {@link SecretService#fromName client.secrets.fromName()} のオプションパラメータ
@@ -18,7 +23,10 @@ import {
  */
 export type SecretFromNameParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 	requiredKeys?: string[];
+	required_keys?: string[];
 };
 
 /**
@@ -27,6 +35,8 @@ export type SecretFromNameParams = {
  */
 export type SecretFromObjectParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 };
 
 /**
@@ -35,6 +45,8 @@ export type SecretFromObjectParams = {
  */
 export type SecretFromDotenvParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 };
 
 /**
@@ -43,6 +55,8 @@ export type SecretFromDotenvParams = {
  */
 export type SecretFromLocalEnvironParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 };
 
 /**
@@ -52,7 +66,10 @@ export type SecretFromLocalEnvironParams = {
  */
 export type SecretCreateParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 	allowExisting?: boolean;
+	allow_existing?: boolean;
 };
 
 /**
@@ -63,8 +80,12 @@ export type SecretCreateParams = {
  */
 export type SecretListParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 	maxObjects?: number;
+	max_objects?: number;
 	createdBefore?: number;
+	created_before?: number;
 };
 
 /**
@@ -73,6 +94,8 @@ export type SecretListParams = {
  */
 export type SecretUpdateParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 };
 
 /**
@@ -82,7 +105,10 @@ export type SecretUpdateParams = {
  */
 export type SecretDeleteParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 	allowMissing?: boolean;
+	allow_missing?: boolean;
 };
 
 /**
@@ -110,8 +136,8 @@ export class SecretService {
 		try {
 			const resp = await this.#client.cpClient.secretGetOrCreate({
 				deploymentName: name,
-				environmentName: this.#client.environmentName(params?.environment),
-				requiredKeys: params?.requiredKeys ?? [],
+				environmentName: this.#client.environmentName(environmentParam(params)),
+				requiredKeys: params?.requiredKeys ?? params?.required_keys ?? [],
 			});
 			this.#client.logger.debug(
 				"Retrieved Secret",
@@ -156,7 +182,7 @@ export class SecretService {
 			const resp = await this.#client.cpClient.secretGetOrCreate({
 				objectCreationType: ObjectCreationType.OBJECT_CREATION_TYPE_EPHEMERAL,
 				envDict: entries,
-				environmentName: this.#client.environmentName(params?.environment),
+				environmentName: this.#client.environmentName(environmentParam(params)),
 			});
 			this.#client.logger.debug(
 				"Created ephemeral Secret",
@@ -238,10 +264,14 @@ export class SecretService {
 		await this.#client.cpClient.secretGetOrCreate({
 			deploymentName: name,
 			envDict: entries,
-			objectCreationType: params.allowExisting
+			objectCreationType: aliasedBoolean(
+				params,
+				"allowExisting",
+				"allow_existing",
+			)
 				? ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_IF_MISSING
 				: ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_FAIL_IF_EXISTS,
-			environmentName: this.#client.environmentName(params.environment),
+			environmentName: this.#client.environmentName(environmentParam(params)),
 		});
 	}
 
@@ -250,22 +280,21 @@ export class SecretService {
 	 * @param params - オプションパラメータ
 	 */
 	async list(params: SecretListParams = {}): Promise<Secret[]> {
-		if (params.maxObjects !== undefined && params.maxObjects < 0) {
+		const maxObjects = aliasedNumber(params, "maxObjects", "max_objects");
+		if (maxObjects !== undefined && maxObjects < 0) {
 			throw new InvalidError("maxObjects cannot be negative");
 		}
 
 		const secrets: Secret[] = [];
-		let createdBefore = params.createdBefore ?? 0;
-		while (
-			params.maxObjects === undefined ||
-			secrets.length < params.maxObjects
-		) {
+		let createdBefore =
+			aliasedNumber(params, "createdBefore", "created_before") ?? 0;
+		while (maxObjects === undefined || secrets.length < maxObjects) {
 			const maxPageSize =
-				params.maxObjects === undefined
+				maxObjects === undefined
 					? 100
-					: Math.min(100, params.maxObjects - secrets.length);
+					: Math.min(100, maxObjects - secrets.length);
 			const resp = await this.#client.cpClient.secretList({
-				environmentName: this.#client.environmentName(params.environment),
+				environmentName: this.#client.environmentName(environmentParam(params)),
 				pagination: { maxObjects: maxPageSize, createdBefore },
 			});
 
@@ -299,10 +328,9 @@ export class SecretService {
 		updates: Record<string, string | null>,
 		params: SecretUpdateParams = {},
 	): Promise<void> {
+		const environment = environmentParam(params);
 		const secret = await this.fromName(name, {
-			...(params.environment !== undefined && {
-				environment: params.environment,
-			}),
+			...(environment !== undefined && { environment }),
 		});
 		await this.#client.cpClient.secretUpdate({
 			secretId: secret.secretId,
@@ -320,10 +348,9 @@ export class SecretService {
 	 */
 	async delete(name: string, params?: SecretDeleteParams): Promise<void> {
 		try {
+			const environment = environmentParam(params);
 			const secret = await this.fromName(name, {
-				...(params?.environment !== undefined && {
-					environment: params.environment,
-				}),
+				...(environment !== undefined && { environment }),
 			});
 			await this.#client.cpClient.secretDelete({
 				secretId: secret.secretId,
@@ -336,7 +363,10 @@ export class SecretService {
 				secret.secretId,
 			);
 		} catch (err) {
-			suppressNotFound(err, params?.allowMissing);
+			suppressNotFound(
+				err,
+				aliasedBoolean(params, "allowMissing", "allow_missing"),
+			);
 		}
 	}
 }

@@ -17,6 +17,12 @@ import { type App, parseGpuConfig } from "@/services/deploy/app";
 import { createMount, type MountFileEntry } from "@/services/deploy/deploy";
 import { mergeEnvIntoSecrets, Secret } from "@/services/secret/secret";
 import { FilePatternMatcher } from "@/utils/file_pattern_matcher";
+import {
+	aliasedBoolean,
+	aliasedString,
+	aliasedValue,
+	environmentParam,
+} from "@/utils/param_aliases";
 
 const DEFAULT_IMAGE_TAG = "latest";
 
@@ -247,7 +253,7 @@ export class ImageService {
 		const tag = parseNamedImageRef(name);
 		try {
 			const resp = await this.#client.cpClient.imageGetByTag({
-				environmentName: this.#client.environmentName(params.environment),
+				environmentName: this.#client.environmentName(environmentParam(params)),
 				tag,
 			});
 			return new Image(this.#client, resp.imageId, "");
@@ -333,9 +339,12 @@ export class ImageService {
 	 * @description 空の scratch image を作成する
 	 * @param params - オプションパラメータ
 	 */
-	fromScratch(params: { forceBuild?: boolean } = {}): Image {
+	fromScratch(
+		params: { forceBuild?: boolean; force_build?: boolean } = {},
+	): Image {
 		const layer: Layer = { commands: [] };
-		if (params.forceBuild !== undefined) layer.forceBuild = params.forceBuild;
+		const forceBuild = imageForceBuild(params);
+		if (forceBuild !== undefined) layer.forceBuild = forceBuild;
 		return new Image(this.#client, "", "scratch", undefined, [layer]);
 	}
 
@@ -351,9 +360,16 @@ export class ImageService {
 	 * @param params - Python version と build オプション
 	 */
 	debianSlim(
-		params: { pythonVersion?: string; forceBuild?: boolean } = {},
+		params: {
+			pythonVersion?: string;
+			python_version?: string;
+			forceBuild?: boolean;
+			force_build?: boolean;
+		} = {},
 	): Image {
-		const pythonVersion = params.pythonVersion ?? "3.12";
+		const pythonVersion =
+			aliasedString(params, "pythonVersion", "python_version") ?? "3.12";
+		const forceBuild = imageForceBuild(params);
 		const image = new Image(
 			this.#client,
 			"",
@@ -367,9 +383,7 @@ export class ImageService {
 				"RUN echo 'debconf debconf/frontend select Noninteractive' | debconf-set-selections",
 				'CMD ["sleep", "172800"]',
 			],
-			params.forceBuild === undefined
-				? undefined
-				: { forceBuild: params.forceBuild },
+			forceBuild === undefined ? undefined : { forceBuild },
 		);
 	}
 
@@ -389,32 +403,37 @@ export class ImageService {
 		dockerfilePath: string,
 		params: ImageBuildStepParams & {
 			contextDir?: string;
+			context_dir?: string;
 			addPython?: string;
+			add_python?: string;
 		} = {},
 	): Image {
 		const commands = readFileSync(dockerfilePath, "utf8")
 			.split(/\r?\n/)
 			.filter((line) => line.length > 0);
-		const contextDir = params.contextDir ?? path.dirname(dockerfilePath);
+		const contextDir =
+			aliasedString(params, "contextDir", "context_dir") ??
+			path.dirname(dockerfilePath);
+		const forceBuild = imageForceBuild(params);
+		const buildArgs = imageBuildArgs(params);
 		let image = new Image(this.#client, "", "scratch", undefined, [
 			{
 				commands,
 				contextFiles: { "/": contextDir },
-				...(params.forceBuild !== undefined && {
-					forceBuild: params.forceBuild,
-				}),
+				...(forceBuild !== undefined && { forceBuild }),
 				...(params.gpu !== undefined && {
 					gpuConfig: parseGpuConfig(params.gpu),
 				}),
 				...(params.env !== undefined && { env: params.env }),
 				...(params.secrets !== undefined && { secrets: params.secrets }),
-				...(params.buildArgs !== undefined && { buildArgs: params.buildArgs }),
+				...(buildArgs !== undefined && { buildArgs }),
 				includeBase: false,
 			},
 		]);
-		if (params.addPython) {
+		const addPython = aliasedString(params, "addPython", "add_python");
+		if (addPython) {
 			image = image.dockerfileCommands([
-				`RUN apt-get update && apt-get install -y python${params.addPython} python3-pip`,
+				`RUN apt-get update && apt-get install -y python${addPython} python3-pip`,
 			]);
 		}
 		return image;
@@ -434,9 +453,16 @@ export class ImageService {
 	 * @description Micromamba base image を作成する
 	 */
 	micromamba(
-		params: { pythonVersion?: string; forceBuild?: boolean } = {},
+		params: {
+			pythonVersion?: string;
+			python_version?: string;
+			forceBuild?: boolean;
+			force_build?: boolean;
+		} = {},
 	): Image {
-		const pythonVersion = params.pythonVersion ?? "3.12";
+		const pythonVersion =
+			aliasedString(params, "pythonVersion", "python_version") ?? "3.12";
+		const forceBuild = imageForceBuild(params);
 		const image = new Image(this.#client, "", "mambaorg/micromamba:latest");
 		return image.dockerfileCommands(
 			[
@@ -444,9 +470,7 @@ export class ImageService {
 				"ENV MAMBA_DOCKERFILE_ACTIVATE=1",
 				`RUN micromamba install -n base -y python=${pythonVersion} pip -c conda-forge`,
 			],
-			params.forceBuild === undefined
-				? undefined
-				: { forceBuild: params.forceBuild },
+			forceBuild === undefined ? undefined : { forceBuild },
 		);
 	}
 
@@ -497,6 +521,8 @@ export type ImageDeleteParams = Record<never, never>;
  */
 export type ImageFromNameParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 };
 
 /**
@@ -505,6 +531,8 @@ export type ImageFromNameParams = {
  */
 export type ImagePublishParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 };
 
 /**
@@ -534,22 +562,78 @@ export type ImageDockerfileCommandsParams = {
 	 * @description キャッシュを無視してビルドする ('docker build --no-cache' に相当)
 	 */
 	forceBuild?: boolean;
+	force_build?: boolean;
 
 	/**
 	 * @description Docker build context に含める local file mapping
 	 */
 	contextFiles?: Record<string, LocalPathSpec>;
+	context_files?: Record<string, LocalPathSpec>;
 
 	/**
 	 * @description Dockerfile ARG に渡す build arguments
 	 */
 	buildArgs?: Record<string, string>;
+	build_args?: Record<string, string>;
 };
 
 /**
  * @description Image builder の共通オプション
  */
 export type ImageBuildStepParams = ImageDockerfileCommandsParams;
+
+type PythonPackageOptions = ImageBuildStepParams & {
+	findLinks?: string;
+	find_links?: string;
+	indexUrl?: string;
+	index_url?: string;
+	extraIndexUrl?: string;
+	extra_index_url?: string;
+	pre?: boolean;
+	extraOptions?: string;
+	extra_options?: string;
+};
+
+function imageForceBuild(
+	params: ImageBuildStepParams | undefined,
+): boolean | undefined {
+	return aliasedBoolean(params, "forceBuild", "force_build");
+}
+
+function imageContextFiles(
+	params: ImageBuildStepParams | undefined,
+): Record<string, LocalPathSpec> | undefined {
+	return aliasedValue<Record<string, LocalPathSpec>>(
+		params,
+		"contextFiles",
+		"context_files",
+	);
+}
+
+function imageBuildArgs(
+	params: ImageBuildStepParams | undefined,
+): Record<string, string> | undefined {
+	return aliasedValue<Record<string, string>>(
+		params,
+		"buildArgs",
+		"build_args",
+	);
+}
+
+function packageInstallArgs(params: PythonPackageOptions): string {
+	return [
+		aliasedString(params, "findLinks", "find_links") &&
+			`--find-links ${shellQuote(aliasedString(params, "findLinks", "find_links") ?? "")}`,
+		aliasedString(params, "indexUrl", "index_url") &&
+			`--index-url ${shellQuote(aliasedString(params, "indexUrl", "index_url") ?? "")}`,
+		aliasedString(params, "extraIndexUrl", "extra_index_url") &&
+			`--extra-index-url ${shellQuote(aliasedString(params, "extraIndexUrl", "extra_index_url") ?? "")}`,
+		params.pre && "--pre",
+		aliasedString(params, "extraOptions", "extra_options"),
+	]
+		.filter(Boolean)
+		.join(" ");
+}
 
 /**
  * @description 単一の Image レイヤーとそのビルド設定を表す
@@ -655,22 +739,31 @@ export class Image {
 		return Image.fromGcpArtifactRegistry(tag, secret);
 	}
 
-	static fromScratch(params: { forceBuild?: boolean } = {}): Image {
+	static fromScratch(
+		params: { forceBuild?: boolean; force_build?: boolean } = {},
+	): Image {
 		return getDefaultClient().images.fromScratch(params);
 	}
 
-	static from_scratch(params: { forceBuild?: boolean } = {}): Image {
+	static from_scratch(
+		params: Parameters<typeof Image.fromScratch>[0] = {},
+	): Image {
 		return Image.fromScratch(params);
 	}
 
 	static debianSlim(
-		params: { pythonVersion?: string; forceBuild?: boolean } = {},
+		params: {
+			pythonVersion?: string;
+			python_version?: string;
+			forceBuild?: boolean;
+			force_build?: boolean;
+		} = {},
 	): Image {
 		return getDefaultClient().images.debianSlim(params);
 	}
 
 	static debian_slim(
-		params: { pythonVersion?: string; forceBuild?: boolean } = {},
+		params: Parameters<typeof Image.debianSlim>[0] = {},
 	): Image {
 		return Image.debianSlim(params);
 	}
@@ -690,7 +783,12 @@ export class Image {
 	}
 
 	static micromamba(
-		params: { pythonVersion?: string; forceBuild?: boolean } = {},
+		params: {
+			pythonVersion?: string;
+			python_version?: string;
+			forceBuild?: boolean;
+			force_build?: boolean;
+		} = {},
 	): Image {
 		return getDefaultClient().images.micromamba(params);
 	}
@@ -737,6 +835,9 @@ export class Image {
 			);
 		}
 
+		const forceBuild = imageForceBuild(params);
+		const contextFiles = imageContextFiles(params);
+		const buildArgs = imageBuildArgs(params);
 		const newLayer: Layer = {
 			commands: [...commands],
 			...(params?.env !== undefined && { env: params.env }),
@@ -744,15 +845,9 @@ export class Image {
 			...(params?.gpu !== undefined && {
 				gpuConfig: parseGpuConfig(params.gpu),
 			}),
-			...(params?.forceBuild !== undefined && {
-				forceBuild: params.forceBuild,
-			}),
-			...(params?.contextFiles !== undefined && {
-				contextFiles: params.contextFiles,
-			}),
-			...(params?.buildArgs !== undefined && {
-				buildArgs: params.buildArgs,
-			}),
+			...(forceBuild !== undefined && { forceBuild }),
+			...(contextFiles !== undefined && { contextFiles }),
+			...(buildArgs !== undefined && { buildArgs }),
 		};
 
 		const baseImageId = this.#imageId || this.#baseImageId;
@@ -807,27 +902,9 @@ export class Image {
 	 * @param packages - package 名
 	 * @param params - build step オプション
 	 */
-	pipInstall(
-		packages: string[],
-		params: ImageBuildStepParams & {
-			findLinks?: string;
-			indexUrl?: string;
-			extraIndexUrl?: string;
-			pre?: boolean;
-			extraOptions?: string;
-		} = {},
-	): Image {
+	pipInstall(packages: string[], params: PythonPackageOptions = {}): Image {
 		if (packages.length === 0) return this;
-		const extraArgs = [
-			params.findLinks && `--find-links ${shellQuote(params.findLinks)}`,
-			params.indexUrl && `--index-url ${shellQuote(params.indexUrl)}`,
-			params.extraIndexUrl &&
-				`--extra-index-url ${shellQuote(params.extraIndexUrl)}`,
-			params.pre && "--pre",
-			params.extraOptions,
-		]
-			.filter(Boolean)
-			.join(" ");
+		const extraArgs = packageInstallArgs(params);
 		const suffix = extraArgs ? ` ${extraArgs}` : "";
 		return this.dockerfileCommands(
 			[
@@ -856,16 +933,26 @@ export class Image {
 			gitUser?: string;
 			git_user?: string;
 			tokenSecret?: Secret;
+			token_secret?: Secret;
 			findLinks?: string;
+			find_links?: string;
 			indexUrl?: string;
+			index_url?: string;
 			extraIndexUrl?: string;
+			extra_index_url?: string;
 			pre?: boolean;
 			extraOptions?: string;
+			extra_options?: string;
 		} = {},
 	): Image {
 		if (repositories.length === 0) return this;
-		const secrets = params.tokenSecret
-			? [...(params.secrets ?? []), params.tokenSecret]
+		const tokenSecret = aliasedValue<Secret>(
+			params,
+			"tokenSecret",
+			"token_secret",
+		);
+		const secrets = tokenSecret
+			? [...(params.secrets ?? []), tokenSecret]
 			: params.secrets;
 		if (!secrets || secrets.length === 0) {
 			throw new InvalidError(
@@ -896,16 +983,7 @@ export class Image {
 			);
 		}
 
-		const extraArgs = [
-			params.findLinks && `--find-links ${shellQuote(params.findLinks)}`,
-			params.indexUrl && `--index-url ${shellQuote(params.indexUrl)}`,
-			params.extraIndexUrl &&
-				`--extra-index-url ${shellQuote(params.extraIndexUrl)}`,
-			params.pre && "--pre",
-			params.extraOptions,
-		]
-			.filter(Boolean)
-			.join(" ");
+		const extraArgs = packageInstallArgs(params);
 		const suffix = extraArgs ? ` ${extraArgs}` : "";
 		const commands: string[] = [];
 		if (repositories.some((repo) => repo.startsWith("github.com"))) {
@@ -926,11 +1004,16 @@ export class Image {
 			gitUser: _gitUser,
 			git_user: _git_user,
 			tokenSecret: _tokenSecret,
+			token_secret: _token_secret,
 			findLinks: _findLinks,
+			find_links: _find_links,
 			indexUrl: _indexUrl,
+			index_url: _index_url,
 			extraIndexUrl: _extraIndexUrl,
+			extra_index_url: _extra_index_url,
 			pre: _pre,
 			extraOptions: _extraOptions,
+			extra_options: _extra_options,
 			...rest
 		} = params;
 		return this.dockerfileCommands(commands, {
@@ -1100,24 +1183,9 @@ export class Image {
 	 */
 	pipInstallFromRequirements(
 		requirementsTxt: string,
-		params: ImageBuildStepParams & {
-			findLinks?: string;
-			indexUrl?: string;
-			extraIndexUrl?: string;
-			pre?: boolean;
-			extraOptions?: string;
-		} = {},
+		params: PythonPackageOptions = {},
 	): Image {
-		const extraArgs = [
-			params.findLinks && `-f ${shellQuote(params.findLinks)}`,
-			params.indexUrl && `--index-url ${shellQuote(params.indexUrl)}`,
-			params.extraIndexUrl &&
-				`--extra-index-url ${shellQuote(params.extraIndexUrl)}`,
-			params.pre && "--pre",
-			params.extraOptions,
-		]
-			.filter(Boolean)
-			.join(" ");
+		const extraArgs = packageInstallArgs(params);
 		const suffix = extraArgs ? ` ${extraArgs}` : "";
 		return this.dockerfileCommands(
 			[
@@ -1136,13 +1204,7 @@ export class Image {
 	 */
 	pip_install_from_requirements(
 		requirementsTxt: string,
-		params: ImageBuildStepParams & {
-			findLinks?: string;
-			indexUrl?: string;
-			extraIndexUrl?: string;
-			pre?: boolean;
-			extraOptions?: string;
-		} = {},
+		params: PythonPackageOptions = {},
 	): Image {
 		return this.pipInstallFromRequirements(requirementsTxt, params);
 	}
@@ -1153,13 +1215,7 @@ export class Image {
 	pipInstallFromPyproject(
 		pyprojectToml: string,
 		optionalDependencies: string[] = [],
-		params: ImageBuildStepParams & {
-			findLinks?: string;
-			indexUrl?: string;
-			extraIndexUrl?: string;
-			pre?: boolean;
-			extraOptions?: string;
-		} = {},
+		params: PythonPackageOptions = {},
 	): Image {
 		const config = parseToml(readFileSync(pyprojectToml, "utf8")) as {
 			project?: {
@@ -1201,33 +1257,36 @@ export class Image {
 	 */
 	uvPipInstall(
 		packages: string[] = [],
-		params: ImageBuildStepParams & {
+		params: PythonPackageOptions & {
 			requirements?: string[];
-			findLinks?: string;
-			indexUrl?: string;
-			extraIndexUrl?: string;
-			pre?: boolean;
-			extraOptions?: string;
 			uvVersion?: string;
+			uv_version?: string;
 		} = {},
 	): Image {
 		const uvRoot = "/.uv";
+		const uvVersion = aliasedString(params, "uvVersion", "uv_version");
 		const commands = [
-			params.uvVersion
-				? `COPY --from=ghcr.io/astral-sh/uv:${params.uvVersion} /uv ${uvRoot}/uv`
+			uvVersion
+				? `COPY --from=ghcr.io/astral-sh/uv:${uvVersion} /uv ${uvRoot}/uv`
 				: `COPY --from=ghcr.io/astral-sh/uv:latest /uv ${uvRoot}/uv`,
 		];
 		const contextFiles: Record<string, string> = {};
 		const args = ["--python $(command -v python)", "--compile-bytecode"];
-		if (params.findLinks)
-			args.push(`--find-links ${shellQuote(params.findLinks)}`);
-		if (params.indexUrl)
-			args.push(`--index-url ${shellQuote(params.indexUrl)}`);
-		if (params.extraIndexUrl) {
-			args.push(`--extra-index-url ${shellQuote(params.extraIndexUrl)}`);
+		const findLinks = aliasedString(params, "findLinks", "find_links");
+		const indexUrl = aliasedString(params, "indexUrl", "index_url");
+		const extraIndexUrl = aliasedString(
+			params,
+			"extraIndexUrl",
+			"extra_index_url",
+		);
+		if (findLinks) args.push(`--find-links ${shellQuote(findLinks)}`);
+		if (indexUrl) args.push(`--index-url ${shellQuote(indexUrl)}`);
+		if (extraIndexUrl) {
+			args.push(`--extra-index-url ${shellQuote(extraIndexUrl)}`);
 		}
 		if (params.pre) args.push("--prerelease allow");
-		if (params.extraOptions) args.push(params.extraOptions);
+		const extraOptions = aliasedString(params, "extraOptions", "extra_options");
+		if (extraOptions) args.push(extraOptions);
 		for (const [index, requirement] of (params.requirements ?? []).entries()) {
 			const contextPath = `/.${index}_${basename(requirement)}`;
 			const destPath = `${uvRoot}/${index}/${basename(requirement)}`;
@@ -1260,29 +1319,43 @@ export class Image {
 		pyprojectToml: string,
 		params: ImageBuildStepParams & {
 			poetryLockfile?: string;
+			poetry_lockfile?: string;
 			ignoreLockfile?: boolean;
+			ignore_lockfile?: boolean;
 			with?: string[];
 			without?: string[];
 			only?: string[];
 			poetryVersion?: string | null;
+			poetry_version?: string | null;
 			oldInstaller?: boolean;
+			old_installer?: boolean;
 		} = {},
 	): Image {
 		const contextFiles: Record<string, string> = {
 			"/.pyproject.toml": pyprojectToml,
 		};
 		const commands: string[] = [];
-		const poetryVersion = params.poetryVersion ?? "latest";
+		const poetryVersion =
+			aliasedValue<string | null>(params, "poetryVersion", "poetry_version") ??
+			"latest";
 		if (poetryVersion !== null) {
 			commands.push(
 				`RUN python -m pip install poetry${poetryVersion === "latest" ? "" : `==${poetryVersion}`}`,
 			);
 		}
-		if (params.oldInstaller) {
+		if (aliasedBoolean(params, "oldInstaller", "old_installer")) {
 			commands.push("RUN poetry config experimental.new-installer false");
 		}
-		if (!params.ignoreLockfile && params.poetryLockfile) {
-			contextFiles["/.poetry.lock"] = params.poetryLockfile;
+		const poetryLockfile = aliasedString(
+			params,
+			"poetryLockfile",
+			"poetry_lockfile",
+		);
+		if (
+			!aliasedBoolean(params, "ignoreLockfile", "ignore_lockfile") &&
+			poetryLockfile
+		) {
+			contextFiles["/.poetry.lock"] = poetryLockfile;
 			commands.push("COPY /.poetry.lock /tmp/poetry/poetry.lock");
 		}
 		let installCommand = "poetry install --no-root";
@@ -1323,7 +1396,9 @@ export class Image {
 			extras?: string[];
 			frozen?: boolean;
 			extraOptions?: string;
+			extra_options?: string;
 			uvVersion?: string;
+			uv_version?: string;
 		} = {},
 	): Image {
 		const uvRoot = "/.uv";
@@ -1331,9 +1406,10 @@ export class Image {
 			"/.pyproject.toml": path.join(projectDir, "pyproject.toml"),
 		};
 		const lockPath = path.join(projectDir, "uv.lock");
+		const uvVersion = aliasedString(params, "uvVersion", "uv_version");
 		const commands = [
-			params.uvVersion
-				? `COPY --from=ghcr.io/astral-sh/uv:${params.uvVersion} /uv ${uvRoot}/uv`
+			uvVersion
+				? `COPY --from=ghcr.io/astral-sh/uv:${uvVersion} /uv ${uvRoot}/uv`
 				: `COPY --from=ghcr.io/astral-sh/uv:latest /uv ${uvRoot}/uv`,
 			"COPY /.pyproject.toml /tmp/uv/pyproject.toml",
 		];
@@ -1347,7 +1423,8 @@ export class Image {
 			args.push("--group", shellQuote(group));
 		for (const extra of params.extras ?? [])
 			args.push("--extra", shellQuote(extra));
-		if (params.extraOptions) args.push(params.extraOptions);
+		const extraOptions = aliasedString(params, "extraOptions", "extra_options");
+		if (extraOptions) args.push(extraOptions);
 		commands.push(`RUN cd /tmp/uv && ${uvRoot}/uv ${args.join(" ")}`);
 		return this.dockerfileCommands(commands, { ...params, contextFiles });
 	}
@@ -1369,10 +1446,12 @@ export class Image {
 		packages: string[] = [],
 		params: ImageBuildStepParams & {
 			specFile?: string;
+			spec_file?: string;
 			channels?: string[];
 		} = {},
 	): Image {
-		if (packages.length === 0 && !params.specFile) return this;
+		const specFile = aliasedString(params, "specFile", "spec_file");
+		if (packages.length === 0 && !specFile) return this;
 		const contextFiles: Record<string, string> = {};
 		const commands: string[] = [];
 		const packageArgs = packages.map(shellQuote).join(" ");
@@ -1380,9 +1459,9 @@ export class Image {
 			.map((channel) => `-c ${shellQuote(channel)}`)
 			.join(" ");
 		let fileArg = "";
-		if (params.specFile) {
-			const remoteSpecFile = `/${basename(params.specFile)}`;
-			contextFiles[remoteSpecFile] = params.specFile;
+		if (specFile) {
+			const remoteSpecFile = `/${basename(specFile)}`;
+			contextFiles[remoteSpecFile] = specFile;
 			commands.push(`COPY ${remoteSpecFile} ${remoteSpecFile}`);
 			fileArg = ` -f ${remoteSpecFile} -n base`;
 		}
@@ -1669,7 +1748,7 @@ export class Image {
 
 		await this.#client.cpClient.imagePublish({
 			imageId: this.#imageId,
-			environmentName: this.#client.environmentName(params.environment),
+			environmentName: this.#client.environmentName(environmentParam(params)),
 			isPublic: false,
 			tag,
 		});

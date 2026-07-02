@@ -6,6 +6,7 @@ test("DictService.fromName and Dict put/get", async () => {
 
 	mock.handleUnary("/DictGetOrCreate", (req) => {
 		expect(req.deploymentName).toBe("test-dict");
+		expect(req.environmentName).toBe("dev");
 		expect(req.objectCreationType).toBe(1);
 		return {
 			dictId: "di-test",
@@ -27,7 +28,10 @@ test("DictService.fromName and Dict put/get", async () => {
 		};
 	});
 
-	const dict = await mc.dicts.fromName("test-dict", { createIfMissing: true });
+	const dict = await mc.dicts.fromName("test-dict", {
+		create_if_missing: true,
+		environment_name: "dev",
+	});
 	await dict.put("answer", 42);
 	expect(await dict.get("answer")).toBe(42);
 	mock.assertExhausted();

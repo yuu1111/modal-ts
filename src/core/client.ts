@@ -61,6 +61,7 @@ export const GRPC_CHANNEL_OPTIONS = {
  * @property tokenId - Modal APIトークンID @optional
  * @property tokenSecret - Modal APIトークンシークレット @optional
  * @property environment - 使用する環境名 @optional
+ * @property imageBuilderVersion - 使用するイメージビルダーのバージョン @optional
  * @property endpoint - gRPCエンドポイントURL @optional
  * @property timeoutMs - デフォルトのリクエストタイムアウト(ミリ秒) @optional
  * @property maxRetries - 最大リトライ回数 @optional
@@ -72,6 +73,7 @@ export interface ModalClientParams {
 	tokenId?: string;
 	tokenSecret?: string;
 	environment?: string;
+	imageBuilderVersion?: string;
 	endpoint?: string;
 	timeoutMs?: number;
 	maxRetries?: number;
@@ -142,6 +144,7 @@ export class ModalClient {
 	private ipClients: Map<string, ModalGrpcClient>;
 	private authTokenManager: AuthTokenManager | null = null;
 	private customMiddleware: ClientMiddleware[];
+	private closed = false;
 
 	constructor(params?: ModalClientParams) {
 		checkForRenamedParams(params, { timeout: "timeoutMs" });
@@ -152,6 +155,9 @@ export class ModalClient {
 			...(params?.tokenId && { tokenId: params.tokenId }),
 			...(params?.tokenSecret && { tokenSecret: params.tokenSecret }),
 			...(params?.environment && { environment: params.environment }),
+			...(params?.imageBuilderVersion && {
+				imageBuilderVersion: params.imageBuilderVersion,
+			}),
 		};
 
 		const logLevelValue = params?.logLevel || this.profile.logLevel || "";
@@ -188,6 +194,28 @@ export class ModalClient {
 		this.workspaces = new WorkspaceService(this);
 	}
 
+	static async from_env(): Promise<ModalClient> {
+		return new ModalClient();
+	}
+
+	static async fromEnv(): Promise<ModalClient> {
+		return await ModalClient.from_env();
+	}
+
+	static async from_credentials(
+		tokenId: string,
+		tokenSecret: string,
+	): Promise<ModalClient> {
+		return new ModalClient({ tokenId, tokenSecret });
+	}
+
+	static async fromCredentials(
+		tokenId: string,
+		tokenSecret: string,
+	): Promise<ModalClient> {
+		return await ModalClient.from_credentials(tokenId, tokenSecret);
+	}
+
 	/**
 	 * @description 有効な環境名を返す
 	 * @param environment - 明示的な環境名(省略時はプロファイルの値)
@@ -204,6 +232,25 @@ export class ModalClient {
 	 */
 	imageBuilderVersion(version?: string): string {
 		return version || this.profile.imageBuilderVersion || "2024.10";
+	}
+
+	/**
+	 * @description サーバーから Environment の image builder version を取得する。
+	 * profile に明示された値がある場合はそれを優先する。
+	 * @param environmentName - 取得対象の環境名。省略時は profile の環境を使う
+	 * @returns イメージビルダーのバージョン
+	 */
+	async getImageBuilderVersion(environmentName?: string): Promise<string> {
+		if (
+			this.profile.imageBuilderVersion !== undefined &&
+			this.profile.imageBuilderVersion !== ""
+		) {
+			return this.profile.imageBuilderVersion;
+		}
+		const environment = await this.environments.fromName(
+			environmentName ?? this.profile.environment ?? "",
+		);
+		return environment.info().imageBuilderVersion || "2024.10";
 	}
 
 	/**
@@ -229,7 +276,16 @@ export class ModalClient {
 		this.logger.debug("Closing Modal client");
 		this.authTokenManager = null;
 		this.ipClients.clear();
+		this.closed = true;
 		this.logger.debug("Modal client closed");
+	}
+
+	is_closed(): boolean {
+		return this.closed;
+	}
+
+	isClosed(): boolean {
+		return this.is_closed();
 	}
 
 	/**

@@ -1,6 +1,7 @@
-import type { ModalClient } from "@/core/client";
+import { getDefaultClient, type ModalClient } from "@/core/client";
 import { rethrowNotFound } from "@/core/grpc/errors";
 import { GPUConfig, ObjectCreationType } from "@/generated/modal_proto/api";
+import { aliasedBoolean, environmentParam } from "@/utils/param_aliases";
 
 /**
  * @description {@link App} を管理するサービス
@@ -28,8 +29,12 @@ export class AppService {
 		try {
 			const resp = await this.#client.cpClient.appGetOrCreate({
 				appName: name,
-				environmentName: this.#client.environmentName(params.environment),
-				objectCreationType: params.createIfMissing
+				environmentName: this.#client.environmentName(environmentParam(params)),
+				objectCreationType: aliasedBoolean(
+					params,
+					"createIfMissing",
+					"create_if_missing",
+				)
 					? ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_IF_MISSING
 					: ObjectCreationType.OBJECT_CREATION_TYPE_UNSPECIFIED,
 			});
@@ -40,7 +45,11 @@ export class AppService {
 				"app_name",
 				name,
 			);
-			return new App(resp.appId, name);
+			return new App(
+				resp.appId,
+				name,
+				this.#client.environmentName(environmentParam(params)),
+			);
 		} catch (err) {
 			rethrowNotFound(err, `App '${name}' not found`);
 		}
@@ -52,7 +61,10 @@ export class AppService {
  */
 export type AppFromNameParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 	createIfMissing?: boolean;
+	create_if_missing?: boolean;
 };
 
 /**
@@ -91,12 +103,28 @@ export function parseGpuConfig(gpu: string | undefined): GPUConfig {
 export class App {
 	readonly appId: string;
 	readonly name?: string;
+	readonly environmentName?: string;
 
 	/**
 	 * @internal
 	 */
-	constructor(appId: string, name?: string) {
+	constructor(appId: string, name?: string, environmentName?: string) {
 		this.appId = appId;
 		if (name !== undefined) this.name = name;
+		if (environmentName !== undefined) this.environmentName = environmentName;
+	}
+
+	static async from_name(
+		name: string,
+		params: AppFromNameParams = {},
+	): Promise<App> {
+		return await getDefaultClient().apps.fromName(name, params);
+	}
+
+	static async fromName(
+		name: string,
+		params: AppFromNameParams = {},
+	): Promise<App> {
+		return await App.from_name(name, params);
 	}
 }

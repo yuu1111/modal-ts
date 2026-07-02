@@ -24,6 +24,7 @@ import type { SchedulerPlacement } from "@/services/scheduler_placement/schedule
 import type { Secret } from "@/services/secret/secret";
 import { mergeEnvIntoSecrets } from "@/services/secret/secret";
 import { type Volume, volumeToMountProto } from "@/services/volume/volume";
+import { aliasedNumber, environmentParam } from "@/utils/param_aliases";
 import { parseRetries, type Retries } from "@/utils/retries";
 import { checkForRenamedParams } from "@/utils/validation";
 
@@ -34,7 +35,10 @@ import { checkForRenamedParams } from "@/utils/validation";
  */
 export type ClsFromNameParams = {
 	environment?: string;
+	environmentName?: string;
+	environment_name?: string;
 	createIfMissing?: boolean;
+	create_if_missing?: boolean;
 };
 
 /**
@@ -65,7 +69,7 @@ export class ClsService {
 			const serviceFunction = await this.#client.cpClient.functionGet({
 				appName,
 				objectTag: serviceFunctionName,
-				environmentName: this.#client.environmentName(params.environment),
+				environmentName: this.#client.environmentName(environmentParam(params)),
 			});
 
 			const parameterInfo = serviceFunction.handleMetadata?.classParameterInfo;
@@ -143,8 +147,12 @@ export type ClsWithOptionsParams = {
 	volumes?: Record<string, Volume>;
 	retries?: number | Retries;
 	maxContainers?: number;
+	max_containers?: number;
 	bufferContainers?: number;
+	buffer_containers?: number;
 	scaledownWindowMs?: number;
+	scaledown_window?: number;
+	scaledown_window_ms?: number;
 	timeoutMs?: number;
 	schedulerPlacement?: SchedulerPlacement;
 };
@@ -155,8 +163,10 @@ export type ClsWithOptionsParams = {
  * @property targetInputs - 目標同時入力数 @optional
  */
 export type ClsWithConcurrencyParams = {
-	maxInputs: number;
+	maxInputs?: number;
+	max_inputs?: number;
 	targetInputs?: number;
+	target_inputs?: number;
 };
 
 /**
@@ -165,8 +175,10 @@ export type ClsWithConcurrencyParams = {
  * @property waitMs - バッチ待機時間(ミリ秒)
  */
 export type ClsWithBatchingParams = {
-	maxBatchSize: number;
-	waitMs: number;
+	maxBatchSize?: number;
+	max_batch_size?: number;
+	waitMs?: number;
+	wait_ms?: number;
 };
 
 /**
@@ -174,9 +186,13 @@ export type ClsWithBatchingParams = {
  */
 type ServiceOptions = ClsWithOptionsParams & {
 	maxConcurrentInputs?: number;
+	max_concurrent_inputs?: number;
 	targetConcurrentInputs?: number;
+	target_concurrent_inputs?: number;
 	batchMaxSize?: number;
+	batch_max_size?: number;
 	batchWaitMs?: number;
+	batch_wait_ms?: number;
 };
 
 /**
@@ -315,12 +331,12 @@ export class Cls {
 	 * @returns 同時実行設定が適用された Cls
 	 */
 	withConcurrency(params: ClsWithConcurrencyParams): Cls {
-		const merged = mergeServiceOptions(this.#serviceOptions, {
-			maxConcurrentInputs: params.maxInputs,
-			...(params.targetInputs !== undefined && {
-				targetConcurrentInputs: params.targetInputs,
-			}),
-		});
+		const maxInputs = aliasedNumber(params, "maxInputs", "max_inputs");
+		const targetInputs = aliasedNumber(params, "targetInputs", "target_inputs");
+		const diff: Partial<ServiceOptions> = {};
+		if (maxInputs !== undefined) diff.maxConcurrentInputs = maxInputs;
+		if (targetInputs !== undefined) diff.targetConcurrentInputs = targetInputs;
+		const merged = mergeServiceOptions(this.#serviceOptions, diff);
 		return new Cls(
 			this.#client,
 			this.#serviceFunctionId,
@@ -339,10 +355,16 @@ export class Cls {
 	 * @returns バッチング設定が適用された Cls
 	 */
 	withBatching(params: ClsWithBatchingParams): Cls {
-		const merged = mergeServiceOptions(this.#serviceOptions, {
-			batchMaxSize: params.maxBatchSize,
-			batchWaitMs: params.waitMs,
-		});
+		const maxBatchSize = aliasedNumber(
+			params,
+			"maxBatchSize",
+			"max_batch_size",
+		);
+		const waitMs = aliasedNumber(params, "waitMs", "wait_ms");
+		const diff: Partial<ServiceOptions> = {};
+		if (maxBatchSize !== undefined) diff.batchMaxSize = maxBatchSize;
+		if (waitMs !== undefined) diff.batchWaitMs = waitMs;
+		const merged = mergeServiceOptions(this.#serviceOptions, diff);
 		return new Cls(
 			this.#client,
 			this.#serviceFunctionId,
@@ -419,6 +441,66 @@ function mergeServiceOptions(
 	return Object.keys(merged).length === 0 ? undefined : merged;
 }
 
+function secondsAliasToMs(
+	params: Record<string, unknown>,
+	msName: string,
+	secondsName: string,
+): number | undefined {
+	const ms =
+		aliasedNumber(params, msName, `${secondsName}_ms`) ??
+		aliasedNumber(params, secondsName);
+	if (ms === undefined) return undefined;
+	return msName in params || `${secondsName}_ms` in params ? ms : ms * 1000;
+}
+
+function normalizeServiceOptions(options: ServiceOptions): ServiceOptions {
+	const normalized: ServiceOptions = {
+		...options,
+	};
+	const maxContainers = aliasedNumber(
+		options,
+		"maxContainers",
+		"max_containers",
+	);
+	if (maxContainers !== undefined) normalized.maxContainers = maxContainers;
+	const bufferContainers = aliasedNumber(
+		options,
+		"bufferContainers",
+		"buffer_containers",
+	);
+	if (bufferContainers !== undefined)
+		normalized.bufferContainers = bufferContainers;
+	const scaledownWindowMs =
+		secondsAliasToMs(options, "scaledownWindowMs", "scaledown_window") ??
+		options.scaledownWindowMs;
+	if (scaledownWindowMs !== undefined)
+		normalized.scaledownWindowMs = scaledownWindowMs;
+	const timeoutMs =
+		secondsAliasToMs(options, "timeoutMs", "timeout") ?? options.timeoutMs;
+	if (timeoutMs !== undefined) normalized.timeoutMs = timeoutMs;
+	const maxConcurrentInputs = aliasedNumber(
+		options,
+		"maxConcurrentInputs",
+		"max_concurrent_inputs",
+	);
+	if (maxConcurrentInputs !== undefined)
+		normalized.maxConcurrentInputs = maxConcurrentInputs;
+	const targetConcurrentInputs = aliasedNumber(
+		options,
+		"targetConcurrentInputs",
+		"target_concurrent_inputs",
+	);
+	if (targetConcurrentInputs !== undefined)
+		normalized.targetConcurrentInputs = targetConcurrentInputs;
+	const batchMaxSize = aliasedNumber(options, "batchMaxSize", "batch_max_size");
+	if (batchMaxSize !== undefined) normalized.batchMaxSize = batchMaxSize;
+	const batchWaitMs =
+		secondsAliasToMs(options, "batchWaitMs", "batch_wait") ??
+		options.batchWaitMs;
+	if (batchWaitMs !== undefined) normalized.batchWaitMs = batchWaitMs;
+	return normalized;
+}
+
 /**
  * @description ServiceOptions から gRPC FunctionOptions プロトコルバッファを構築する
  * @param options - サービスオプション
@@ -428,7 +510,7 @@ async function buildFunctionOptionsProto(
 	options?: ServiceOptions,
 ): Promise<FunctionOptions | undefined> {
 	if (!options) return undefined;
-	const o = options;
+	const o = normalizeServiceOptions(options);
 
 	checkForRenamedParams(o, {
 		memory: "memoryMiB",

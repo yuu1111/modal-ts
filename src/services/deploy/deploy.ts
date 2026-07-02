@@ -336,7 +336,7 @@ export async function deployApp(
 		throw new Error("Server returned empty appId from appGetOrCreate");
 	}
 	const appId = appResp.appId;
-	const app = new App(appId, params.name);
+	const app = new App(appId, params.name, environmentName);
 
 	const functionIds: Record<string, string> = {};
 	const classIds: Record<string, string> = {};

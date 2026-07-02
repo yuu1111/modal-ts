@@ -1,11 +1,13 @@
 import { InvalidError } from "@/core/errors";
+import { aliasedNumber } from "@/utils/param_aliases";
 
 /**
  * @description Probe作成時のパラメータ
  * @property intervalMs - ヘルスチェック間隔(ミリ秒) @defaultValue 100
  */
 export type ProbeParams = {
-	intervalMs: number;
+	intervalMs?: number;
+	interval_ms?: number;
 };
 
 /**
@@ -49,8 +51,10 @@ export class Probe {
 				`Probe.withTcp() expects \`port\` in [1, 65535], got ${port}`,
 			);
 		}
-		Probe.#validateIntervalMs("Probe.withTcp", params.intervalMs);
-		return new Probe({ tcpPort: port, intervalMs: params.intervalMs });
+		const intervalMs =
+			aliasedNumber(params, "intervalMs", "interval_ms") ?? 100;
+		Probe.#validateIntervalMs("Probe.withTcp", intervalMs);
+		return new Probe({ tcpPort: port, intervalMs });
 	}
 
 	/**
@@ -70,8 +74,10 @@ export class Probe {
 				"Probe.withExec() expects all arguments to be strings",
 			);
 		}
-		Probe.#validateIntervalMs("Probe.withExec", params.intervalMs);
-		return new Probe({ execArgv: [...argv], intervalMs: params.intervalMs });
+		const intervalMs =
+			aliasedNumber(params, "intervalMs", "interval_ms") ?? 100;
+		Probe.#validateIntervalMs("Probe.withExec", intervalMs);
+		return new Probe({ execArgv: [...argv], intervalMs });
 	}
 
 	/** @internal */
