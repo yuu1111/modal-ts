@@ -695,6 +695,13 @@ export class Image {
 		return getDefaultClient().images.micromamba(params);
 	}
 
+	static async delete(
+		imageId: string,
+		params: ImageDeleteParams = {},
+	): Promise<void> {
+		await getDefaultClient().images.delete(imageId, params);
+	}
+
 	get imageId(): string {
 		return this.#imageId;
 	}

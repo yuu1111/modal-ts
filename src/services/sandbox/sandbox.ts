@@ -15,6 +15,7 @@ import {
 } from "@/core/grpc/errors";
 import { TaskCommandRouterClientImpl } from "@/core/grpc/task_command_router_client";
 import {
+	ContainerReloadVolumesRequest,
 	FileDescriptor,
 	type GenericResult,
 	GenericResult_GenericStatus,
@@ -678,6 +679,29 @@ export class Sandbox {
 		}
 	}
 
+	#sandboxWait(timeout: number) {
+		const req = { sandboxId: this.sandboxId, timeout };
+		return this.#isV2
+			? this.#client.cpClient.sandboxWaitV2(req)
+			: this.#client.cpClient.sandboxWait(req);
+	}
+
+	#sandboxGetTunnels(timeoutMs: number) {
+		const req = { sandboxId: this.sandboxId, timeout: timeoutMs / 1000 };
+		return this.#isV2
+			? this.#client.cpClient.sandboxGetTunnelsV2(req)
+			: this.#client.cpClient.sandboxGetTunnels(req);
+	}
+
+	async #sandboxTerminate(): Promise<void> {
+		const req = { sandboxId: this.sandboxId };
+		if (this.#isV2) {
+			await this.#client.cpClient.sandboxTerminateV2(req);
+			return;
+		}
+		await this.#client.cpClient.sandboxTerminate(req);
+	}
+
 	static readonly #maxGetTaskIdAttempts = 600; // 5 minutes at 500ms intervals
 
 	async #getTaskId(): Promise<string> {
@@ -835,7 +859,7 @@ export class Sandbox {
 		params?: SandboxTerminateParams,
 	): Promise<number | undefined> {
 		this.#ensureAttached();
-		await this.#client.cpClient.sandboxTerminate({ sandboxId: this.sandboxId });
+		await this.#sandboxTerminate();
 
 		let exitCode: number | undefined;
 		if (params?.wait) {
@@ -864,10 +888,7 @@ export class Sandbox {
 	 */
 	async wait(): Promise<number> {
 		while (true) {
-			const resp = await this.#client.cpClient.sandboxWait({
-				sandboxId: this.sandboxId,
-				timeout: 10,
-			});
+			const resp = await this.#sandboxWait(10);
 			if (resp.result) {
 				const returnCode = Sandbox.#getReturnCode(resp.result);
 				if (returnCode == null)
@@ -902,10 +923,7 @@ export class Sandbox {
 			return this.#tunnels;
 		}
 
-		const resp = await this.#client.cpClient.sandboxGetTunnels({
-			sandboxId: this.sandboxId,
-			timeout: timeoutMs / 1000,
-		});
+		const resp = await this.#sandboxGetTunnels(timeoutMs);
 
 		if (
 			resp.result?.status === GenericResult_GenericStatus.GENERIC_STATUS_TIMEOUT
@@ -1124,10 +1142,16 @@ export class Sandbox {
 	async reloadVolumes(): Promise<void> {
 		this.#ensureAttached();
 		const taskId = await this.#getTaskId();
-		const commandRouterClient =
-			await this.#getOrCreateCommandRouterClient(taskId);
-		await commandRouterClient.reloadVolumes(
-			TaskReloadVolumesRequest.create({ taskId }),
+		if (this.#isV2) {
+			const commandRouterClient =
+				await this.#getOrCreateCommandRouterClient(taskId);
+			await commandRouterClient.reloadVolumes(
+				TaskReloadVolumesRequest.create({ taskId }),
+			);
+			return;
+		}
+		await this.#client.cpClient.containerReloadVolumes(
+			ContainerReloadVolumesRequest.create({ taskId }),
 		);
 	}
 
@@ -1171,10 +1195,7 @@ export class Sandbox {
 	 */
 	async poll(): Promise<number | null> {
 		this.#ensureAttached();
-		const resp = await this.#client.cpClient.sandboxWait({
-			sandboxId: this.sandboxId,
-			timeout: 0,
-		});
+		const resp = await this.#sandboxWait(0);
 
 		return Sandbox.#getReturnCode(resp.result);
 	}

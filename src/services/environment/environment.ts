@@ -215,6 +215,21 @@ export class Environment {
 		return getDefaultClient().environments;
 	}
 
+	static async create(
+		name: string,
+		params: EnvironmentCreateParams = {},
+	): Promise<void> {
+		await getDefaultClient().environments.create(name, params);
+	}
+
+	static async list(): Promise<EnvironmentListEntry[]> {
+		return await getDefaultClient().environments.list();
+	}
+
+	static async delete(name: string): Promise<void> {
+		await getDefaultClient().environments.delete(name);
+	}
+
 	static async from_context(): Promise<Environment> {
 		return await getDefaultClient().environments.fromContext();
 	}

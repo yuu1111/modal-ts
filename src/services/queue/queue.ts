@@ -415,6 +415,24 @@ export class Queue {
 		return getDefaultClient().queues;
 	}
 
+	static async create(
+		name: string,
+		params: QueueCreateParams = {},
+	): Promise<void> {
+		await getDefaultClient().queues.create(name, params);
+	}
+
+	static async list(params: QueueListParams = {}): Promise<Queue[]> {
+		return await getDefaultClient().queues.list(params);
+	}
+
+	static async delete(
+		name: string,
+		params: QueueDeleteParams = {},
+	): Promise<void> {
+		await getDefaultClient().queues.delete(name, params);
+	}
+
 	static validate_partition_key(partition: string | undefined): Uint8Array {
 		return Queue.#validatePartitionKey(partition);
 	}

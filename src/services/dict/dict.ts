@@ -258,6 +258,24 @@ export class Dict {
 		return getDefaultClient().dicts;
 	}
 
+	static async create(
+		name: string,
+		params: DictCreateParams = {},
+	): Promise<void> {
+		await getDefaultClient().dicts.create(name, params);
+	}
+
+	static async list(params: DictListParams = {}): Promise<Dict[]> {
+		return await getDefaultClient().dicts.list(params);
+	}
+
+	static async delete(
+		name: string,
+		params: DictDeleteParams = {},
+	): Promise<void> {
+		await getDefaultClient().dicts.delete(name, params);
+	}
+
 	static async ephemeral(params: DictEphemeralParams = {}): Promise<Dict> {
 		return await getDefaultClient().dicts.ephemeral(params);
 	}

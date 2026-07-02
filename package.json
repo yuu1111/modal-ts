@@ -52,6 +52,7 @@
     "format": "biome check --write --unsafe .",
     "test": "vitest run",
     "test:watch": "vitest",
+    "audit:parity": "bun scripts/audit-python-parity.ts",
     "prepublishOnly": "bun run build",
     "version": "bun run typecheck",
     "docs": "typedoc --entryPoints src/index.ts --out .typedoc",

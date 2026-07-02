@@ -41,6 +41,68 @@ test("CreateOneSandboxTerminateWaitWorks", async () => {
 	expect(await sb.wait()).toBe(137);
 });
 
+test("Sandbox V2 handles use V2 wait, tunnel, and terminate RPCs", async () => {
+	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
+	const sandboxId = "sb-01ARZ3NDEKTSV4RRFFQ69G5FAV";
+
+	const sb = await mc.sandboxes.fromId(sandboxId);
+
+	mock.handleUnary("/SandboxWaitV2", (req) => {
+		expect(req).toMatchObject({ sandboxId, timeout: 0 });
+		return {
+			result: {
+				status: GenericResult_GenericStatus.GENERIC_STATUS_SUCCESS,
+				exitcode: 0,
+			},
+		};
+	});
+	expect(await sb.poll()).toBe(0);
+
+	mock.handleUnary("/SandboxGetTunnelsV2", (req) => {
+		expect(req).toMatchObject({ sandboxId, timeout: 50 });
+		return {
+			tunnels: [
+				{
+					containerPort: 8080,
+					host: "example.modal.run",
+					port: 443,
+				},
+			],
+		};
+	});
+	expect((await sb.tunnels())[8080]?.url).toBe("https://example.modal.run");
+
+	mock.handleUnary("/SandboxTerminateV2", (req) => {
+		expect(req).toMatchObject({ sandboxId });
+		return {};
+	});
+	await sb.terminate();
+
+	mock.assertExhausted();
+});
+
+test("Sandbox.reloadVolumes uses control plane for V1 sandboxes", async () => {
+	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
+
+	mock.handleUnary("/SandboxWait", (req) => {
+		expect(req).toMatchObject({ sandboxId: "sb-v1", timeout: 0 });
+		return {};
+	});
+	const sb = await mc.sandboxes.fromId("sb-v1");
+
+	mock.handleUnary("/SandboxGetTaskId", (req) => {
+		expect(req).toMatchObject({ sandboxId: "sb-v1" });
+		return { taskId: "ta-v1" };
+	});
+	mock.handleUnary("/ContainerReloadVolumes", (req) => {
+		expect(req).toMatchObject({ taskId: "ta-v1" });
+		return {};
+	});
+	await sb.reloadVolumes();
+
+	mock.assertExhausted();
+});
+
 test("PassCatToStdin", async () => {
 	const app = await tc.apps.fromName("libmodal-test", {
 		createIfMissing: true,

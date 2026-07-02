@@ -362,6 +362,25 @@ export class Secret {
 		return getDefaultClient().secrets;
 	}
 
+	static async create(
+		name: string,
+		entries: Record<string, string>,
+		params: SecretCreateParams = {},
+	): Promise<void> {
+		await getDefaultClient().secrets.create(name, entries, params);
+	}
+
+	static async list(params: SecretListParams = {}): Promise<Secret[]> {
+		return await getDefaultClient().secrets.list(params);
+	}
+
+	static async delete(
+		name: string,
+		params?: SecretDeleteParams,
+	): Promise<void> {
+		await getDefaultClient().secrets.delete(name, params);
+	}
+
 	static async from_name(
 		name: string,
 		params?: SecretFromNameParams,
@@ -388,6 +407,20 @@ export class Secret {
 		params?: SecretFromObjectParams,
 	): Promise<Secret> {
 		return await Secret.from_dict(entries, params);
+	}
+
+	static async from_object(
+		entries: Record<string, string>,
+		params?: SecretFromObjectParams,
+	): Promise<Secret> {
+		return await Secret.from_dict(entries, params);
+	}
+
+	static async fromObject(
+		entries: Record<string, string>,
+		params?: SecretFromObjectParams,
+	): Promise<Secret> {
+		return await Secret.from_object(entries, params);
 	}
 
 	static async from_dotenv(

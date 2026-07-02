@@ -67,4 +67,11 @@ export class Proxy {
 	): Promise<Proxy> {
 		return await getDefaultClient().proxies.fromName(name, params);
 	}
+
+	static async fromName(
+		name: string,
+		params?: ProxyFromNameParams,
+	): Promise<Proxy> {
+		return await Proxy.from_name(name, params);
+	}
 }

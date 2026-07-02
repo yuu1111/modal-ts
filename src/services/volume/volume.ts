@@ -347,6 +347,24 @@ export class Volume {
 		return getDefaultClient().volumes;
 	}
 
+	static async create(
+		name: string,
+		params: VolumeCreateParams = {},
+	): Promise<void> {
+		await getDefaultClient().volumes.create(name, params);
+	}
+
+	static async list(params: VolumeListParams = {}): Promise<Volume[]> {
+		return await getDefaultClient().volumes.list(params);
+	}
+
+	static async delete(
+		name: string,
+		params?: VolumeDeleteParams,
+	): Promise<void> {
+		await getDefaultClient().volumes.delete(name, params);
+	}
+
 	static async ephemeral(params: VolumeEphemeralParams = {}): Promise<Volume> {
 		return await getDefaultClient().volumes.ephemeral(params);
 	}
