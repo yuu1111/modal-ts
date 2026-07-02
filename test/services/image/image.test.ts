@@ -7,6 +7,11 @@ import { Secret } from "../../../src/services/secret/secret";
 import { createMockModalClients } from "../../support/grpc_mock";
 import { tc } from "../../support/test-client";
 
+const skipCloudRegistryTests =
+	process.env.MODAL_TS_SKIP_CLOUD_REGISTRY_TESTS === "1" ||
+	process.env.MODAL_TS_SKIP_CLOUD_REGISTRY_TESTS?.toLowerCase() === "true";
+const cloudRegistryTest = skipCloudRegistryTests ? test.skip : test;
+
 test("ImageFromId", async () => {
 	const app = await tc.apps.fromName("libmodal-test", {
 		createIfMissing: true,
@@ -74,7 +79,7 @@ test("ImagePublish", async () => {
 	mock.assertExhausted();
 });
 
-test("ImageFromRegistryWithSecret", async () => {
+cloudRegistryTest("ImageFromRegistryWithSecret", async () => {
 	// GCP Artifact Registry also supports auth using username and password, if the username is "_json_key"
 	// and the password is the service account JSON blob. See:
 	// https://cloud.google.com/artifact-registry/docs/docker/authentication#json-key
@@ -96,7 +101,7 @@ test("ImageFromRegistryWithSecret", async () => {
 	expect(image.imageId).toMatch(/^im-/);
 });
 
-test("ImageFromAwsEcr", async () => {
+cloudRegistryTest("ImageFromAwsEcr", async () => {
 	const app = await tc.apps.fromName("libmodal-test", {
 		createIfMissing: true,
 	});
@@ -113,22 +118,26 @@ test("ImageFromAwsEcr", async () => {
 	expect(image.imageId).toMatch(/^im-/);
 });
 
-test("ImageFromGcpArtifactRegistry", { timeout: 30_000 }, async () => {
-	const app = await tc.apps.fromName("libmodal-test", {
-		createIfMissing: true,
-	});
+cloudRegistryTest(
+	"ImageFromGcpArtifactRegistry",
+	{ timeout: 30_000 },
+	async () => {
+		const app = await tc.apps.fromName("libmodal-test", {
+			createIfMissing: true,
+		});
 
-	const image = await tc.images
-		.fromGcpArtifactRegistry(
-			"us-east1-docker.pkg.dev/modal-prod-367916/private-repo-test/my-image",
-			await tc.secrets.fromName("modal-ts-gcp-artifact-registry-test", {
-				requiredKeys: ["SERVICE_ACCOUNT_JSON"],
-			}),
-		)
-		.build(app);
-	expect(image.imageId).toBeTruthy();
-	expect(image.imageId).toMatch(/^im-/);
-});
+		const image = await tc.images
+			.fromGcpArtifactRegistry(
+				"us-east1-docker.pkg.dev/modal-prod-367916/private-repo-test/my-image",
+				await tc.secrets.fromName("modal-ts-gcp-artifact-registry-test", {
+					requiredKeys: ["SERVICE_ACCOUNT_JSON"],
+				}),
+			)
+			.build(app);
+		expect(image.imageId).toBeTruthy();
+		expect(image.imageId).toMatch(/^im-/);
+	},
+);
 
 test("ImageDelete", async () => {
 	const app = await tc.apps.fromName("libmodal-test", {

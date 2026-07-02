@@ -74,6 +74,12 @@ bun run build         # Build (esbuild + tsc)
 bun run test          # Run tests (vitest)
 ```
 
+Some image integration tests require private AWS/GCP registry secrets. Set
+`MODAL_TS_SKIP_CLOUD_REGISTRY_TESTS=1` to opt out of those registry-specific
+tests when the secrets are not available. The proxy integration test also
+requires a pre-created `modal-ts-test-proxy` fixture; set
+`MODAL_TS_SKIP_PROXY_TESTS=1` to opt out when it is not available.
+
 ## License
 
 Apache-2.0

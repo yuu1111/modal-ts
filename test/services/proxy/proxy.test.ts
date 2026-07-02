@@ -1,7 +1,12 @@
 import { expect, onTestFinished, test } from "vitest";
 import { tc } from "../../support/test-client";
 
-test("CreateSandboxWithProxy", async () => {
+const skipProxyTests =
+	process.env.MODAL_TS_SKIP_PROXY_TESTS === "1" ||
+	process.env.MODAL_TS_SKIP_PROXY_TESTS?.toLowerCase() === "true";
+const proxyTest = skipProxyTests ? test.skip : test;
+
+proxyTest("CreateSandboxWithProxy", async () => {
 	const app = await tc.apps.fromName("libmodal-test", {
 		createIfMissing: true,
 	});

@@ -282,7 +282,6 @@ export async function buildSandboxCreateRequestProto(
 		memoryLimit: "memoryLimitMiB",
 		timeout: "timeoutMs",
 		idleTimeout: "idleTimeoutMs",
-		cidrAllowlist: "outboundCidrAllowlist",
 	});
 
 	const gpuConfig = parseGpuConfig(params.gpu);
@@ -420,7 +419,9 @@ export async function buildSandboxCreateRequestProto(
 	if (blockNetwork) {
 		if (cidrAllowlist || outboundCidrAllowlist) {
 			throw new Error(
-				"outboundCidrAllowlist cannot be used when blockNetwork is enabled",
+				cidrAllowlist
+					? "cidrAllowlist cannot be used when blockNetwork is enabled"
+					: "outboundCidrAllowlist cannot be used when blockNetwork is enabled",
 			);
 		}
 		if (outboundDomainAllowlist) {

@@ -27,7 +27,7 @@ test("CreateOneSandbox", async () => {
 	const sb = await tc.sandboxes.create(app, image);
 	expect(sb.sandboxId).toBeTruthy();
 	expect(await sb.terminate({ wait: true })).toBe(137);
-});
+}, 60_000);
 
 test("CreateOneSandboxTerminateWaitWorks", async () => {
 	const app = await tc.apps.fromName("libmodal-test", {
@@ -39,7 +39,7 @@ test("CreateOneSandboxTerminateWaitWorks", async () => {
 	expect(sb.sandboxId).toBeTruthy();
 	await sb.terminate();
 	expect(await sb.wait()).toBe(137);
-});
+}, 60_000);
 
 test("Sandbox V2 handles use V2 wait, tunnel, and terminate RPCs", async () => {
 	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();

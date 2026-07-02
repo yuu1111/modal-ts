@@ -74,6 +74,12 @@ bun run build         # ビルド (esbuild + tsc)
 bun run test          # テスト実行 (vitest)
 ```
 
+一部のImage統合テストはプライベートなAWS/GCPレジストリ用Secretを必要とします。
+Secretがない環境では `MODAL_TS_SKIP_CLOUD_REGISTRY_TESTS=1` を設定すると、
+そのレジストリ固有テストをオプトアウトできます。Proxy統合テストも事前作成済みの
+`modal-ts-test-proxy` fixtureを必要とするため、利用できない環境では
+`MODAL_TS_SKIP_PROXY_TESTS=1` でオプトアウトできます。
+
 ## ライセンス
 
 Apache-2.0
