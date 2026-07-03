@@ -35,7 +35,7 @@ export {
 	SandboxTimeoutError,
 	TimeoutError,
 } from "./core/errors";
-export { enable_output, enableOutput, OutputManager } from "./output";
+export { enable_output, enableOutput, OutputManager } from "./core/output";
 export {
 	currentFunctionCallId,
 	currentFunctionCallId as current_function_call_id,

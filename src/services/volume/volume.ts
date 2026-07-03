@@ -8,7 +8,13 @@ import type {
 	VolumeMount,
 	VolumePutFiles2Request_Block,
 } from "@/generated/modal_proto/api";
-import { chunkBytes, concatBytes } from "@/utils/bytes";
+import { collectAsync } from "@/utils/async_iterable";
+import {
+	chunkBytes,
+	concatBytes,
+	responseBytes,
+	sha256Bytes,
+} from "@/utils/bytes";
 import {
 	closeEphemeralHeartbeat,
 	EphemeralHeartbeatManager,
@@ -558,9 +564,7 @@ export class Volume {
 		path = "/",
 		params: { recursive?: boolean; maxEntries?: number } = {},
 	): Promise<VolumeFileEntry[]> {
-		const entries: VolumeFileEntry[] = [];
-		for await (const entry of this.iterdir(path, params)) entries.push(entry);
-		return entries;
+		return await collectAsync(this.iterdir(path, params));
 	}
 
 	async readFile(
@@ -577,10 +581,7 @@ export class Volume {
 		const chunks: Uint8Array[] = [];
 		for (const url of resp.getUrls ?? []) {
 			const httpResp = await fetch(url);
-			if (!httpResp.ok) {
-				throw new Error(`Volume file download failed with ${httpResp.status}`);
-			}
-			chunks.push(new Uint8Array(await httpResp.arrayBuffer()));
+			chunks.push(await responseBytes(httpResp, "Volume file download failed"));
 		}
 		return concatBytes(chunks);
 	}
@@ -618,9 +619,7 @@ export class Volume {
 		const client = this.#requireClient();
 		const blocks: VolumePutFiles2Request_Block[] = await Promise.all(
 			chunkBytes(data, VOLUME_BLOCK_SIZE).map(async (chunk) => ({
-				contentsSha256: new Uint8Array(
-					await crypto.subtle.digest("SHA-256", chunk),
-				),
+				contentsSha256: await sha256Bytes(chunk),
 			})),
 		);
 		let resp = await client.cpClient.volumePutFiles2({
@@ -647,7 +646,7 @@ export class Volume {
 			if (!block) throw new Error("Volume upload requested an unknown block");
 			uploadedBlocks[missing.blockIndex] = {
 				...block,
-				putResponse: new Uint8Array(await putResp.arrayBuffer()),
+				putResponse: await responseBytes(putResp, "Volume block upload failed"),
 			};
 		}
 

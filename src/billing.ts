@@ -1,5 +1,8 @@
 import { getDefaultClient, type ModalClient } from "@/core/client";
-import type { WorkspaceBillingReportItem as WorkspaceBillingReportItemProto } from "@/generated/modal_proto/api";
+import {
+	WorkspaceBillingManager,
+	type WorkspaceBillingReportRow,
+} from "@/services/workspace/workspace";
 
 /**
  * Parameters for a workspace billing report
@@ -15,15 +18,7 @@ export type WorkspaceBillingReportParams = {
 /**
  * A billing report row
  */
-export type BillingReportItem = {
-	objectId: string;
-	description: string;
-	environmentName: string;
-	intervalStart: Date;
-	cost: string;
-	costByResource: Record<string, string>;
-	tags: Record<string, string>;
-};
+export type BillingReportItem = WorkspaceBillingReportRow;
 
 /**
  * Row compatible with Python's modal.billing.workspace_billing_report
@@ -44,27 +39,9 @@ export async function workspaceBillingReport(
 	params: WorkspaceBillingReportParams,
 ): Promise<WorkspaceBillingReportItem[]> {
 	const client = params.client ?? getDefaultClient();
-	const rows: WorkspaceBillingReportItem[] = [];
-	const stream = await client.cpClient.workspaceBillingReport({
-		startTimestamp: params.start,
-		endTimestamp: params.end ?? new Date(),
-		resolution: params.resolution ?? "d",
-		tagNames: params.tagNames ?? [],
-		environmentIds: [],
-		appIds: [],
-	});
-	for await (const item of stream) {
-		const row = billingReportItemFromProto(item);
-		rows.push({
-			object_id: row.objectId,
-			description: row.description,
-			environment_name: row.environmentName,
-			interval_start: row.intervalStart,
-			cost: row.cost,
-			tags: row.tags,
-		});
-	}
-	return rows;
+	const manager = new WorkspaceBillingManager(client);
+	const rows = await manager.report(params);
+	return rows.map(workspaceBillingReportItemFromRow);
 }
 
 export const workspace_billing_report = workspaceBillingReport;
@@ -74,16 +51,15 @@ export const billing = {
 	workspace_billing_report,
 };
 
-export function billingReportItemFromProto(
-	item: WorkspaceBillingReportItemProto,
-): BillingReportItem {
+function workspaceBillingReportItemFromRow(
+	row: WorkspaceBillingReportRow,
+): WorkspaceBillingReportItem {
 	return {
-		objectId: item.objectId,
-		description: item.description,
-		environmentName: item.environmentName,
-		intervalStart: item.interval ?? new Date(0),
-		cost: item.cost,
-		costByResource: item.costByResource,
-		tags: item.tags,
+		object_id: row.objectId,
+		description: row.description,
+		environment_name: row.environmentName,
+		interval_start: row.intervalStart,
+		cost: row.cost,
+		tags: row.tags,
 	};
 }

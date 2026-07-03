@@ -1,5 +1,5 @@
 /**
- * Minimal OutputManager for SDK output display
+ * Manages SDK output display
  */
 export class OutputManager {
 	static #current: OutputManager | undefined;

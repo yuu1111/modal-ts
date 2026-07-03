@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from "node:fs";
-import { readdir, readFile, stat } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import path from "node:path";
 import { parse as parseToml } from "smol-toml";
 import { getDefaultClient, type ModalClient } from "@/core/client";
@@ -18,12 +18,21 @@ import { createMount, type MountFileEntry } from "@/services/deploy/deploy";
 import { mergeEnvIntoSecrets, Secret } from "@/services/secret/secret";
 import { FilePatternMatcher } from "@/utils/file_pattern_matcher";
 import {
+	type LocalFileIgnorePredicate,
+	walkLocalFiles,
+} from "@/utils/local_files";
+import {
 	aliasedBoolean,
 	aliasedString,
 	aliasedValue,
 	environmentParam,
 } from "@/utils/param_aliases";
-import { pathBasename, posixJoin } from "@/utils/path";
+import {
+	normalizePathSeparators,
+	pathBasename,
+	posixJoin,
+	relativePosixPath,
+} from "@/utils/path";
 
 const DEFAULT_IMAGE_TAG = "latest";
 
@@ -72,7 +81,7 @@ function asArray(value: string | string[]): string[] {
 }
 
 function normalizeContainerPath(value: string): string {
-	return value.replaceAll("\\", "/");
+	return normalizePathSeparators(value);
 }
 
 function ensureAbsoluteRemotePath(remotePath: string, method: string): void {
@@ -88,38 +97,20 @@ export type ImageIgnoreMatcher =
 	| FilePatternMatcher
 	| ((filePath: string) => boolean);
 
-function shouldIgnore(
+function ignorePredicate(
 	ignore: ImageIgnoreMatcher | undefined,
-	rootPath: string,
-	filePath: string,
-): boolean {
-	if (ignore === undefined) return false;
-	const relativePath = path.relative(rootPath, filePath).replaceAll("\\", "/");
+): LocalFileIgnorePredicate | undefined {
 	if (Array.isArray(ignore)) {
-		return new FilePatternMatcher(...ignore).matches(relativePath);
+		const matcher = new FilePatternMatcher(...ignore);
+		return (rootPath, filePath) =>
+			matcher.matches(relativePosixPath(rootPath, filePath));
 	}
 	if (ignore instanceof FilePatternMatcher) {
-		return ignore.matches(relativePath);
+		return (rootPath, filePath) =>
+			ignore.matches(relativePosixPath(rootPath, filePath));
 	}
-	return ignore(filePath);
-}
-
-async function* walkLocalFiles(
-	dir: string,
-	ignore?: ImageIgnoreMatcher,
-	rootPath = dir,
-): AsyncGenerator<string, void, unknown> {
-	for (const entry of await readdir(dir, { withFileTypes: true })) {
-		const entryPath = path.join(dir, entry.name);
-		if (shouldIgnore(ignore, rootPath, entryPath)) {
-			continue;
-		}
-		if (entry.isDirectory()) {
-			yield* walkLocalFiles(entryPath, ignore, rootPath);
-		} else if (entry.isFile()) {
-			yield entryPath;
-		}
-	}
+	if (ignore !== undefined) return (_rootPath, filePath) => ignore(filePath);
+	return undefined;
 }
 
 type LocalPathSpec =
@@ -135,10 +126,11 @@ async function buildContextFiles(
 		const ignore = typeof spec === "string" ? undefined : spec.ignore;
 		const localStat = await stat(localPath);
 		if (localStat.isDirectory()) {
-			for await (const filePath of walkLocalFiles(localPath, ignore)) {
-				const relativePath = path
-					.relative(localPath, filePath)
-					.replaceAll("\\", "/");
+			for await (const filePath of walkLocalFiles(
+				localPath,
+				ignorePredicate(ignore),
+			)) {
+				const relativePath = relativePosixPath(localPath, filePath);
 				files.push({
 					filename: posixJoin(containerPath, relativePath),
 					data: await readFile(filePath),
@@ -169,14 +161,11 @@ async function localMountLayerFiles(
 		const files: MountFileEntry[] = [];
 		for await (const filePath of walkLocalFiles(
 			layer.localPath,
-			layer.ignore,
+			ignorePredicate(layer.ignore),
 		)) {
-			const relativePath = path.relative(layer.localPath, filePath);
+			const relativePath = relativePosixPath(layer.localPath, filePath);
 			files.push({
-				remotePath: posixJoin(
-					layer.remotePath,
-					relativePath.replaceAll("\\", "/"),
-				),
+				remotePath: posixJoin(layer.remotePath, relativePath),
 				content: await readFile(filePath),
 			});
 		}
@@ -609,15 +598,20 @@ function imageBuildArgs(
 }
 
 function packageInstallArgs(params: PythonPackageOptions): string {
+	const findLinks = aliasedString(params, "findLinks", "find_links");
+	const indexUrl = aliasedString(params, "indexUrl", "index_url");
+	const extraIndexUrl = aliasedString(
+		params,
+		"extraIndexUrl",
+		"extra_index_url",
+	);
+	const extraOptions = aliasedString(params, "extraOptions", "extra_options");
 	return [
-		aliasedString(params, "findLinks", "find_links") &&
-			`--find-links ${shellQuote(aliasedString(params, "findLinks", "find_links") ?? "")}`,
-		aliasedString(params, "indexUrl", "index_url") &&
-			`--index-url ${shellQuote(aliasedString(params, "indexUrl", "index_url") ?? "")}`,
-		aliasedString(params, "extraIndexUrl", "extra_index_url") &&
-			`--extra-index-url ${shellQuote(aliasedString(params, "extraIndexUrl", "extra_index_url") ?? "")}`,
+		findLinks && `--find-links ${shellQuote(findLinks)}`,
+		indexUrl && `--index-url ${shellQuote(indexUrl)}`,
+		extraIndexUrl && `--extra-index-url ${shellQuote(extraIndexUrl)}`,
 		params.pre && "--pre",
-		aliasedString(params, "extraOptions", "extra_options"),
+		extraOptions,
 	]
 		.filter(Boolean)
 		.join(" ");

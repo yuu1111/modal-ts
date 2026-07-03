@@ -1,19 +1,21 @@
-import { readdir, readFile } from "node:fs/promises";
-import path from "node:path";
+import { readFile } from "node:fs/promises";
 import { getDefaultClient, type ModalClient } from "@/core/client";
 import { rethrowNotFound, suppressNotFound } from "@/core/grpc/errors";
+import { collectAsync } from "@/utils/async_iterable";
+import { responseBytes, sha256Hex } from "@/utils/bytes";
 import {
 	closeEphemeralHeartbeat,
 	EphemeralHeartbeatManager,
 } from "@/utils/ephemeral";
 import { resourceFileEntryFromProto } from "@/utils/file_entry";
+import { walkLocalFiles } from "@/utils/local_files";
 import {
 	allowExistingObjectCreationType,
 	createIfMissingObjectCreationType,
 	ephemeralObjectCreationType,
 } from "@/utils/object_creation";
 import { aliasedBoolean, environmentParam } from "@/utils/param_aliases";
-import { pathBasename, posixJoin } from "@/utils/path";
+import { pathBasename, posixJoin, relativePosixPath } from "@/utils/path";
 
 /**
  * Optional parameters for {@link NetworkFileSystemService#fromName client.networkFileSystems.fromName()}
@@ -334,9 +336,7 @@ export class NetworkFileSystem {
 		const rootRemotePath = remotePath ?? `/${pathBasename(localPath)}`;
 		let totalBytes = 0;
 		for await (const filePath of walkLocalFiles(localPath)) {
-			const relativePath = path
-				.relative(localPath, filePath)
-				.replaceAll("\\", "/");
+			const relativePath = relativePosixPath(localPath, filePath);
 			totalBytes += await this.addLocalFile(
 				filePath,
 				posixJoin(rootRemotePath, relativePath),
@@ -363,12 +363,10 @@ export class NetworkFileSystem {
 				blobId: resp.dataBlobId,
 			});
 			const httpResp = await fetch(blob.downloadUrl);
-			if (!httpResp.ok) {
-				throw new Error(
-					`NetworkFileSystem file download failed with ${httpResp.status}`,
-				);
-			}
-			return new Uint8Array(await httpResp.arrayBuffer());
+			return await responseBytes(
+				httpResp,
+				"NetworkFileSystem file download failed",
+			);
 		}
 		return new Uint8Array();
 	}
@@ -399,9 +397,7 @@ export class NetworkFileSystem {
 	 * Returns the list of file entries under a path
 	 */
 	async listdir(path: string): Promise<NetworkFileSystemFileEntry[]> {
-		const entries: NetworkFileSystemFileEntry[] = [];
-		for await (const entry of this.iterdir(path)) entries.push(entry);
-		return entries;
+		return await collectAsync(this.iterdir(path));
 	}
 
 	/**
@@ -423,23 +419,5 @@ export class NetworkFileSystem {
 		params: { recursive?: boolean } = {},
 	): Promise<void> {
 		await this.removeFile(path, params);
-	}
-}
-
-async function sha256Hex(data: Uint8Array): Promise<string> {
-	const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", data));
-	return Array.from(digest, (b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-async function* walkLocalFiles(
-	dir: string,
-): AsyncGenerator<string, void, unknown> {
-	for (const entry of await readdir(dir, { withFileTypes: true })) {
-		const entryPath = path.join(dir, entry.name);
-		if (entry.isDirectory()) {
-			yield* walkLocalFiles(entryPath);
-		} else if (entry.isFile()) {
-			yield entryPath;
-		}
 	}
 }

@@ -7,6 +7,7 @@ import type { Schedule } from "@/services/schedule/schedule";
 import type { SchedulerPlacement } from "@/services/scheduler_placement/scheduler_placement";
 import type { Secret } from "@/services/secret/secret";
 import { FilePatternMatcher } from "@/utils/file_pattern_matcher";
+import { normalizePathSeparators, relativePosixPath } from "@/utils/path";
 
 const require = createRequire(`${process.cwd()}${path.sep}`);
 
@@ -149,7 +150,7 @@ function bundleEntrypoint(
 }
 
 function remotePathForSourceFile(root: string, relativePath: string): string {
-	const parsed = path.posix.parse(relativePath.replaceAll("\\", "/"));
+	const parsed = path.posix.parse(normalizePathSeparators(relativePath));
 	const ext =
 		parsed.ext === ".ts" || parsed.ext === ".tsx" ? ".mjs" : parsed.ext;
 	return path.posix.join(root, "src", parsed.dir, `${parsed.name}${ext}`);
@@ -168,7 +169,7 @@ function shouldIgnoreSourceFile(
 	filePath: string,
 	ignore: string[] | FilePatternMatcher | undefined,
 ): boolean {
-	const relativePath = path.relative(sourceDir, filePath).replaceAll("\\", "/");
+	const relativePath = relativePosixPath(sourceDir, filePath);
 	const matcher =
 		ignore instanceof FilePatternMatcher
 			? ignore
