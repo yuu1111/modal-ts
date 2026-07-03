@@ -1,11 +1,17 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { getDefaultClient, type ModalClient } from "@/core/client";
-import { InvalidError } from "@/core/errors";
 import { rethrowNotFound, suppressNotFound } from "@/core/grpc/errors";
-import { ObjectCreationType } from "@/generated/modal_proto/api";
-import { EphemeralHeartbeatManager } from "@/utils/ephemeral";
+import {
+	closeEphemeralHeartbeat,
+	EphemeralHeartbeatManager,
+} from "@/utils/ephemeral";
 import { resourceFileEntryFromProto } from "@/utils/file_entry";
+import {
+	allowExistingObjectCreationType,
+	createIfMissingObjectCreationType,
+	ephemeralObjectCreationType,
+} from "@/utils/object_creation";
 import { aliasedBoolean, environmentParam } from "@/utils/param_aliases";
 import { pathBasename, posixJoin } from "@/utils/path";
 
@@ -98,13 +104,7 @@ export class NetworkFileSystemService {
 		await this.#client.cpClient.sharedVolumeGetOrCreate({
 			deploymentName: name,
 			environmentName: this.#client.environmentName(environmentParam(params)),
-			objectCreationType: aliasedBoolean(
-				params,
-				"allowExisting",
-				"allow_existing",
-			)
-				? ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_IF_MISSING
-				: ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_FAIL_IF_EXISTS,
+			objectCreationType: allowExistingObjectCreationType(params),
 		});
 	}
 
@@ -116,7 +116,7 @@ export class NetworkFileSystemService {
 	): Promise<NetworkFileSystem> {
 		const resp = await this.#client.cpClient.sharedVolumeGetOrCreate({
 			environmentName: this.#client.environmentName(environmentParam(params)),
-			objectCreationType: ObjectCreationType.OBJECT_CREATION_TYPE_EPHEMERAL,
+			objectCreationType: ephemeralObjectCreationType,
 		});
 		const ephemeralHbManager = new EphemeralHeartbeatManager(() =>
 			this.#client.cpClient.sharedVolumeHeartbeat({
@@ -142,13 +142,7 @@ export class NetworkFileSystemService {
 			const resp = await this.#client.cpClient.sharedVolumeGetOrCreate({
 				deploymentName: name,
 				environmentName: this.#client.environmentName(environmentParam(params)),
-				objectCreationType: aliasedBoolean(
-					params,
-					"createIfMissing",
-					"create_if_missing",
-				)
-					? ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_IF_MISSING
-					: ObjectCreationType.OBJECT_CREATION_TYPE_UNSPECIFIED,
+				objectCreationType: createIfMissingObjectCreationType(params),
 			});
 			return new NetworkFileSystem(this.#client, resp.sharedVolumeId, name);
 		} catch (err) {
@@ -289,11 +283,7 @@ export class NetworkFileSystem {
 	 * Stops the heartbeat for an ephemeral NetworkFileSystem
 	 */
 	closeEphemeral(): void {
-		if (this.#ephemeralHbManager) {
-			this.#ephemeralHbManager.stop();
-		} else {
-			throw new InvalidError("NetworkFileSystem is not ephemeral.");
-		}
+		closeEphemeralHeartbeat(this.#ephemeralHbManager, "NetworkFileSystem");
 	}
 
 	/**

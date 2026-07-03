@@ -4,9 +4,9 @@ import {
 	type EnvironmentListItem,
 	type EnvironmentMetadata,
 	EnvironmentRole,
-	ObjectCreationType,
 	type WorkspaceBillingReportItem,
 } from "@/generated/modal_proto/api";
+import { createIfMissingObjectCreationType } from "@/utils/object_creation";
 
 /**
  * Optional parameters for Environment.fromName()
@@ -125,9 +125,7 @@ export class EnvironmentService {
 		checkEnvironmentName(name);
 		const resp = await this.#client.cpClient.environmentGetOrCreate({
 			deploymentName: name,
-			objectCreationType: params.createIfMissing
-				? ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_IF_MISSING
-				: ObjectCreationType.OBJECT_CREATION_TYPE_UNSPECIFIED,
+			objectCreationType: createIfMissingObjectCreationType(params),
 		});
 		return new Environment(
 			this.#client,

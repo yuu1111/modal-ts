@@ -3,13 +3,25 @@ import { ClientError, Status } from "nice-grpc";
 import { getDefaultClient, type ModalClient } from "@/core/client";
 import { InvalidError, QueueEmptyError, QueueFullError } from "@/core/errors";
 import { rethrowNotFound, suppressNotFound } from "@/core/grpc/errors";
-import {
-	ObjectCreationType,
-	type QueueMetadata,
-	type QueueNextItemsRequest,
+import type {
+	QueueMetadata,
+	QueueNextItemsRequest,
 } from "@/generated/modal_proto/api";
-import { EphemeralHeartbeatManager } from "@/utils/ephemeral";
+import {
+	closeEphemeralHeartbeat,
+	EphemeralHeartbeatManager,
+} from "@/utils/ephemeral";
 import { resourceInfoFromMetadata } from "@/utils/metadata";
+import {
+	allowExistingObjectCreationType,
+	createIfMissingObjectCreationType,
+	ephemeralObjectCreationType,
+} from "@/utils/object_creation";
+import {
+	hasListCapacity,
+	listPageSize,
+	resolveListPagination,
+} from "@/utils/pagination";
 import {
 	aliasedBoolean,
 	aliasedNumber,
@@ -115,7 +127,7 @@ export class QueueService {
 	 */
 	async ephemeral(params: QueueEphemeralParams = {}): Promise<Queue> {
 		const resp = await this.#client.cpClient.queueGetOrCreate({
-			objectCreationType: ObjectCreationType.OBJECT_CREATION_TYPE_EPHEMERAL,
+			objectCreationType: ephemeralObjectCreationType,
 			environmentName: this.#client.environmentName(environmentParam(params)),
 		});
 
@@ -140,13 +152,7 @@ export class QueueService {
 	async create(name: string, params: QueueCreateParams = {}): Promise<void> {
 		await this.#client.cpClient.queueGetOrCreate({
 			deploymentName: name,
-			objectCreationType: aliasedBoolean(
-				params,
-				"allowExisting",
-				"allow_existing",
-			)
-				? ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_IF_MISSING
-				: ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_FAIL_IF_EXISTS,
+			objectCreationType: allowExistingObjectCreationType(params),
 			environmentName: this.#client.environmentName(environmentParam(params)),
 		});
 	}
@@ -187,10 +193,7 @@ export class QueueService {
 		try {
 			const resp = await this.#client.cpClient.queueGetOrCreate({
 				deploymentName: name,
-				...(aliasedBoolean(params, "createIfMissing", "create_if_missing") && {
-					objectCreationType:
-						ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_IF_MISSING,
-				}),
+				objectCreationType: createIfMissingObjectCreationType(params),
 				environmentName: this.#client.environmentName(environmentParam(params)),
 			});
 			this.#client.logger.debug(
@@ -218,19 +221,11 @@ export class QueueService {
 	 * @param params - Optional parameters
 	 */
 	async list(params: QueueListParams = {}): Promise<Queue[]> {
-		const maxObjects = aliasedNumber(params, "maxObjects", "max_objects");
-		if (maxObjects !== undefined && maxObjects < 0) {
-			throw new InvalidError("maxObjects cannot be negative");
-		}
-
+		const pagination = resolveListPagination(params);
 		const queues: Queue[] = [];
-		let createdBefore =
-			aliasedNumber(params, "createdBefore", "created_before") ?? 0;
-		while (maxObjects === undefined || queues.length < maxObjects) {
-			const maxPageSize =
-				maxObjects === undefined
-					? 100
-					: Math.min(100, maxObjects - queues.length);
+		let createdBefore = pagination.createdBefore;
+		while (hasListCapacity(pagination.maxObjects, queues.length)) {
+			const maxPageSize = listPageSize(pagination.maxObjects, queues.length);
 			const resp = await this.#client.cpClient.queueList({
 				environmentName: this.#client.environmentName(environmentParam(params)),
 				pagination: { maxObjects: maxPageSize, createdBefore },
@@ -515,11 +510,7 @@ export class Queue {
 	 * Deletes an ephemeral Queue. Only available for ephemeral Queues
 	 */
 	closeEphemeral(): void {
-		if (this.#ephemeralHbManager) {
-			this.#ephemeralHbManager.stop();
-		} else {
-			throw new InvalidError("Queue is not ephemeral.");
-		}
+		closeEphemeralHeartbeat(this.#ephemeralHbManager, "Queue");
 	}
 
 	/**

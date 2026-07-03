@@ -3,19 +3,30 @@ import path from "node:path";
 import { getDefaultClient, type ModalClient } from "@/core/client";
 import { InvalidError } from "@/core/errors";
 import { rethrowNotFound, suppressNotFound } from "@/core/grpc/errors";
-import {
-	ObjectCreationType,
-	type VolumeMetadata,
-	type VolumeMount,
-	type VolumePutFiles2Request_Block,
+import type {
+	VolumeMetadata,
+	VolumeMount,
+	VolumePutFiles2Request_Block,
 } from "@/generated/modal_proto/api";
 import { chunkBytes, concatBytes } from "@/utils/bytes";
-import { EphemeralHeartbeatManager } from "@/utils/ephemeral";
+import {
+	closeEphemeralHeartbeat,
+	EphemeralHeartbeatManager,
+} from "@/utils/ephemeral";
 import { resourceFileEntryFromProto } from "@/utils/file_entry";
 import { resourceInfoFromMetadata } from "@/utils/metadata";
 import {
+	allowExistingObjectCreationType,
+	createIfMissingObjectCreationType,
+	ephemeralObjectCreationType,
+} from "@/utils/object_creation";
+import {
+	hasListCapacity,
+	listPageSize,
+	resolveListPagination,
+} from "@/utils/pagination";
+import {
 	aliasedBoolean,
-	aliasedNumber,
 	aliasedString,
 	environmentParam,
 } from "@/utils/param_aliases";
@@ -135,13 +146,7 @@ export class VolumeService {
 			const resp = await this.#client.cpClient.volumeGetOrCreate({
 				deploymentName: name,
 				environmentName: this.#client.environmentName(environmentParam(params)),
-				objectCreationType: aliasedBoolean(
-					params,
-					"createIfMissing",
-					"create_if_missing",
-				)
-					? ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_IF_MISSING
-					: ObjectCreationType.OBJECT_CREATION_TYPE_UNSPECIFIED,
+				objectCreationType: createIfMissingObjectCreationType(params),
 			});
 			this.#client.logger.debug(
 				"Retrieved Volume",
@@ -174,13 +179,7 @@ export class VolumeService {
 		await this.#client.cpClient.volumeGetOrCreate({
 			deploymentName: name,
 			environmentName: this.#client.environmentName(environmentParam(params)),
-			objectCreationType: aliasedBoolean(
-				params,
-				"allowExisting",
-				"allow_existing",
-			)
-				? ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_IF_MISSING
-				: ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_FAIL_IF_EXISTS,
+			objectCreationType: allowExistingObjectCreationType(params),
 		});
 	}
 
@@ -205,19 +204,11 @@ export class VolumeService {
 	}
 
 	async list(params: VolumeListParams = {}): Promise<Volume[]> {
-		const maxObjects = aliasedNumber(params, "maxObjects", "max_objects");
-		if (maxObjects !== undefined && maxObjects < 0) {
-			throw new InvalidError("maxObjects cannot be negative");
-		}
-
+		const pagination = resolveListPagination(params);
 		const volumes: Volume[] = [];
-		let createdBefore =
-			aliasedNumber(params, "createdBefore", "created_before") ?? 0;
-		while (maxObjects === undefined || volumes.length < maxObjects) {
-			const maxPageSize =
-				maxObjects === undefined
-					? 100
-					: Math.min(100, maxObjects - volumes.length);
+		let createdBefore = pagination.createdBefore;
+		while (hasListCapacity(pagination.maxObjects, volumes.length)) {
+			const maxPageSize = listPageSize(pagination.maxObjects, volumes.length);
 			const resp = await this.#client.cpClient.volumeList({
 				environmentName: this.#client.environmentName(environmentParam(params)),
 				pagination: { maxObjects: maxPageSize, createdBefore },
@@ -252,7 +243,7 @@ export class VolumeService {
 	 */
 	async ephemeral(params: VolumeEphemeralParams = {}): Promise<Volume> {
 		const resp = await this.#client.cpClient.volumeGetOrCreate({
-			objectCreationType: ObjectCreationType.OBJECT_CREATION_TYPE_EPHEMERAL,
+			objectCreationType: ephemeralObjectCreationType,
 			environmentName: this.#client.environmentName(environmentParam(params)),
 		});
 
@@ -488,11 +479,7 @@ export class Volume {
 	 * Deletes an ephemeral Volume. Only available for ephemeral Volumes
 	 */
 	closeEphemeral(): void {
-		if (this.#ephemeralHbManager) {
-			this.#ephemeralHbManager.stop();
-		} else {
-			throw new InvalidError("Volume is not ephemeral.");
-		}
+		closeEphemeralHeartbeat(this.#ephemeralHbManager, "Volume");
 	}
 
 	info(): VolumeInfo {

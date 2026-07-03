@@ -6,16 +6,18 @@ import {
 	rethrowNotFound,
 	suppressNotFound,
 } from "@/core/grpc/errors";
-import {
-	ObjectCreationType,
-	type SecretMetadata,
-} from "@/generated/modal_proto/api";
+import type { SecretMetadata } from "@/generated/modal_proto/api";
 import { resourceInfoFromMetadata } from "@/utils/metadata";
 import {
-	aliasedBoolean,
-	aliasedNumber,
-	environmentParam,
-} from "@/utils/param_aliases";
+	allowExistingObjectCreationType,
+	ephemeralObjectCreationType,
+} from "@/utils/object_creation";
+import {
+	hasListCapacity,
+	listPageSize,
+	resolveListPagination,
+} from "@/utils/pagination";
+import { aliasedBoolean, environmentParam } from "@/utils/param_aliases";
 
 /**
  * Optional parameters for {@link SecretService#fromName client.secrets.fromName()}
@@ -181,7 +183,7 @@ export class SecretService {
 
 		try {
 			const resp = await this.#client.cpClient.secretGetOrCreate({
-				objectCreationType: ObjectCreationType.OBJECT_CREATION_TYPE_EPHEMERAL,
+				objectCreationType: ephemeralObjectCreationType,
 				envDict: entries,
 				environmentName: this.#client.environmentName(environmentParam(params)),
 			});
@@ -265,13 +267,7 @@ export class SecretService {
 		await this.#client.cpClient.secretGetOrCreate({
 			deploymentName: name,
 			envDict: entries,
-			objectCreationType: aliasedBoolean(
-				params,
-				"allowExisting",
-				"allow_existing",
-			)
-				? ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_IF_MISSING
-				: ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_FAIL_IF_EXISTS,
+			objectCreationType: allowExistingObjectCreationType(params),
 			environmentName: this.#client.environmentName(environmentParam(params)),
 		});
 	}
@@ -281,19 +277,11 @@ export class SecretService {
 	 * @param params - Optional parameters
 	 */
 	async list(params: SecretListParams = {}): Promise<Secret[]> {
-		const maxObjects = aliasedNumber(params, "maxObjects", "max_objects");
-		if (maxObjects !== undefined && maxObjects < 0) {
-			throw new InvalidError("maxObjects cannot be negative");
-		}
-
+		const pagination = resolveListPagination(params);
 		const secrets: Secret[] = [];
-		let createdBefore =
-			aliasedNumber(params, "createdBefore", "created_before") ?? 0;
-		while (maxObjects === undefined || secrets.length < maxObjects) {
-			const maxPageSize =
-				maxObjects === undefined
-					? 100
-					: Math.min(100, maxObjects - secrets.length);
+		let createdBefore = pagination.createdBefore;
+		while (hasListCapacity(pagination.maxObjects, secrets.length)) {
+			const maxPageSize = listPageSize(pagination.maxObjects, secrets.length);
 			const resp = await this.#client.cpClient.secretList({
 				environmentName: this.#client.environmentName(environmentParam(params)),
 				pagination: { maxObjects: maxPageSize, createdBefore },

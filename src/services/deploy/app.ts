@@ -1,7 +1,8 @@
 import { getDefaultClient, type ModalClient } from "@/core/client";
 import { rethrowNotFound } from "@/core/grpc/errors";
-import { GPUConfig, ObjectCreationType } from "@/generated/modal_proto/api";
-import { aliasedBoolean, environmentParam } from "@/utils/param_aliases";
+import { GPUConfig } from "@/generated/modal_proto/api";
+import { createIfMissingObjectCreationType } from "@/utils/object_creation";
+import { environmentParam } from "@/utils/param_aliases";
 
 /**
  * Service for managing {@link App}
@@ -30,13 +31,7 @@ export class AppService {
 			const resp = await this.#client.cpClient.appGetOrCreate({
 				appName: name,
 				environmentName: this.#client.environmentName(environmentParam(params)),
-				objectCreationType: aliasedBoolean(
-					params,
-					"createIfMissing",
-					"create_if_missing",
-				)
-					? ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_IF_MISSING
-					: ObjectCreationType.OBJECT_CREATION_TYPE_UNSPECIFIED,
+				objectCreationType: createIfMissingObjectCreationType(params),
 			});
 			this.#client.logger.debug(
 				"Retrieved App",

@@ -1,17 +1,23 @@
 import { getDefaultClient, type ModalClient } from "@/core/client";
-import { InvalidError, NotFoundError } from "@/core/errors";
+import { NotFoundError } from "@/core/errors";
 import { rethrowNotFound, suppressNotFound } from "@/core/grpc/errors";
+import type { DictMetadata } from "@/generated/modal_proto/api";
 import {
-	type DictMetadata,
-	ObjectCreationType,
-} from "@/generated/modal_proto/api";
-import { EphemeralHeartbeatManager } from "@/utils/ephemeral";
+	closeEphemeralHeartbeat,
+	EphemeralHeartbeatManager,
+} from "@/utils/ephemeral";
 import { resourceInfoFromMetadata } from "@/utils/metadata";
 import {
-	aliasedBoolean,
-	aliasedNumber,
-	environmentParam,
-} from "@/utils/param_aliases";
+	allowExistingObjectCreationType,
+	createIfMissingObjectCreationType,
+	ephemeralObjectCreationType,
+} from "@/utils/object_creation";
+import {
+	hasListCapacity,
+	listPageSize,
+	resolveListPagination,
+} from "@/utils/pagination";
+import { aliasedBoolean, environmentParam } from "@/utils/param_aliases";
 import { loads as pickleDecode, dumps as pickleEncode } from "@/utils/pickle";
 
 /**
@@ -107,13 +113,7 @@ export class DictService {
 		await this.#client.cpClient.dictGetOrCreate({
 			deploymentName: name,
 			environmentName: this.#client.environmentName(environmentParam(params)),
-			objectCreationType: aliasedBoolean(
-				params,
-				"allowExisting",
-				"allow_existing",
-			)
-				? ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_IF_MISSING
-				: ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_FAIL_IF_EXISTS,
+			objectCreationType: allowExistingObjectCreationType(params),
 		});
 	}
 
@@ -124,7 +124,7 @@ export class DictService {
 	async ephemeral(params: DictEphemeralParams = {}): Promise<Dict> {
 		const resp = await this.#client.cpClient.dictGetOrCreate({
 			environmentName: this.#client.environmentName(environmentParam(params)),
-			objectCreationType: ObjectCreationType.OBJECT_CREATION_TYPE_EPHEMERAL,
+			objectCreationType: ephemeralObjectCreationType,
 		});
 
 		const ephemeralHbManager = new EphemeralHeartbeatManager(() =>
@@ -166,13 +166,7 @@ export class DictService {
 			const resp = await this.#client.cpClient.dictGetOrCreate({
 				deploymentName: name,
 				environmentName: this.#client.environmentName(environmentParam(params)),
-				objectCreationType: aliasedBoolean(
-					params,
-					"createIfMissing",
-					"create_if_missing",
-				)
-					? ObjectCreationType.OBJECT_CREATION_TYPE_CREATE_IF_MISSING
-					: ObjectCreationType.OBJECT_CREATION_TYPE_UNSPECIFIED,
+				objectCreationType: createIfMissingObjectCreationType(params),
 			});
 			return new Dict(
 				this.#client,
@@ -198,19 +192,11 @@ export class DictService {
 	 * @param params - Optional parameters
 	 */
 	async list(params: DictListParams = {}): Promise<Dict[]> {
-		const maxObjects = aliasedNumber(params, "maxObjects", "max_objects");
-		if (maxObjects !== undefined && maxObjects < 0) {
-			throw new InvalidError("maxObjects cannot be negative");
-		}
-
+		const pagination = resolveListPagination(params);
 		const dicts: Dict[] = [];
-		let createdBefore =
-			aliasedNumber(params, "createdBefore", "created_before") ?? 0;
-		while (maxObjects === undefined || dicts.length < maxObjects) {
-			const maxPageSize =
-				maxObjects === undefined
-					? 100
-					: Math.min(100, maxObjects - dicts.length);
+		let createdBefore = pagination.createdBefore;
+		while (hasListCapacity(pagination.maxObjects, dicts.length)) {
+			const maxPageSize = listPageSize(pagination.maxObjects, dicts.length);
 			const resp = await this.#client.cpClient.dictList({
 				environmentName: this.#client.environmentName(environmentParam(params)),
 				pagination: { maxObjects: maxPageSize, createdBefore },
@@ -343,11 +329,7 @@ export class Dict {
 	 * Stops the heartbeat for an ephemeral Dict
 	 */
 	closeEphemeral(): void {
-		if (this.#ephemeralHbManager) {
-			this.#ephemeralHbManager.stop();
-		} else {
-			throw new InvalidError("Dict is not ephemeral.");
-		}
+		closeEphemeralHeartbeat(this.#ephemeralHbManager, "Dict");
 	}
 
 	/**

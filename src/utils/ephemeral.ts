@@ -1,3 +1,5 @@
+import { InvalidError } from "@/core/errors";
+
 /**
  * Heartbeat interval in milliseconds
  */
@@ -63,5 +65,22 @@ export class EphemeralHeartbeatManager {
 	 */
 	stop(): void {
 		this.abortController.abort();
+	}
+}
+
+/**
+ * Stops an ephemeral heartbeat manager or throws when the object is not ephemeral.
+ *
+ * @param heartbeatManager - Optional heartbeat manager
+ * @param resourceName - Resource name for error messages
+ */
+export function closeEphemeralHeartbeat(
+	heartbeatManager: EphemeralHeartbeatManager | undefined,
+	resourceName: string,
+): void {
+	if (heartbeatManager) {
+		heartbeatManager.stop();
+	} else {
+		throw new InvalidError(`${resourceName} is not ephemeral.`);
 	}
 }
