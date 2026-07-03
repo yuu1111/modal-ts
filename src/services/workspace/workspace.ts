@@ -1,9 +1,13 @@
 import { getDefaultClient, type ModalClient } from "@/core/client";
 import {
 	MemberRole,
-	type WorkspaceBillingReportItem as WorkspaceBillingReportItemProto,
 	type WorkspaceMembersListItem,
 } from "@/generated/modal_proto/api";
+import { collectMappedAsync } from "@/utils/async_iterable";
+import {
+	type BillingReportRow,
+	billingReportRowFromProto,
+} from "@/utils/billing";
 
 /**
  * Workspace settings
@@ -17,15 +21,7 @@ export type WorkspaceSettingName =
 	| "defaultEnvironmentName"
 	| "imageBuilderVersion";
 
-export type WorkspaceBillingReportRow = {
-	objectId: string;
-	description: string;
-	environmentName: string;
-	intervalStart: Date;
-	cost: string;
-	costByResource: Record<string, string>;
-	tags: Record<string, string>;
-};
+export type WorkspaceBillingReportRow = BillingReportRow;
 
 /**
  * Workspace member role
@@ -239,7 +235,6 @@ export class WorkspaceBillingManager {
 		resolution?: string;
 		tagNames?: string[];
 	}): Promise<WorkspaceBillingReportRow[]> {
-		const rows: WorkspaceBillingReportRow[] = [];
 		const stream = await this.#client.cpClient.workspaceBillingReport({
 			startTimestamp: params.start,
 			endTimestamp: params.end ?? new Date(),
@@ -248,10 +243,7 @@ export class WorkspaceBillingManager {
 			environmentIds: [],
 			appIds: [],
 		});
-		for await (const item of stream) {
-			rows.push(workspaceBillingReportRowFromProto(item));
-		}
-		return rows;
+		return await collectMappedAsync(stream, billingReportRowFromProto);
 	}
 }
 
@@ -379,18 +371,4 @@ function memberRoleFromProto(role: MemberRole): WorkspaceMemberRole {
 		default:
 			throw new Error(`Unknown workspace member role: ${role}`);
 	}
-}
-
-function workspaceBillingReportRowFromProto(
-	item: WorkspaceBillingReportItemProto,
-): WorkspaceBillingReportRow {
-	return {
-		objectId: item.objectId,
-		description: item.description,
-		environmentName: item.environmentName,
-		intervalStart: item.interval ?? new Date(0),
-		cost: item.cost,
-		costByResource: item.costByResource,
-		tags: item.tags,
-	};
 }

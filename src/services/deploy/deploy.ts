@@ -98,6 +98,22 @@ export interface DeployClassParams {
 }
 
 /**
+ * Common mutable deployment fields shared by Function and Cls definitions.
+ */
+type DeployServiceParams = Pick<
+	DeployFunctionParams,
+	| "moduleName"
+	| "implementationName"
+	| "localRuntime"
+	| "imageId"
+	| "image"
+	| "mountIds"
+	| "secrets"
+	| "env"
+	| "secretIds"
+>;
+
+/**
  * File entry to upload to a Mount
  * @property remotePath - File path inside the container
  * @property content - File content as text or binary data
@@ -218,6 +234,59 @@ export async function createSecret(
 		throw new Error("Server returned empty secretId");
 	}
 	return resp.secretId;
+}
+
+/**
+ * Applies common deployment preprocessing for Function and Cls definitions.
+ *
+ * @param client - Modal client
+ * @param cpClient - Control-plane gRPC client
+ * @param app - App being deployed
+ * @param params - Service deployment parameters to prepare
+ * @returns Prepared deployment parameters
+ */
+async function prepareDeployServiceParams<T extends DeployServiceParams>(
+	client: ModalClient,
+	cpClient: ModalGrpcClient,
+	app: App,
+	params: T,
+): Promise<T> {
+	if (params.localRuntime !== undefined) {
+		const localMountId = await createMount(
+			cpClient,
+			app.appId,
+			params.localRuntime.mountFiles,
+		);
+		params.moduleName = params.localRuntime.moduleName;
+		params.implementationName = params.localRuntime.implementationName;
+		params.mountIds = [...(params.mountIds ?? []), localMountId];
+		if (params.image === undefined && params.imageId === undefined) {
+			params.image = client.images.debianSlim().aptInstall(["nodejs"]);
+		}
+	}
+
+	if (params.secrets !== undefined || params.env !== undefined) {
+		const mergedSecrets = await mergeEnvIntoSecrets(
+			client,
+			params.env,
+			params.secrets,
+		);
+		params.secretIds = [
+			...(params.secretIds ?? []),
+			...mergedSecrets.map((secret) => secret.secretId),
+		];
+	}
+
+	if (params.image !== undefined) {
+		await params.image.build(app);
+		params.imageId = params.image.imageId;
+		params.mountIds = [
+			...(params.mountIds ?? []),
+			...(await params.image.mountIds(app)),
+		];
+	}
+
+	return params;
 }
 
 /**
@@ -343,51 +412,12 @@ export async function deployApp(
 	const definitionIds: Record<string, string> = {};
 
 	for (const fn of params.functions ?? []) {
-		const functionParams = { ...fn };
-		if (functionParams.localRuntime !== undefined) {
-			const localMountId = await createMount(
-				cpClient,
-				appId,
-				functionParams.localRuntime.mountFiles,
-			);
-			functionParams.moduleName = functionParams.localRuntime.moduleName;
-			functionParams.implementationName =
-				functionParams.localRuntime.implementationName;
-			functionParams.mountIds = [
-				...(functionParams.mountIds ?? []),
-				localMountId,
-			];
-			if (
-				functionParams.image === undefined &&
-				functionParams.imageId === undefined
-			) {
-				functionParams.image = client.images
-					.debianSlim()
-					.aptInstall(["nodejs"]);
-			}
-		}
-		if (
-			functionParams.secrets !== undefined ||
-			functionParams.env !== undefined
-		) {
-			const mergedSecrets = await mergeEnvIntoSecrets(
-				client,
-				functionParams.env,
-				functionParams.secrets,
-			);
-			functionParams.secretIds = [
-				...(functionParams.secretIds ?? []),
-				...mergedSecrets.map((secret) => secret.secretId),
-			];
-		}
-		if (functionParams.image !== undefined) {
-			await functionParams.image.build(app);
-			functionParams.imageId = functionParams.image.imageId;
-			functionParams.mountIds = [
-				...(functionParams.mountIds ?? []),
-				...(await functionParams.image.mountIds(app)),
-			];
-		}
+		const functionParams = await prepareDeployServiceParams(
+			client,
+			cpClient,
+			app,
+			{ ...fn },
+		);
 		const result = await createFunctionInternal(
 			cpClient,
 			appId,
@@ -400,43 +430,12 @@ export async function deployApp(
 	}
 
 	for (const cls of params.classes ?? []) {
-		const classParams = { ...cls };
-		if (classParams.localRuntime !== undefined) {
-			const localMountId = await createMount(
-				cpClient,
-				appId,
-				classParams.localRuntime.mountFiles,
-			);
-			classParams.moduleName = classParams.localRuntime.moduleName;
-			classParams.implementationName =
-				classParams.localRuntime.implementationName;
-			classParams.mountIds = [...(classParams.mountIds ?? []), localMountId];
-			if (
-				classParams.image === undefined &&
-				classParams.imageId === undefined
-			) {
-				classParams.image = client.images.debianSlim().aptInstall(["nodejs"]);
-			}
-		}
-		if (classParams.secrets !== undefined || classParams.env !== undefined) {
-			const mergedSecrets = await mergeEnvIntoSecrets(
-				client,
-				classParams.env,
-				classParams.secrets,
-			);
-			classParams.secretIds = [
-				...(classParams.secretIds ?? []),
-				...mergedSecrets.map((secret) => secret.secretId),
-			];
-		}
-		if (classParams.image !== undefined) {
-			await classParams.image.build(app);
-			classParams.imageId = classParams.image.imageId;
-			classParams.mountIds = [
-				...(classParams.mountIds ?? []),
-				...(await classParams.image.mountIds(app)),
-			];
-		}
+		const classParams = await prepareDeployServiceParams(
+			client,
+			cpClient,
+			app,
+			{ ...cls },
+		);
 		const outputFormats = classParams.localRuntime
 			? [DataFormat.DATA_FORMAT_CBOR]
 			: DEFAULT_DATA_FORMATS;

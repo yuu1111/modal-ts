@@ -4,8 +4,12 @@ import {
 	type EnvironmentListItem,
 	type EnvironmentMetadata,
 	EnvironmentRole,
-	type WorkspaceBillingReportItem,
 } from "@/generated/modal_proto/api";
+import { collectMappedAsync } from "@/utils/async_iterable";
+import {
+	type BillingReportRow,
+	billingReportRowFromProto,
+} from "@/utils/billing";
 import { createIfMissingObjectCreationType } from "@/utils/object_creation";
 
 /**
@@ -84,15 +88,7 @@ export type EnvironmentMembers = {
 /**
  * Billing report row
  */
-export type EnvironmentBillingReportItem = {
-	objectId: string;
-	description: string;
-	environmentName: string;
-	intervalStart: Date;
-	cost: string;
-	costByResource: Record<string, string>;
-	tags: Record<string, string>;
-};
+export type EnvironmentBillingReportItem = BillingReportRow;
 
 /**
  * Service for managing Environments
@@ -305,7 +301,6 @@ export class EnvironmentBillingManager {
 		tagNames?: string[];
 		tag_names?: string[];
 	}): Promise<EnvironmentBillingReportItem[]> {
-		const rows: EnvironmentBillingReportItem[] = [];
 		const stream = await this.#client.cpClient.workspaceBillingReport({
 			startTimestamp: params.start,
 			endTimestamp: params.end ?? new Date(),
@@ -313,10 +308,7 @@ export class EnvironmentBillingManager {
 			tagNames: params.tagNames ?? params.tag_names ?? [],
 			environmentIds: [this.#environmentId],
 		});
-		for await (const item of stream) {
-			rows.push(environmentBillingReportItemFromProto(item));
-		}
-		return rows;
+		return await collectMappedAsync(stream, billingReportRowFromProto);
 	}
 }
 
@@ -528,18 +520,4 @@ function environmentRoleToProto(role: EnvironmentMemberRole): EnvironmentRole {
 		return EnvironmentRole.ENVIRONMENT_ROLE_CONTRIBUTOR;
 	}
 	throw new InvalidError(`Unknown Environment role: ${role}`);
-}
-
-function environmentBillingReportItemFromProto(
-	item: WorkspaceBillingReportItem,
-): EnvironmentBillingReportItem {
-	return {
-		objectId: item.objectId,
-		description: item.description,
-		environmentName: item.environmentName,
-		intervalStart: item.interval ?? new Date(0),
-		cost: item.cost,
-		costByResource: item.costByResource,
-		tags: item.tags,
-	};
 }

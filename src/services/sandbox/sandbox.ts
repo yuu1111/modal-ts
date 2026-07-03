@@ -118,20 +118,12 @@ export class SandboxService {
 	): Promise<Sandbox> {
 		await image.build(app);
 
-		const mergedSecrets = await mergeEnvIntoSecrets(
+		const mergedParams = await mergeSandboxCreateParams(
 			this.#client,
-			params.env,
-			params.secrets,
+			app,
+			image,
+			params,
 		);
-		const { env: _env, ...restParams } = params;
-		const mergedParams = {
-			...restParams,
-			secrets: mergedSecrets,
-			mountIds: [
-				...(restParams.mountIds ?? []),
-				...(await image.mountIds(app)),
-			],
-		};
 
 		const createReq = await buildSandboxCreateRequestProto(
 			app.appId,
@@ -164,20 +156,12 @@ export class SandboxService {
 	): Promise<Sandbox> {
 		await image.build(app);
 
-		const mergedSecrets = await mergeEnvIntoSecrets(
+		const mergedParams = await mergeSandboxCreateParams(
 			this.#client,
-			params.env,
-			params.secrets,
+			app,
+			image,
+			params,
 		);
-		const { env: _env, ...restParams } = params;
-		const mergedParams = {
-			...restParams,
-			secrets: mergedSecrets,
-			mountIds: [
-				...(restParams.mountIds ?? []),
-				...(await image.mountIds(app)),
-			],
-		};
 
 		const createReq = await buildSandboxCreateV2RequestProto(
 			app.appId,
@@ -345,6 +329,34 @@ export class SandboxService {
 			beforeTimestamp = resp.sandboxes[resp.sandboxes.length - 1]?.createdAt;
 		}
 	}
+}
+
+/**
+ * Merges Sandbox env vars, Secrets, and Image mounts into create params.
+ *
+ * @param client - Modal client
+ * @param app - App used for Image mounts
+ * @param image - Sandbox image
+ * @param params - Sandbox create params
+ * @returns Params ready for create RPC construction
+ */
+async function mergeSandboxCreateParams(
+	client: ModalClient,
+	app: App,
+	image: Image,
+	params: SandboxCreateParams,
+): Promise<SandboxCreateParams> {
+	const mergedSecrets = await mergeEnvIntoSecrets(
+		client,
+		params.env,
+		params.secrets,
+	);
+	const { env: _env, ...restParams } = params;
+	return {
+		...restParams,
+		secrets: mergedSecrets,
+		mountIds: [...(restParams.mountIds ?? []), ...(await image.mountIds(app))],
+	};
 }
 
 /**

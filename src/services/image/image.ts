@@ -597,7 +597,13 @@ function imageBuildArgs(
 	);
 }
 
-function packageInstallArgs(params: PythonPackageOptions): string {
+/**
+ * Builds shared Python package index arguments.
+ *
+ * @param params - Package install options
+ * @returns CLI arguments for package indexes and extra options
+ */
+function pythonPackageIndexArgs(params: PythonPackageOptions): string[] {
 	const findLinks = aliasedString(params, "findLinks", "find_links");
 	const indexUrl = aliasedString(params, "indexUrl", "index_url");
 	const extraIndexUrl = aliasedString(
@@ -610,11 +616,31 @@ function packageInstallArgs(params: PythonPackageOptions): string {
 		findLinks && `--find-links ${shellQuote(findLinks)}`,
 		indexUrl && `--index-url ${shellQuote(indexUrl)}`,
 		extraIndexUrl && `--extra-index-url ${shellQuote(extraIndexUrl)}`,
-		params.pre && "--pre",
 		extraOptions,
-	]
-		.filter(Boolean)
+	].filter((arg): arg is string => Boolean(arg));
+}
+
+/**
+ * Builds pip install option arguments.
+ *
+ * @param params - Package install options
+ * @returns CLI arguments joined for shell use
+ */
+function packageInstallArgs(params: PythonPackageOptions): string {
+	return [...pythonPackageIndexArgs(params), params.pre && "--pre"]
+		.filter((arg): arg is string => Boolean(arg))
 		.join(" ");
+}
+
+/**
+ * Builds the Dockerfile command that copies the uv binary.
+ *
+ * @param uvRoot - Destination root for uv
+ * @param uvVersion - uv image tag
+ * @returns Dockerfile COPY command
+ */
+function uvBinaryCopyCommand(uvRoot: string, uvVersion?: string): string {
+	return `COPY --from=ghcr.io/astral-sh/uv:${uvVersion ?? "latest"} /uv ${uvRoot}/uv`;
 }
 
 /**
@@ -1247,28 +1273,14 @@ export class Image {
 	): Image {
 		const uvRoot = "/.uv";
 		const uvVersion = aliasedString(params, "uvVersion", "uv_version");
-		const commands = [
-			uvVersion
-				? `COPY --from=ghcr.io/astral-sh/uv:${uvVersion} /uv ${uvRoot}/uv`
-				: `COPY --from=ghcr.io/astral-sh/uv:latest /uv ${uvRoot}/uv`,
-		];
+		const commands = [uvBinaryCopyCommand(uvRoot, uvVersion)];
 		const contextFiles: Record<string, string> = {};
-		const args = ["--python $(command -v python)", "--compile-bytecode"];
-		const findLinks = aliasedString(params, "findLinks", "find_links");
-		const indexUrl = aliasedString(params, "indexUrl", "index_url");
-		const extraIndexUrl = aliasedString(
-			params,
-			"extraIndexUrl",
-			"extra_index_url",
-		);
-		if (findLinks) args.push(`--find-links ${shellQuote(findLinks)}`);
-		if (indexUrl) args.push(`--index-url ${shellQuote(indexUrl)}`);
-		if (extraIndexUrl) {
-			args.push(`--extra-index-url ${shellQuote(extraIndexUrl)}`);
-		}
+		const args = [
+			"--python $(command -v python)",
+			"--compile-bytecode",
+			...pythonPackageIndexArgs(params),
+		];
 		if (params.pre) args.push("--prerelease allow");
-		const extraOptions = aliasedString(params, "extraOptions", "extra_options");
-		if (extraOptions) args.push(extraOptions);
 		for (const [index, requirement] of (params.requirements ?? []).entries()) {
 			const contextPath = `/.${index}_${pathBasename(requirement)}`;
 			const destPath = `${uvRoot}/${index}/${pathBasename(requirement)}`;
@@ -1390,9 +1402,7 @@ export class Image {
 		const lockPath = path.join(projectDir, "uv.lock");
 		const uvVersion = aliasedString(params, "uvVersion", "uv_version");
 		const commands = [
-			uvVersion
-				? `COPY --from=ghcr.io/astral-sh/uv:${uvVersion} /uv ${uvRoot}/uv`
-				: `COPY --from=ghcr.io/astral-sh/uv:latest /uv ${uvRoot}/uv`,
+			uvBinaryCopyCommand(uvRoot, uvVersion),
 			"COPY /.pyproject.toml /tmp/uv/pyproject.toml",
 		];
 		if (existsSync(lockPath)) {
