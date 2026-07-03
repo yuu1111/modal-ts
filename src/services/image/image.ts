@@ -23,6 +23,7 @@ import {
 	aliasedValue,
 	environmentParam,
 } from "@/utils/param_aliases";
+import { pathBasename, posixJoin } from "@/utils/path";
 
 const DEFAULT_IMAGE_TAG = "latest";
 
@@ -72,19 +73,6 @@ function asArray(value: string | string[]): string[] {
 
 function normalizeContainerPath(value: string): string {
 	return value.replaceAll("\\", "/");
-}
-
-function basename(value: string): string {
-	return value.replaceAll("\\", "/").split("/").filter(Boolean).pop() ?? "file";
-}
-
-function posixJoin(...parts: string[]): string {
-	return `/${parts
-		.join("/")
-		.replaceAll("\\", "/")
-		.split("/")
-		.filter((part) => part.length > 0)
-		.join("/")}`;
 }
 
 function ensureAbsoluteRemotePath(remotePath: string, method: string): void {
@@ -1042,7 +1030,7 @@ export class Image {
 	): Image {
 		ensureAbsoluteRemotePath(remotePath, "image.addLocalFile()");
 		const finalRemotePath = remotePath.endsWith("/")
-			? `${remotePath}${basename(localPath)}`
+			? `${remotePath}${pathBasename(localPath)}`
 			: remotePath;
 		if (params.copy === true) {
 			const contextPath = posixJoin(
@@ -1288,8 +1276,8 @@ export class Image {
 		const extraOptions = aliasedString(params, "extraOptions", "extra_options");
 		if (extraOptions) args.push(extraOptions);
 		for (const [index, requirement] of (params.requirements ?? []).entries()) {
-			const contextPath = `/.${index}_${basename(requirement)}`;
-			const destPath = `${uvRoot}/${index}/${basename(requirement)}`;
+			const contextPath = `/.${index}_${pathBasename(requirement)}`;
+			const destPath = `${uvRoot}/${index}/${pathBasename(requirement)}`;
 			contextFiles[contextPath] = requirement;
 			commands.push(`COPY ${contextPath} ${destPath}`);
 			args.push(`--requirements ${destPath}`);
@@ -1460,7 +1448,7 @@ export class Image {
 			.join(" ");
 		let fileArg = "";
 		if (specFile) {
-			const remoteSpecFile = `/${basename(specFile)}`;
+			const remoteSpecFile = `/${pathBasename(specFile)}`;
 			contextFiles[remoteSpecFile] = specFile;
 			commands.push(`COPY ${remoteSpecFile} ${remoteSpecFile}`);
 			fileArg = ` -f ${remoteSpecFile} -n base`;

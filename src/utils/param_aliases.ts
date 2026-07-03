@@ -47,6 +47,28 @@ export function aliasedNumber(
 	return undefined;
 }
 
+/**
+ * Reads a millisecond option or converts its seconds alias to milliseconds.
+ *
+ * @param params - Parameter object
+ * @param msName - Millisecond parameter name
+ * @param secondsName - Seconds parameter name
+ * @returns Milliseconds, or undefined when no alias is present
+ */
+export function secondsAliasToMs(
+	params: ParamBag | undefined,
+	msName: string,
+	secondsName: string,
+): number | undefined {
+	const ms =
+		aliasedNumber(params, msName, `${secondsName}_ms`) ??
+		aliasedNumber(params, secondsName);
+	if (ms === undefined) return undefined;
+	return params && (msName in params || `${secondsName}_ms` in params)
+		? ms
+		: ms * 1000;
+}
+
 export function environmentParam(
 	params: ParamBag | undefined,
 ): string | undefined {

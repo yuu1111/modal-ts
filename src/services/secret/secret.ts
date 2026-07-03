@@ -10,6 +10,7 @@ import {
 	ObjectCreationType,
 	type SecretMetadata,
 } from "@/generated/modal_proto/api";
+import { resourceInfoFromMetadata } from "@/utils/metadata";
 import {
 	aliasedBoolean,
 	aliasedNumber,
@@ -563,12 +564,5 @@ function secretInfoFromMetadata(
 	metadata?: SecretMetadata,
 	fallbackName?: string,
 ): SecretInfo {
-	const info: SecretInfo = {};
-	const name = metadata?.name || fallbackName;
-	const createdAt = metadata?.creationInfo?.createdAt;
-	const createdBy = metadata?.creationInfo?.createdBy;
-	if (name) info.name = name;
-	if (createdAt) info.createdAt = createdAt;
-	if (createdBy) info.createdBy = createdBy;
-	return info;
+	return resourceInfoFromMetadata<SecretInfo>(metadata, fallbackName);
 }

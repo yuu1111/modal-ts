@@ -9,6 +9,7 @@ import {
 	type QueueNextItemsRequest,
 } from "@/generated/modal_proto/api";
 import { EphemeralHeartbeatManager } from "@/utils/ephemeral";
+import { resourceInfoFromMetadata } from "@/utils/metadata";
 import {
 	aliasedBoolean,
 	aliasedNumber,
@@ -825,12 +826,9 @@ function queueInfoFromMetadata(
 	fallbackName?: string,
 	fallbackCreatedAt?: number,
 ): QueueInfo {
-	const info: QueueInfo = {};
-	const name = metadata?.name || fallbackName;
-	const createdAt = metadata?.creationInfo?.createdAt || fallbackCreatedAt;
-	const createdBy = metadata?.creationInfo?.createdBy;
-	if (name) info.name = name;
-	if (createdAt) info.createdAt = createdAt;
-	if (createdBy) info.createdBy = createdBy;
-	return info;
+	return resourceInfoFromMetadata<QueueInfo>(
+		metadata,
+		fallbackName,
+		fallbackCreatedAt,
+	);
 }

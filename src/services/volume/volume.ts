@@ -4,19 +4,22 @@ import { getDefaultClient, type ModalClient } from "@/core/client";
 import { InvalidError } from "@/core/errors";
 import { rethrowNotFound, suppressNotFound } from "@/core/grpc/errors";
 import {
-	type FileEntry,
 	ObjectCreationType,
 	type VolumeMetadata,
 	type VolumeMount,
 	type VolumePutFiles2Request_Block,
 } from "@/generated/modal_proto/api";
+import { chunkBytes, concatBytes } from "@/utils/bytes";
 import { EphemeralHeartbeatManager } from "@/utils/ephemeral";
+import { resourceFileEntryFromProto } from "@/utils/file_entry";
+import { resourceInfoFromMetadata } from "@/utils/metadata";
 import {
 	aliasedBoolean,
 	aliasedNumber,
 	aliasedString,
 	environmentParam,
 } from "@/utils/param_aliases";
+import { posixJoin } from "@/utils/path";
 
 const VOLUME_BLOCK_SIZE = 8 * 1024 * 1024;
 
@@ -559,7 +562,7 @@ export class Volume {
 			...(params.maxEntries !== undefined && { maxEntries: params.maxEntries }),
 		})) {
 			for (const entry of resp.entries ?? []) {
-				yield volumeFileEntryFromProto(entry);
+				yield resourceFileEntryFromProto<VolumeFileEntry>(entry);
 			}
 		}
 	}
@@ -826,51 +829,11 @@ function volumeInfoFromMetadata(
 	fallbackName?: string,
 	fallbackCreatedAt?: number,
 ): VolumeInfo {
-	const info: VolumeInfo = {};
-	const name = metadata?.name || fallbackName;
-	const createdAt = metadata?.creationInfo?.createdAt || fallbackCreatedAt;
-	const createdBy = metadata?.creationInfo?.createdBy;
-	if (name) info.name = name;
-	if (createdAt) info.createdAt = createdAt;
-	if (createdBy) info.createdBy = createdBy;
+	const info = resourceInfoFromMetadata<VolumeInfo>(
+		metadata,
+		fallbackName,
+		fallbackCreatedAt,
+	);
 	if (metadata?.version !== undefined) info.version = metadata.version;
 	return info;
-}
-
-function volumeFileEntryFromProto(entry: FileEntry): VolumeFileEntry {
-	return {
-		path: entry.path,
-		type: entry.type,
-		mtime: entry.mtime,
-		size: entry.size,
-	};
-}
-
-function chunkBytes(data: Uint8Array, size: number): Uint8Array[] {
-	if (data.length === 0) return [new Uint8Array()];
-	const chunks: Uint8Array[] = [];
-	for (let offset = 0; offset < data.length; offset += size) {
-		chunks.push(data.subarray(offset, offset + size));
-	}
-	return chunks;
-}
-
-function concatBytes(chunks: Uint8Array[]): Uint8Array {
-	const total = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
-	const out = new Uint8Array(total);
-	let offset = 0;
-	for (const chunk of chunks) {
-		out.set(chunk, offset);
-		offset += chunk.length;
-	}
-	return out;
-}
-
-function posixJoin(...parts: string[]): string {
-	return `/${parts
-		.join("/")
-		.replaceAll("\\", "/")
-		.split("/")
-		.filter((part) => part.length > 0)
-		.join("/")}`;
 }

@@ -30,8 +30,8 @@ import type { Secret } from "@/services/secret/secret";
 import { type Volume, volumeToMountProto } from "@/services/volume/volume";
 import {
 	aliasedBoolean,
-	aliasedNumber,
 	aliasedValue,
+	secondsAliasToMs,
 } from "@/utils/param_aliases";
 import { checkForRenamedParams } from "@/utils/validation";
 import type { Probe } from "./sandbox_probe";
@@ -249,20 +249,6 @@ export function validateExecArgs(args: string[]): void {
 				`Got ${totalArgLen} bytes.`,
 		);
 	}
-}
-
-function secondsAliasToMs(
-	params: Record<string, unknown> | undefined,
-	msName: string,
-	secondsName: string,
-): number | undefined {
-	const ms =
-		aliasedNumber(params, msName, `${secondsName}_ms`) ??
-		aliasedNumber(params, secondsName);
-	if (ms === undefined) return undefined;
-	return params && (msName in params || `${secondsName}_ms` in params)
-		? ms
-		: ms * 1000;
 }
 
 /**

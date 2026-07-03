@@ -6,6 +6,7 @@ import {
 	ObjectCreationType,
 } from "@/generated/modal_proto/api";
 import { EphemeralHeartbeatManager } from "@/utils/ephemeral";
+import { resourceInfoFromMetadata } from "@/utils/metadata";
 import {
 	aliasedBoolean,
 	aliasedNumber,
@@ -503,12 +504,9 @@ function dictInfoFromMetadata(
 	fallbackName?: string,
 	fallbackCreatedAt?: number,
 ): DictInfo {
-	const info: DictInfo = {};
-	const name = metadata?.name || fallbackName;
-	const createdAt = metadata?.creationInfo?.createdAt || fallbackCreatedAt;
-	const createdBy = metadata?.creationInfo?.createdBy;
-	if (name) info.name = name;
-	if (createdAt) info.createdAt = createdAt;
-	if (createdBy) info.createdBy = createdBy;
-	return info;
+	return resourceInfoFromMetadata<DictInfo>(
+		metadata,
+		fallbackName,
+		fallbackCreatedAt,
+	);
 }

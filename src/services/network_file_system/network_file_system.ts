@@ -3,12 +3,11 @@ import path from "node:path";
 import { getDefaultClient, type ModalClient } from "@/core/client";
 import { InvalidError } from "@/core/errors";
 import { rethrowNotFound, suppressNotFound } from "@/core/grpc/errors";
-import {
-	type FileEntry,
-	ObjectCreationType,
-} from "@/generated/modal_proto/api";
+import { ObjectCreationType } from "@/generated/modal_proto/api";
 import { EphemeralHeartbeatManager } from "@/utils/ephemeral";
+import { resourceFileEntryFromProto } from "@/utils/file_entry";
 import { aliasedBoolean, environmentParam } from "@/utils/param_aliases";
+import { pathBasename, posixJoin } from "@/utils/path";
 
 /**
  * Optional parameters for {@link NetworkFileSystemService#fromName client.networkFileSystems.fromName()}
@@ -325,7 +324,10 @@ export class NetworkFileSystem {
 	 */
 	async addLocalFile(localPath: string, remotePath?: string): Promise<number> {
 		const data = await readFile(localPath);
-		return await this.writeFile(remotePath ?? `/${basename(localPath)}`, data);
+		return await this.writeFile(
+			remotePath ?? `/${pathBasename(localPath)}`,
+			data,
+		);
 	}
 
 	async add_local_file(
@@ -339,7 +341,7 @@ export class NetworkFileSystem {
 	 * Recursively adds a local directory to the NetworkFileSystem
 	 */
 	async addLocalDir(localPath: string, remotePath?: string): Promise<number> {
-		const rootRemotePath = remotePath ?? `/${basename(localPath)}`;
+		const rootRemotePath = remotePath ?? `/${pathBasename(localPath)}`;
 		let totalBytes = 0;
 		for await (const filePath of walkLocalFiles(localPath)) {
 			const relativePath = path
@@ -398,7 +400,7 @@ export class NetworkFileSystem {
 			},
 		)) {
 			for (const entry of batch.entries ?? []) {
-				yield networkFileSystemFileEntryFromProto(entry);
+				yield resourceFileEntryFromProto<NetworkFileSystemFileEntry>(entry);
 			}
 		}
 	}
@@ -434,24 +436,9 @@ export class NetworkFileSystem {
 	}
 }
 
-function networkFileSystemFileEntryFromProto(
-	entry: FileEntry,
-): NetworkFileSystemFileEntry {
-	return {
-		path: entry.path,
-		type: entry.type,
-		mtime: entry.mtime,
-		size: entry.size,
-	};
-}
-
 async function sha256Hex(data: Uint8Array): Promise<string> {
 	const digest = new Uint8Array(await crypto.subtle.digest("SHA-256", data));
 	return Array.from(digest, (b) => b.toString(16).padStart(2, "0")).join("");
-}
-
-function basename(path: string): string {
-	return path.replace(/\\/g, "/").split("/").filter(Boolean).pop() ?? "file";
 }
 
 async function* walkLocalFiles(
@@ -465,12 +452,4 @@ async function* walkLocalFiles(
 			yield entryPath;
 		}
 	}
-}
-
-function posixJoin(...parts: string[]): string {
-	return `/${parts
-		.join("/")
-		.split("/")
-		.filter((part) => part.length > 0)
-		.join("/")}`;
 }
