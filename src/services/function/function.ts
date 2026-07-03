@@ -41,19 +41,19 @@ import {
 } from "./invocation";
 
 /**
- * @description Blobアップロードの閾値
+ * @description Threshold for blob uploads
  */
 const maxObjectSizeBytes = 2 * 1024 * 1024; // 2 MiB
 
 /**
- * @description InternalFailure時の最大リトライ回数
+ * @description Maximum retry count for InternalFailure
  */
 const maxSystemRetries = 8;
 
 /**
- * @description `client.functions.fromName()` のオプションパラメータ
- * @property environment - 環境名 @optional
- * @property createIfMissing - 存在しない場合に作成するか @optional
+ * @description Optional parameters for `client.functions.fromName()`
+ * @property environment - Environment name @optional
+ * @property createIfMissing - Whether to create when missing @optional
  */
 export type FunctionFromNameParams = {
 	environment?: string;
@@ -64,9 +64,9 @@ export type FunctionFromNameParams = {
 };
 
 /**
- * @description {@link Function_} を管理するサービス
+ * @description Service for managing {@link Function_}
  *
- * 通常はクライアント経由でのみアクセスする:
+ * Usually accessed only through the client:
  * ```typescript
  * const modal = new ModalClient();
  * const fn = await modal.functions.fromName("my-app", "my-function");
@@ -79,12 +79,12 @@ export class FunctionService {
 	}
 
 	/**
-	 * @description App内のFunctionを名前で取得する
-	 * @param appName - アプリ名
-	 * @param name - Function名
-	 * @param params - オプションパラメータ
-	 * @returns Functionインスタンス
-	 * @throws NotFoundError 指定されたFunctionが存在しない場合
+	 * @description Gets a Function in an App by name
+	 * @param appName - App name
+	 * @param name - Function name
+	 * @param params - Optional parameters
+	 * @returns Function instance
+	 * @throws NotFoundError when the specified Function does not exist
 	 */
 	async fromName(
 		appName: string,
@@ -125,9 +125,9 @@ export class FunctionService {
 }
 
 /**
- * @description 実行中のFunctionの統計情報
- * @property backlog - 未処理の入力数
- * @property numTotalRunners - 総ランナー数
+ * @description Runtime statistics for a Function
+ * @property backlog - Number of pending inputs
+ * @property numTotalRunners - Total number of runners
  */
 export interface FunctionStats {
 	backlog: number;
@@ -135,13 +135,13 @@ export interface FunctionStats {
 }
 
 /**
- * @description オートスケーラーの更新パラメータ
- * @property minContainers - 最小コンテナ数 @optional
- * @property maxContainers - 最大コンテナ数 @optional
- * @property bufferContainers - バッファコンテナ数 @optional
- * @property targetConcurrency - 目標同時リクエスト数 @optional
- * @property scaleupWindowMs - スケールアップ猶予期間(ミリ秒) @optional
- * @property scaledownWindowMs - スケールダウン猶予期間(ミリ秒) @optional
+ * @description Parameters for updating the autoscaler
+ * @property minContainers - Minimum container count @optional
+ * @property maxContainers - Maximum container count @optional
+ * @property bufferContainers - Buffer container count @optional
+ * @property targetConcurrency - Target concurrent request count @optional
+ * @property scaleupWindowMs - Scale-up grace period in milliseconds @optional
+ * @property scaledownWindowMs - Scale-down grace period in milliseconds @optional
  */
 export interface FunctionUpdateAutoscalerParams {
 	minContainers?: number;
@@ -161,21 +161,21 @@ export interface FunctionUpdateAutoscalerParams {
 }
 
 /**
- * @description Function のランタイムオプション上書きパラメータ
- * @property cpu - CPU コア数 @optional
- * @property cpuLimit - CPU コア数の上限 @optional
- * @property memoryMiB - メモリ(MiB) @optional
- * @property memoryLimitMiB - メモリ上限(MiB) @optional
- * @property gpu - GPU 設定文字列 @optional
- * @property env - 環境変数 @optional
- * @property secrets - シークレット @optional
- * @property volumes - ボリュームマウント @optional
- * @property retries - リトライポリシー @optional
- * @property maxContainers - 最大コンテナ数 @optional
- * @property bufferContainers - バッファコンテナ数 @optional
- * @property scaledownWindowMs - スケールダウン待機時間(ミリ秒) @optional
- * @property timeoutMs - タイムアウト(ミリ秒) @optional
- * @property schedulerPlacement - スケジューリング制約 @optional
+ * @description Parameters for overriding Function runtime options
+ * @property cpu - CPU core count @optional
+ * @property cpuLimit - Upper limit for CPU cores @optional
+ * @property memoryMiB - Memory in MiB @optional
+ * @property memoryLimitMiB - Memory limit in MiB @optional
+ * @property gpu - GPU settings string @optional
+ * @property env - Environment variables @optional
+ * @property secrets - Secrets @optional
+ * @property volumes - Volume mounts @optional
+ * @property retries - Retry policy @optional
+ * @property maxContainers - Maximum container count @optional
+ * @property bufferContainers - Buffer container count @optional
+ * @property scaledownWindowMs - Scale-down wait time in milliseconds @optional
+ * @property timeoutMs - Timeout in milliseconds @optional
+ * @property schedulerPlacement - Scheduling constraints @optional
  */
 export type FunctionWithOptionsParams = {
 	cpu?: number;
@@ -199,9 +199,9 @@ export type FunctionWithOptionsParams = {
 };
 
 /**
- * @description Function の同時実行設定パラメータ
- * @property maxInputs - 最大同時入力数
- * @property targetInputs - 目標同時入力数 @optional
+ * @description Function concurrency settings
+ * @property maxInputs - Maximum concurrent input count
+ * @property targetInputs - Target concurrent input count @optional
  */
 export type FunctionWithConcurrencyParams = {
 	maxInputs?: number;
@@ -211,9 +211,9 @@ export type FunctionWithConcurrencyParams = {
 };
 
 /**
- * @description Function のダイナミックバッチング設定パラメータ
- * @property maxBatchSize - 最大バッチサイズ
- * @property waitMs - バッチ待機時間(ミリ秒)
+ * @description Function dynamic batching settings
+ * @property maxBatchSize - Maximum batch size
+ * @property waitMs - Batch wait time in milliseconds
  */
 export type FunctionWithBatchingParams = {
 	maxBatchSize?: number;
@@ -223,7 +223,7 @@ export type FunctionWithBatchingParams = {
 };
 
 /**
- * @description Function の内部オプション(公開パラメータ + 内部フィールド)
+ * @description Internal Function options, combining public parameters and internal fields
  */
 export type FunctionOptions = FunctionWithOptionsParams & {
 	maxConcurrentInputs?: number;
@@ -237,10 +237,10 @@ export type FunctionOptions = FunctionWithOptionsParams & {
 };
 
 /**
- * @description ベースオプションに差分をマージする
- * @param base - ベースオプション
- * @param diff - マージする差分
- * @returns マージ結果(空の場合は undefined)
+ * @description Merges a diff into base options
+ * @param base - Base options
+ * @param diff - Diff to merge
+ * @returns Merged result, or undefined when empty
  * @internal
  */
 export function mergeServiceOptions(
@@ -315,9 +315,9 @@ function normalizeFunctionOptions(options: FunctionOptions): FunctionOptions {
 }
 
 /**
- * @description FunctionOptions から gRPC FunctionOptions プロトコルバッファを構築する
- * @param options - Function オプション
- * @returns FunctionOptions プロトメッセージ(オプションが空の場合は undefined)
+ * @description Builds a gRPC FunctionOptions protobuf from FunctionOptions
+ * @param options - Function options
+ * @returns FunctionOptions proto message, or undefined when options are empty
  * @internal
  */
 export async function buildFunctionOptionsProto(
@@ -443,10 +443,10 @@ export async function buildFunctionOptionsProto(
 }
 
 /**
- * @description パラメータスキーマに基づいてパラメータセットをエンコードする
- * @param schema - パラメータスキーマ
- * @param params - エンコードするパラメータ
- * @returns シリアライズされたバイト列
+ * @description Encodes a parameter set based on the parameter schema
+ * @param schema - Parameter schema
+ * @param params - Parameters to encode
+ * @returns Serialized bytes
  * @internal
  */
 export function encodeParameterSet(
@@ -515,13 +515,13 @@ function encodeParameter(
 }
 
 /**
- * @description Function にパラメータとランタイムオプションをバインドする
- * @param client - Modal クライアント
+ * @description Binds parameters and runtime options to a Function
+ * @param client - Modal client
  * @param functionId - Function ID
- * @param options - ランタイムオプション
- * @param schema - パラメータスキーマ
- * @param parameters - バインドするパラメータ
- * @returns バインド結果
+ * @param options - Runtime options
+ * @param schema - Parameter schema
+ * @param parameters - Parameters to bind
+ * @returns Binding result
  * @internal
  */
 export async function bindParameters(
@@ -551,7 +551,7 @@ export async function bindParameters(
 }
 
 /**
- * @description デプロイ済みModal Functionを表し、リモート実行が可能
+ * @description Represents a deployed Modal Function that can be executed remotely
  */
 export class Function_ {
 	readonly functionId: string;
@@ -580,7 +580,7 @@ export class Function_ {
 	}
 
 	/**
-	 * @description local JavaScript/TypeScript function を deployApp 用の定義に変換する
+	 * @description Converts a local JavaScript/TypeScript function into a definition for deployApp
 	 */
 	static from_local(
 		source: LocalFunctionSource,
@@ -619,7 +619,7 @@ export class Function_ {
 	}
 
 	/**
-	 * @description deployed Function を名前で取得する Python 互換 helper
+	 * @description Python-compatible helper that gets a deployed Function by name
 	 */
 	static async from_name(
 		appName: string,
@@ -638,21 +638,21 @@ export class Function_ {
 	}
 
 	/**
-	 * @description Function のタグ名
+	 * @description Tag name for the Function
 	 */
 	get tag(): string | undefined {
 		return this.#handleMetadata?.functionName;
 	}
 
 	/**
-	 * @description Python の古い `stub` alias 互換
+	 * @description Compatibility with Python's old `stub` alias
 	 */
 	get stub(): undefined {
 		return undefined;
 	}
 
 	/**
-	 * @description Function handle のメタデータを返す
+	 * @description Returns metadata for the Function handle
 	 */
 	info(): Record<string, unknown> {
 		return {
@@ -664,14 +664,14 @@ export class Function_ {
 	}
 
 	/**
-	 * @description Function spec 相当の軽量情報を返す
+	 * @description Returns lightweight information equivalent to a Function spec
 	 */
 	spec(): Record<string, unknown> {
 		return this.info();
 	}
 
 	/**
-	 * @description build definition はTS handleでは保持しないため undefined を返す
+	 * @description Returns undefined because TS handles do not keep the build definition
 	 */
 	get_build_def(): undefined {
 		return undefined;
@@ -682,7 +682,7 @@ export class Function_ {
 	}
 
 	/**
-	 * @description generator Function かどうか
+	 * @description Whether this is a generator Function
 	 */
 	is_generator(): boolean {
 		return false;
@@ -693,7 +693,7 @@ export class Function_ {
 	}
 
 	/**
-	 * @description raw local function はTS handleでは保持しないため undefined を返す
+	 * @description Returns undefined because TS handles do not keep the raw local function
 	 */
 	get_raw_f(): undefined {
 		return undefined;
@@ -712,9 +712,9 @@ export class Function_ {
 	}
 
 	/**
-	 * @description 静的な Function 設定をランタイムで上書きする
-	 * @param options - 上書きオプション
-	 * @returns 新しいオプションが適用された Function
+	 * @description Overrides static Function settings at runtime
+	 * @param options - Override options
+	 * @returns Function with the new options applied
 	 */
 	withOptions(options: FunctionWithOptionsParams): Function_ {
 		return new Function_(
@@ -731,9 +731,9 @@ export class Function_ {
 	}
 
 	/**
-	 * @description 同時実行設定を有効化または上書きした Function を返す
-	 * @param params - 同時実行パラメータ
-	 * @returns 同時実行設定が適用された Function
+	 * @description Returns a Function with concurrency settings enabled or overridden
+	 * @param params - Concurrency parameters
+	 * @returns Function with concurrency settings applied
 	 */
 	withConcurrency(params: FunctionWithConcurrencyParams): Function_ {
 		const maxInputs = aliasedNumber(params, "maxInputs", "max_inputs");
@@ -755,9 +755,9 @@ export class Function_ {
 	}
 
 	/**
-	 * @description ダイナミックバッチングを有効化または上書きした Function を返す
-	 * @param params - バッチングパラメータ
-	 * @returns バッチング設定が適用された Function
+	 * @description Returns a Function with dynamic batching enabled or overridden
+	 * @param params - Batching parameters
+	 * @returns Function with batching settings applied
 	 */
 	withBatching(params: FunctionWithBatchingParams): Function_ {
 		const maxBatchSize = aliasedNumber(
@@ -783,8 +783,8 @@ export class Function_ {
 	}
 
 	/**
-	 * @description withOptions/withConcurrency/withBatching の設定を適用した Function インスタンスを生成する
-	 * @returns 設定がバインドされた Function
+	 * @description Creates a Function instance with withOptions/withConcurrency/withBatching settings applied
+	 * @returns Function with settings bound
 	 */
 	async instance(): Promise<Function_> {
 		let newFunctionId = this.functionId;
@@ -806,10 +806,10 @@ export class Function_ {
 	}
 
 	/**
-	 * @description Functionを同期的にリモート実行し、結果を返す
-	 * @param args - 位置引数の配列
-	 * @param kwargs - キーワード引数のマッピング
-	 * @returns Function実行結果
+	 * @description Executes the Function remotely and synchronously, returning the result
+	 * @param args - Positional arguments
+	 * @param kwargs - Keyword argument mapping
+	 * @returns Function execution result
 	 */
 	async remote(
 		args: unknown[] = [],
@@ -823,7 +823,7 @@ export class Function_ {
 		this.#checkNoWebUrl("remote");
 		const input = await this.#createInput(args, kwargs);
 		const invocation = await this.#createRemoteInvocation(input);
-		// TODO(ryan): リトライのテストを追加
+		// TODO(ryan): Add retry tests.
 		let retryCount = 0;
 		while (true) {
 			try {
@@ -853,7 +853,7 @@ export class Function_ {
 	}
 
 	/**
-	 * @description generator API 互換。結果が iterable なら順に yield する
+	 * @description Generator API compatibility. Yields each item when the result is iterable
 	 */
 	async *remote_gen(
 		args: unknown[] = [],
@@ -875,7 +875,7 @@ export class Function_ {
 	}
 
 	/**
-	 * @description local 実行互換。TS handleでは remote と同じ経路を使う
+	 * @description Local execution compatibility. TS handles use the same path as remote
 	 */
 	async local(
 		args: unknown[] = [],
@@ -903,10 +903,10 @@ export class Function_ {
 	}
 
 	/**
-	 * @description Functionを非同期的にスポーンし、FunctionCallを返す
-	 * @param args - 位置引数の配列
-	 * @param kwargs - キーワード引数のマッピング
-	 * @returns 非同期実行を追跡するFunctionCall
+	 * @description Spawns the Function asynchronously and returns a FunctionCall
+	 * @param args - Positional arguments
+	 * @param kwargs - Keyword argument mapping
+	 * @returns FunctionCall that tracks the asynchronous execution
 	 */
 	async spawn(
 		args: unknown[] = [],
@@ -936,8 +936,8 @@ export class Function_ {
 	}
 
 	/**
-	 * @description 各入力を Function に渡して結果を配列で返す
-	 * @param inputs - 各 call の第一位置引数
+	 * @description Passes each input to the Function and returns results as an array
+	 * @param inputs - First positional argument for each call
 	 */
 	async map(inputs: Iterable<unknown>): Promise<unknown[]> {
 		const calls = await Promise.all(
@@ -947,8 +947,8 @@ export class Function_ {
 	}
 
 	/**
-	 * @description 各入力タプルを Function の位置引数として渡して結果を配列で返す
-	 * @param inputs - 各 call の位置引数配列
+	 * @description Passes each input tuple as Function positional arguments and returns results as an array
+	 * @param inputs - Positional arguments for each call
 	 */
 	async starmap(inputs: Iterable<readonly unknown[]>): Promise<unknown[]> {
 		const calls = await Promise.all(
@@ -958,23 +958,23 @@ export class Function_ {
 	}
 
 	/**
-	 * @description 各入力を Function に渡して完了を待つ。結果値は破棄する
-	 * @param inputs - 各 call の第一位置引数
+	 * @description Passes each input to the Function and waits for completion, discarding results
+	 * @param inputs - First positional argument for each call
 	 */
 	async forEach(inputs: Iterable<unknown>): Promise<void> {
 		await this.map(inputs);
 	}
 
 	/**
-	 * @description {@link Function_#forEach} の Python 互換 alias
+	 * @description Python-compatible alias for {@link Function_#forEach}
 	 */
 	async for_each(inputs: Iterable<unknown>): Promise<void> {
 		await this.forEach(inputs);
 	}
 
 	/**
-	 * @description Functionの現在の統計情報を取得する
-	 * @returns バックログとランナー数を含む統計情報
+	 * @description Gets current statistics for the Function
+	 * @returns Statistics including backlog and runner count
 	 */
 	async getCurrentStats(): Promise<FunctionStats> {
 		const resp = await this.#client.cpClient.functionGetCurrentStats(
@@ -992,8 +992,8 @@ export class Function_ {
 	}
 
 	/**
-	 * @description Functionのオートスケーラー設定を更新する
-	 * @param params - オートスケーラー設定
+	 * @description Updates autoscaler settings for the Function
+	 * @param params - Autoscaler settings
 	 */
 	async updateAutoscaler(
 		params: FunctionUpdateAutoscalerParams,
@@ -1044,8 +1044,8 @@ export class Function_ {
 	}
 
 	/**
-	 * @description Web エンドポイントとして実行されている Function の URL
-	 * @returns Web エンドポイントの URL。Web エンドポイントでなければ undefined
+	 * @description URL for a Function running as a web endpoint
+	 * @returns Web endpoint URL, or undefined when this is not a web endpoint
 	 */
 	async getWebUrl(): Promise<string | undefined> {
 		return this.#handleMetadata?.webUrl || undefined;
@@ -1064,7 +1064,7 @@ export class Function_ {
 			? this.#handleMetadata.supportedInputFormats
 			: [DataFormat.DATA_FORMAT_PICKLE];
 		if (!supported_input_formats.includes(DataFormat.DATA_FORMAT_CBOR)) {
-			// リモート Function が CBOR 入力に非対応なため早期エラー
+			// Fail early because the remote Function does not support CBOR input.
 			throw new InvalidError(
 				"cannot call Modal Function from JS SDK since it was deployed with an incompatible Python SDK version. Redeploy with Modal Python SDK >= 1.2",
 			);
@@ -1081,16 +1081,16 @@ export class Function_ {
 			argsBlobId,
 			dataFormat: DataFormat.DATA_FORMAT_CBOR,
 			methodName: this.methodName,
-			// Python SDK では未指定(デフォルト false)
+			// Omitted in the Python SDK; defaults to false.
 			finalInput: false,
 		};
 	}
 }
 
 /**
- * @description 大きなペイロードをBlobストレージにアップロードする
- * @param cpClient - gRPCクライアント
- * @param data - アップロードするバイナリデータ
+ * @description Uploads a large payload to blob storage
+ * @param cpClient - gRPC client
+ * @param data - Binary data to upload
  * @returns Blob ID
  */
 async function blobUpload(

@@ -60,12 +60,12 @@ import {
 } from "./utils";
 
 /**
- * @description TaskCommandRouterサービスのgRPCクライアント型
+ * @description gRPC client type for the TaskCommandRouter service
  */
 type TaskCommandRouterClient = Client<typeof TaskCommandRouterDefinition>;
 
 /**
- * @description FileDescriptorからTaskExecStdioFileDescriptorへの変換マップ
+ * @description Conversion map from FileDescriptor to TaskExecStdioFileDescriptor
  */
 const FD_MAP: Partial<Record<FileDescriptor, TaskExecStdioFileDescriptor>> = {
 	[FileDescriptor.FILE_DESCRIPTOR_STDOUT]:
@@ -75,12 +75,12 @@ const FD_MAP: Partial<Record<FileDescriptor, TaskExecStdioFileDescriptor>> = {
 };
 
 /**
- * @description トランジェントエラーリトライの設定
- * @property baseDelayMs - 初回リトライ待機時間 @optional @defaultValue 10
- * @property delayFactor - バックオフ倍率 @optional @defaultValue 2
- * @property maxRetries - 最大リトライ回数(nullで無制限) @optional @defaultValue 10
- * @property deadlineMs - 全体のデッドライン(エポックミリ秒) @optional
- * @property isClosed - クライアント閉鎖判定関数 @optional
+ * @description Settings for transient error retries
+ * @property baseDelayMs - Initial retry wait time @optional @defaultValue 10
+ * @property delayFactor - Backoff multiplier @optional @defaultValue 2
+ * @property maxRetries - Maximum retries; null means unlimited @optional @defaultValue 10
+ * @property deadlineMs - Overall deadline in epoch milliseconds @optional
+ * @property isClosed - Function that checks whether the client is closed @optional
  */
 export interface TransientRetryOptions {
 	baseDelayMs?: number;
@@ -91,9 +91,9 @@ export interface TransientRetryOptions {
 }
 
 /**
- * @description トランジェントエラー時に指数バックオフでリトライする
- * @param func - リトライ対象の非同期関数
- * @param options - リトライ設定
+ * @description Retries with exponential backoff on transient errors
+ * @param func - Async function to retry
+ * @param options - Retry settings
  */
 export async function callWithRetriesOnTransientErrors<T>(
 	func: () => Promise<T>,
@@ -158,7 +158,7 @@ export class TaskCommandRouterClientImpl {
 	private closed: boolean = false;
 
 	/**
-	 * @description callWithRetriesOnTransientErrors に渡す閉鎖判定コールバック
+	 * @description Closed-state callback passed to callWithRetriesOnTransientErrors
 	 */
 	private readonly retryOptions: Pick<TransientRetryOptions, "isClosed"> = {
 		isClosed: () => this.closed,
@@ -267,7 +267,7 @@ export class TaskCommandRouterClientImpl {
 		this.logger = logger;
 		this.channel = channel;
 
-		// ジェネレータ関数はアロー関数にできないため、thisをキャプチャしてJWTリフレッシュ後のアクセスに使用
+		// Generator functions cannot be arrows, so capture this for access after JWT refresh.
 		const self = this;
 
 		const factory = createClientFactory()
@@ -386,8 +386,8 @@ export class TaskCommandRouterClientImpl {
 		deadline: number | null = null,
 	): Promise<TaskExecPollResponse> {
 		const request = TaskExecPollRequest.create({ taskId, execId });
-		// タイムアウトはコマンドルーターとの通信がハングした場合のバックストップ。
-		// poll自体は通常即座に完了する
+		// Timeout is a backstop in case communication with the command router hangs.
+		// The poll itself normally completes immediately.
 		return await this.callWithDeadline(
 			() => this.callWithAuthRetry(() => this.stub.taskExecPoll(request)),
 			`polling for exec ${execId}`,
@@ -411,7 +411,7 @@ export class TaskCommandRouterClientImpl {
 			`waiting for exec ${execId}`,
 			deadline,
 			{
-				// 完了まで長時間かかるため1秒間隔でリトライ
+				// Retry every second because completion can take a long time.
 				baseDelayMs: 1000,
 				delayFactor: 1,
 				maxRetries: null,
@@ -497,8 +497,8 @@ export class TaskCommandRouterClientImpl {
 			return;
 		}
 
-		// 現在のJWT有効期限が十分先なら再取得をスキップ。
-		// 複数の並行リクエストが同時にUNAUTHENTICATEDを受けた場合に発生しうる
+		// Skip refetching when the current JWT expiry is far enough in the future.
+		// This can happen when multiple concurrent requests receive UNAUTHENTICATED.
 		if (this.jwtExp !== null && this.jwtExp - Date.now() / 1000 > 30) {
 			this.logger.debug(
 				"Skipping JWT refresh because expiration is far enough in the future",
@@ -535,7 +535,7 @@ export class TaskCommandRouterClientImpl {
 	}
 
 	/**
-	 * @description UNAUTHENTICATED エラー時にJWTをリフレッシュして1回リトライする
+	 * @description Refreshes the JWT on UNAUTHENTICATED errors and retries once
 	 */
 	private async callWithAuthRetry<T>(func: () => Promise<T>): Promise<T> {
 		try {
@@ -550,11 +550,11 @@ export class TaskCommandRouterClientImpl {
 	}
 
 	/**
-	 * @description デッドライン付きでリトライを実行する。デッドライン超過時は統一メッセージでスロー
-	 * @param func - リトライ対象の非同期関数
-	 * @param operationLabel - エラーメッセージに使う操作名(例: "polling for exec abc")
-	 * @param deadline - デッドライン(エポックミリ秒、nullなら無制限) @optional
-	 * @param extraOptions - 追加のリトライ設定 @optional
+	 * @description Runs retries with a deadline and throws a unified message on deadline expiry
+	 * @param func - Async function to retry
+	 * @param operationLabel - Operation name used in error messages, for example "polling for exec abc"
+	 * @param deadline - Deadline in epoch milliseconds; null means unlimited @optional
+	 * @param extraOptions - Additional retry settings @optional
 	 */
 	private async callWithDeadline<T>(
 		func: () => Promise<T>,
@@ -590,7 +590,7 @@ export class TaskCommandRouterClientImpl {
 		let delayMs = 10;
 		const delayFactor = 2;
 		let numRetriesRemaining = 10;
-		// JWTリフレッシュ後も無効なJWTが返された場合の無限リトライを防止するフラグ
+		// Prevent infinite retries if JWT refresh returns another invalid JWT.
 		let didAuthRetry = false;
 
 		while (true) {

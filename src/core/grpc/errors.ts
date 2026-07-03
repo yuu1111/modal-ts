@@ -2,9 +2,9 @@ import { ClientError, Status } from "nice-grpc";
 import { AlreadyExistsError, InvalidError, NotFoundError } from "@/core/errors";
 
 /**
- * @description rethrow 関数群の共通オプション
- * @property message - エラーメッセージ。省略時は err.details || err.message を使用
- * @property preconditionPatterns - FAILED_PRECONDITION も変換する条件。空配列なら無条件、文字列配列なら details にパターンが含まれる場合のみ
+ * @description Shared options for rethrow functions
+ * @property message - Error message. Uses err.details || err.message when omitted
+ * @property preconditionPatterns - Conditions for converting FAILED_PRECONDITION too. An empty array means unconditional; a string array converts only when details include a pattern
  */
 export interface RethrowOptions {
 	message?: string;
@@ -12,12 +12,12 @@ export interface RethrowOptions {
 }
 
 /**
- * @description gRPC ステータスコードをドメインエラーに変換して再スローする。
- * 該当しなければ元のエラーをそのまま再スローする
- * @param err - catch されたエラー
- * @param ErrorClass - スローするエラークラス
- * @param primaryStatus - 主に判定する gRPC ステータスコード
- * @param options - メッセージと precondition 設定
+ * @description Converts a gRPC status code to a domain error and rethrows it.
+ * Rethrows the original error unchanged when it does not match.
+ * @param err - Caught error
+ * @param ErrorClass - Error class to throw
+ * @param primaryStatus - Primary gRPC status code to match
+ * @param options - Message and precondition settings
  */
 function rethrowGrpc(
 	err: unknown,
@@ -40,8 +40,8 @@ function rethrowGrpc(
 }
 
 /**
- * @description 文字列またはオプションオブジェクトを RethrowOptions に正規化する
- * @param messageOrOptions - メッセージ文字列、またはオプションオブジェクト
+ * @description Normalizes a string or options object into RethrowOptions
+ * @param messageOrOptions - Message string or options object
  */
 function resolveOptions(
 	messageOrOptions: string | RethrowOptions | undefined,
@@ -52,10 +52,10 @@ function resolveOptions(
 }
 
 /**
- * @description gRPC の NOT_FOUND を NotFoundError に変換して再スローする。
- * 該当しなければ元のエラーをそのまま再スローする
- * @param err - catch されたエラー
- * @param messageOrOptions - メッセージ文字列、またはオプションオブジェクト
+ * @description Converts gRPC NOT_FOUND to NotFoundError and rethrows it.
+ * Rethrows the original error unchanged when it does not match.
+ * @param err - Caught error
+ * @param messageOrOptions - Message string or options object
  */
 export function rethrowNotFound(
 	err: unknown,
@@ -70,10 +70,10 @@ export function rethrowNotFound(
 }
 
 /**
- * @description gRPC の INVALID_ARGUMENT を InvalidError に変換して再スローする。
- * 該当しなければ元のエラーをそのまま再スローする
- * @param err - catch されたエラー
- * @param messageOrOptions - メッセージ文字列、またはオプションオブジェクト
+ * @description Converts gRPC INVALID_ARGUMENT to InvalidError and rethrows it.
+ * Rethrows the original error unchanged when it does not match.
+ * @param err - Caught error
+ * @param messageOrOptions - Message string or options object
  */
 export function rethrowInvalid(
 	err: unknown,
@@ -88,10 +88,10 @@ export function rethrowInvalid(
 }
 
 /**
- * @description gRPC の ALREADY_EXISTS を AlreadyExistsError に変換して再スローする。
- * 該当しなければ元のエラーをそのまま再スローする
- * @param err - catch されたエラー
- * @param messageOrOptions - メッセージ文字列、またはオプションオブジェクト
+ * @description Converts gRPC ALREADY_EXISTS to AlreadyExistsError and rethrows it.
+ * Rethrows the original error unchanged when it does not match.
+ * @param err - Caught error
+ * @param messageOrOptions - Message string or options object
  */
 export function rethrowAlreadyExists(
 	err: unknown,
@@ -106,9 +106,9 @@ export function rethrowAlreadyExists(
 }
 
 /**
- * @description NOT_FOUND を allowMissing で抑制する。allowMissing でなければ再スローする
- * @param err - catch されたエラー
- * @param allowMissing - true なら NOT_FOUND を無視する
+ * @description Suppresses NOT_FOUND when allowMissing is true. Otherwise rethrows
+ * @param err - Caught error
+ * @param allowMissing - When true, ignores NOT_FOUND
  */
 export function suppressNotFound(
 	err: unknown,

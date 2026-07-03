@@ -9,27 +9,27 @@ import {
 } from "@/generated/modal_proto/api";
 
 /**
- * @description Environment.fromName() のオプションパラメータ
- * @property createIfMissing - 存在しない場合に作成する @optional
+ * @description Optional parameters for Environment.fromName()
+ * @property createIfMissing - Create when missing @optional
  */
 export type EnvironmentFromNameParams = {
 	createIfMissing?: boolean;
 };
 
 /**
- * @description Environment 作成パラメータ
- * @property restricted - RBAC 制限付き Environment として作成する @optional
+ * @description Environment creation parameters
+ * @property restricted - Create as an RBAC-restricted Environment @optional
  */
 export type EnvironmentCreateParams = {
 	restricted?: boolean;
 };
 
 /**
- * @description Environment 更新パラメータ
- * @property name - 新しい Environment 名 @optional
- * @property webSuffix - 新しい Webhook suffix @optional
- * @property maxConcurrentTasks - 最大同時 task 数 @optional
- * @property maxConcurrentGpus - 最大同時 GPU 数 @optional
+ * @description Environment update parameters
+ * @property name - New Environment name @optional
+ * @property webSuffix - New webhook suffix @optional
+ * @property maxConcurrentTasks - Maximum concurrent task count @optional
+ * @property maxConcurrentGpus - Maximum concurrent GPU count @optional
  */
 export type EnvironmentUpdateParams = {
 	name?: string;
@@ -39,7 +39,7 @@ export type EnvironmentUpdateParams = {
 };
 
 /**
- * @description Environment 情報
+ * @description Environment information
  */
 export type EnvironmentInfo = {
 	name: string;
@@ -48,7 +48,7 @@ export type EnvironmentInfo = {
 };
 
 /**
- * @description Environment 一覧の要素
+ * @description Entry in the Environment list
  */
 export type EnvironmentListEntry = {
 	name: string;
@@ -68,12 +68,12 @@ export type EnvironmentListEntry = {
 };
 
 /**
- * @description Environment member の role
+ * @description Environment member role
  */
 export type EnvironmentMemberRole = "viewer" | "contributor";
 
 /**
- * @description restricted Environment の members
+ * @description Members of a restricted Environment
  */
 export type EnvironmentMembers = {
 	users: Record<string, EnvironmentMemberRole>;
@@ -82,7 +82,7 @@ export type EnvironmentMembers = {
 };
 
 /**
- * @description Billing report の行
+ * @description Billing report row
  */
 export type EnvironmentBillingReportItem = {
 	objectId: string;
@@ -95,7 +95,7 @@ export type EnvironmentBillingReportItem = {
 };
 
 /**
- * @description Environment を管理するサービス
+ * @description Service for managing Environments
  */
 export class EnvironmentService {
 	readonly #client: ModalClient;
@@ -105,7 +105,7 @@ export class EnvironmentService {
 	}
 
 	/**
-	 * @description 現在の profile/context の Environment を取得する
+	 * @description Gets the Environment for the current profile/context
 	 */
 	async fromContext(): Promise<Environment> {
 		return await this.fromName(this.#client.environmentName());
@@ -116,7 +116,7 @@ export class EnvironmentService {
 	}
 
 	/**
-	 * @description 名前で Environment を取得する
+	 * @description Gets an Environment by name
 	 */
 	async fromName(
 		name: string,
@@ -144,7 +144,7 @@ export class EnvironmentService {
 	}
 
 	/**
-	 * @description Environment を作成する
+	 * @description Creates an Environment
 	 */
 	async create(
 		name: string,
@@ -158,7 +158,7 @@ export class EnvironmentService {
 	}
 
 	/**
-	 * @description Environment の一覧を返す
+	 * @description Returns the list of Environments
 	 */
 	async list(): Promise<EnvironmentListEntry[]> {
 		const resp = await this.#client.cpClient.environmentList({});
@@ -166,7 +166,7 @@ export class EnvironmentService {
 	}
 
 	/**
-	 * @description Environment を削除する
+	 * @description Deletes an Environment
 	 */
 	async delete(name: string): Promise<void> {
 		checkEnvironmentName(name);
@@ -253,7 +253,7 @@ export class Environment {
 	}
 
 	/**
-	 * @description Environment の情報を返す
+	 * @description Returns Environment information
 	 */
 	info(): EnvironmentInfo {
 		return {
@@ -268,7 +268,7 @@ export class Environment {
 	}
 
 	/**
-	 * @description Environment を更新する
+	 * @description Updates an Environment
 	 */
 	async update(params: EnvironmentUpdateParams): Promise<EnvironmentListEntry> {
 		if (params.name !== undefined) {
@@ -286,7 +286,7 @@ export class Environment {
 }
 
 /**
- * @description Environment billing 管理
+ * @description Environment billing manager
  */
 export class EnvironmentBillingManager {
 	readonly #client: ModalClient;
@@ -298,7 +298,7 @@ export class EnvironmentBillingManager {
 	}
 
 	/**
-	 * @description Environment usage の billing report を返す
+	 * @description Returns a billing report for Environment usage
 	 */
 	async report(params: {
 		start: Date;
@@ -323,7 +323,7 @@ export class EnvironmentBillingManager {
 }
 
 /**
- * @description restricted Environment の members 管理
+ * @description Members manager for a restricted Environment
  */
 export class EnvironmentMembersManager {
 	readonly #client: ModalClient;
@@ -335,7 +335,7 @@ export class EnvironmentMembersManager {
 	}
 
 	/**
-	 * @description restricted Environment の members を返す
+	 * @description Returns members of a restricted Environment
 	 */
 	async list(): Promise<EnvironmentMembers> {
 		const resp = await this.#client.cpClient.environmentGetManaged({
@@ -355,7 +355,7 @@ export class EnvironmentMembersManager {
 	}
 
 	/**
-	 * @description restricted Environment の members を追加または更新する
+	 * @description Adds or updates members of a restricted Environment
 	 */
 	async update(params: {
 		users?: Record<string, EnvironmentMemberRole>;
@@ -409,7 +409,7 @@ export class EnvironmentMembersManager {
 	}
 
 	/**
-	 * @description restricted Environment から members を削除する
+	 * @description Removes members from a restricted Environment
 	 */
 	async remove(params: {
 		users?: string[];

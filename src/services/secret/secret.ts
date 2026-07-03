@@ -17,9 +17,9 @@ import {
 } from "@/utils/param_aliases";
 
 /**
- * @description {@link SecretService#fromName client.secrets.fromName()} のオプションパラメータ
- * @property environment - 使用する環境名
- * @property requiredKeys - Secret に必須のキー一覧
+ * @description Optional parameters for {@link SecretService#fromName client.secrets.fromName()}
+ * @property environment - Environment name to use
+ * @property requiredKeys - Keys required in the Secret
  */
 export type SecretFromNameParams = {
 	environment?: string;
@@ -30,8 +30,8 @@ export type SecretFromNameParams = {
 };
 
 /**
- * @description {@link SecretService#fromObject client.secrets.fromObject()} のオプションパラメータ
- * @property environment - 使用する環境名
+ * @description Optional parameters for {@link SecretService#fromObject client.secrets.fromObject()}
+ * @property environment - Environment name to use
  */
 export type SecretFromObjectParams = {
 	environment?: string;
@@ -40,8 +40,8 @@ export type SecretFromObjectParams = {
 };
 
 /**
- * @description {@link SecretService#fromDotenv client.secrets.fromDotenv()} のオプションパラメータ
- * @property environment - 使用する環境名
+ * @description Optional parameters for {@link SecretService#fromDotenv client.secrets.fromDotenv()}
+ * @property environment - Environment name to use
  */
 export type SecretFromDotenvParams = {
 	environment?: string;
@@ -50,8 +50,8 @@ export type SecretFromDotenvParams = {
 };
 
 /**
- * @description {@link SecretService#fromLocalEnviron client.secrets.fromLocalEnviron()} のオプションパラメータ
- * @property environment - 使用する環境名
+ * @description Optional parameters for {@link SecretService#fromLocalEnviron client.secrets.fromLocalEnviron()}
+ * @property environment - Environment name to use
  */
 export type SecretFromLocalEnvironParams = {
 	environment?: string;
@@ -60,9 +60,9 @@ export type SecretFromLocalEnvironParams = {
 };
 
 /**
- * @description {@link SecretService#create client.secrets.create()} のオプションパラメータ
- * @property environment - 使用する環境名
- * @property allowExisting - 既に存在する場合に成功として扱うか
+ * @description Optional parameters for {@link SecretService#create client.secrets.create()}
+ * @property environment - Environment name to use
+ * @property allowExisting - Whether to treat an existing Secret as success
  */
 export type SecretCreateParams = {
 	environment?: string;
@@ -73,10 +73,10 @@ export type SecretCreateParams = {
 };
 
 /**
- * @description {@link SecretService#list client.secrets.list()} のオプションパラメータ
- * @property environment - 使用する環境名
- * @property maxObjects - 最大取得件数
- * @property createdBefore - この Unix 秒より前に作成された Secret だけを返す
+ * @description Optional parameters for {@link SecretService#list client.secrets.list()}
+ * @property environment - Environment name to use
+ * @property maxObjects - Maximum number of objects to fetch
+ * @property createdBefore - Return only Secrets created before this Unix timestamp
  */
 export type SecretListParams = {
 	environment?: string;
@@ -89,8 +89,8 @@ export type SecretListParams = {
 };
 
 /**
- * @description {@link SecretService#update client.secrets.update()} のオプションパラメータ
- * @property environment - 使用する環境名
+ * @description Optional parameters for {@link SecretService#update client.secrets.update()}
+ * @property environment - Environment name to use
  */
 export type SecretUpdateParams = {
 	environment?: string;
@@ -99,9 +99,9 @@ export type SecretUpdateParams = {
 };
 
 /**
- * @description {@link SecretService#delete client.secrets.delete()} のオプションパラメータ
- * @property environment - 使用する環境名
- * @property allowMissing - 存在しない場合にエラーを抑制するかどうか
+ * @description Optional parameters for {@link SecretService#delete client.secrets.delete()}
+ * @property environment - Environment name to use
+ * @property allowMissing - Whether to suppress errors when the Secret does not exist
  */
 export type SecretDeleteParams = {
 	environment?: string;
@@ -112,9 +112,9 @@ export type SecretDeleteParams = {
 };
 
 /**
- * @description {@link Secret} を管理するサービス
+ * @description Service for managing {@link Secret}
  *
- * 通常はクライアント経由でのみアクセスする:
+ * Usually accessed only through the client:
  * ```typescript
  * const modal = new ModalClient();
  * const secret = await modal.secrets.fromName("my-secret");
@@ -127,10 +127,10 @@ export class SecretService {
 	}
 
 	/**
-	 * @description 名前で {@link Secret} を参照する
-	 * @param name - Secret の名前
-	 * @param params - オプションパラメータ
-	 * @returns Secret インスタンス
+	 * @description Looks up a {@link Secret} by name
+	 * @param name - Secret name
+	 * @param params - Optional parameters
+	 * @returns Secret instance
 	 */
 	async fromName(name: string, params?: SecretFromNameParams): Promise<Secret> {
 		try {
@@ -160,10 +160,10 @@ export class SecretService {
 	}
 
 	/**
-	 * @description キーと値のペアから {@link Secret} を作成する
-	 * @param entries - 文字列のキーと値のオブジェクト
-	 * @param params - オプションパラメータ
-	 * @returns Secret インスタンス
+	 * @description Creates a {@link Secret} from key/value pairs
+	 * @param entries - Object containing string keys and values
+	 * @param params - Optional parameters
+	 * @returns Secret instance
 	 */
 	async fromObject(
 		entries: Record<string, string>,
@@ -203,9 +203,9 @@ export class SecretService {
 	}
 
 	/**
-	 * @description .env ファイルから一時的な {@link Secret} を作成する
-	 * @param path - .env ファイルのパス
-	 * @param params - オプションパラメータ
+	 * @description Creates an ephemeral {@link Secret} from a .env file
+	 * @param path - Path to the .env file
+	 * @param params - Optional parameters
 	 */
 	async fromDotenv(
 		path = ".env",
@@ -223,9 +223,9 @@ export class SecretService {
 	}
 
 	/**
-	 * @description ローカル環境変数から一時的な {@link Secret} を作成する
-	 * @param keys - 取り込む環境変数名。省略時は現在の環境変数をすべて取り込む
-	 * @param params - オプションパラメータ
+	 * @description Creates an ephemeral {@link Secret} from local environment variables
+	 * @param keys - Environment variable names to include; when omitted, includes all current environment variables
+	 * @param params - Optional parameters
 	 */
 	async fromLocalEnviron(
 		keys?: string[],
@@ -250,10 +250,10 @@ export class SecretService {
 	}
 
 	/**
-	 * @description 名前付き Secret を作成する
-	 * @param name - Secret 名
-	 * @param entries - 保存するキーと値
-	 * @param params - オプションパラメータ
+	 * @description Creates a named Secret
+	 * @param name - Secret name
+	 * @param entries - Key/value pairs to store
+	 * @param params - Optional parameters
 	 */
 	async create(
 		name: string,
@@ -276,8 +276,8 @@ export class SecretService {
 	}
 
 	/**
-	 * @description 名前付き Secret の一覧を取得する
-	 * @param params - オプションパラメータ
+	 * @description Lists named Secrets
+	 * @param params - Optional parameters
 	 */
 	async list(params: SecretListParams = {}): Promise<Secret[]> {
 		const maxObjects = aliasedNumber(params, "maxObjects", "max_objects");
@@ -318,10 +318,10 @@ export class SecretService {
 	}
 
 	/**
-	 * @description 名前付き Secret のキーを更新する。値が null のキーは削除される
-	 * @param name - Secret 名
-	 * @param updates - 更新内容
-	 * @param params - オプションパラメータ
+	 * @description Updates keys in a named Secret. Keys with null values are deleted
+	 * @param name - Secret name
+	 * @param updates - Updates to apply
+	 * @param params - Optional parameters
 	 */
 	async update(
 		name: string,
@@ -342,9 +342,9 @@ export class SecretService {
 	}
 
 	/**
-	 * @description 名前付き {@link Secret} を削除する。削除は不可逆で、現在使用中の App にも影響する
-	 * @param name - 削除する Secret の名前
-	 * @param params - オプションパラメータ
+	 * @description Deletes a named {@link Secret}. Deletion is irreversible and affects any App currently using it
+	 * @param name - Name of the Secret to delete
+	 * @param params - Optional parameters
 	 */
 	async delete(name: string, params?: SecretDeleteParams): Promise<void> {
 		try {
@@ -372,7 +372,7 @@ export class SecretService {
 }
 
 /**
- * @description {@link Image} に環境変数の辞書を提供する Secret
+ * @description Secret that provides a dictionary of environment variables to an {@link Image}
  */
 export class Secret {
 	readonly secretId: string;
@@ -482,7 +482,7 @@ export class Secret {
 	}
 
 	/**
-	 * @description Secret のメタデータを返す
+	 * @description Returns Secret metadata
 	 */
 	info(): SecretInfo {
 		return this.#info ?? secretInfoFromMetadata(undefined, this.name);
@@ -500,11 +500,11 @@ export class Secret {
 }
 
 /**
- * @description 環境変数オブジェクトを Secret 配列にマージする。env が指定されている場合、一時的な Secret を作成して追加する
- * @param client - Modal クライアント
- * @param env - マージする環境変数
- * @param secrets - 既存の Secret 配列
- * @returns マージ済みの Secret 配列
+ * @description Merges an environment variable object into a Secret array. When env is specified, creates and adds an ephemeral Secret
+ * @param client - Modal client
+ * @param env - Environment variables to merge
+ * @param secrets - Existing Secret array
+ * @returns Merged Secret array
  */
 export async function mergeEnvIntoSecrets(
 	client: ModalClient,
@@ -519,7 +519,7 @@ export async function mergeEnvIntoSecrets(
 }
 
 /**
- * @description Secret オブジェクトのメタデータ
+ * @description Metadata for a Secret object
  */
 export type SecretInfo = {
 	name?: string;

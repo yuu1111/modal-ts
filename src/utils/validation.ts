@@ -1,8 +1,8 @@
 /**
- * @description リネームされた旧パラメータ名が使用されている場合にエラーを投げる
- * @param params - チェック対象のパラメータオブジェクト
- * @param renames - 旧名から新名へのマッピング
- * @throws 旧パラメータ名が使用されている場合
+ * @description Throws when a renamed legacy parameter name is used
+ * @param params - Parameter object to check
+ * @param renames - Mapping from old names to new names
+ * @throws When a legacy parameter name is used
  */
 export function checkForRenamedParams(
 	params: object | undefined | null,

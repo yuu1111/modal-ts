@@ -6,7 +6,7 @@ import {
 } from "@/generated/modal_proto/api";
 
 /**
- * @description Workspace 設定
+ * @description Workspace settings
  */
 export type WorkspaceSettings = {
 	defaultEnvironmentName: string;
@@ -28,12 +28,12 @@ export type WorkspaceBillingReportRow = {
 };
 
 /**
- * @description Workspace メンバーのロール
+ * @description Workspace member role
  */
 export type WorkspaceMemberRole = "user" | "manager" | "owner";
 
 /**
- * @description Workspace メンバー情報
+ * @description Workspace member information
  */
 export type WorkspaceMemberInfo = {
 	name: string;
@@ -45,7 +45,7 @@ export type WorkspaceMemberInfo = {
 };
 
 /**
- * @description Proxy token の作成結果
+ * @description Result of creating a proxy token
  */
 export type TokenData = {
 	tokenId: string;
@@ -53,7 +53,7 @@ export type TokenData = {
 };
 
 /**
- * @description Proxy token 情報
+ * @description Proxy token information
  */
 export type ProxyTokenInfo = {
 	tokenId: string;
@@ -62,7 +62,7 @@ export type ProxyTokenInfo = {
 };
 
 /**
- * @description Workspace を管理するサービス
+ * @description Service for managing workspaces
  */
 export class WorkspaceService {
 	readonly #client: ModalClient;
@@ -72,7 +72,7 @@ export class WorkspaceService {
 	}
 
 	/**
-	 * @description 現在の認証情報に紐づく Workspace を取得する
+	 * @description Gets the Workspace associated with the current credentials
 	 */
 	async fromContext(): Promise<Workspace> {
 		const resp = await this.#client.cpClient.workspaceNameLookup({});
@@ -127,7 +127,7 @@ export class Workspace {
 	}
 
 	/**
-	 * @description Dashboard URL を取得する
+	 * @description Gets the dashboard URL
 	 */
 	async getDashboardUrl(environment?: string): Promise<string> {
 		const resp = await this.#client.cpClient.workspaceDashboardUrlGet({
@@ -137,7 +137,7 @@ export class Workspace {
 	}
 
 	/**
-	 * @description Workspace 設定を取得する
+	 * @description Gets Workspace settings
 	 */
 	async settings(): Promise<WorkspaceSettings> {
 		const resp = await this.#client.cpClient.workspaceSettings({});
@@ -148,7 +148,7 @@ export class Workspace {
 	}
 
 	/**
-	 * @description デフォルト Environment を設定する
+	 * @description Sets the default Environment
 	 */
 	async setDefaultEnvironment(environmentName: string): Promise<void> {
 		await this.#client.cpClient.workspaceSetDefaultEnvironment({
@@ -157,7 +157,7 @@ export class Workspace {
 	}
 
 	/**
-	 * @description Workspace の image builder version を設定する
+	 * @description Sets the Workspace image builder version
 	 */
 	async setImageBuilderVersion(version: string): Promise<string> {
 		const resp = await this.#client.cpClient.workspaceSetImageBuilderVersion({
@@ -168,7 +168,7 @@ export class Workspace {
 }
 
 /**
- * @description Workspace settings 管理
+ * @description Workspace settings manager
  */
 export class WorkspaceSettingsManager {
 	readonly #client: ModalClient;
@@ -218,7 +218,7 @@ export class WorkspaceSettingsManager {
 }
 
 /**
- * @description Workspace billing 管理
+ * @description Workspace billing manager
  */
 export class WorkspaceBillingManager {
 	readonly #client: ModalClient;
@@ -231,7 +231,7 @@ export class WorkspaceBillingManager {
 	}
 
 	/**
-	 * @description Workspace usage の billing report を返す
+	 * @description Returns a billing report for Workspace usage
 	 */
 	async report(params: {
 		start: Date;
@@ -256,7 +256,7 @@ export class WorkspaceBillingManager {
 }
 
 /**
- * @description Workspace メンバー管理
+ * @description Workspace members manager
  */
 export class WorkspaceMembersManager {
 	readonly #client: ModalClient;
@@ -269,7 +269,7 @@ export class WorkspaceMembersManager {
 	}
 
 	/**
-	 * @description Workspace メンバー一覧を返す
+	 * @description Returns the list of Workspace members
 	 */
 	async list(): Promise<WorkspaceMemberInfo[]> {
 		const resp = await this.#client.cpClient.workspaceMembersList({});
@@ -280,7 +280,7 @@ export class WorkspaceMembersManager {
 }
 
 /**
- * @description Workspace proxy token 管理
+ * @description Workspace proxy token manager
  */
 export class WorkspaceProxyTokenManager {
 	readonly #client: ModalClient;
@@ -293,7 +293,7 @@ export class WorkspaceProxyTokenManager {
 	}
 
 	/**
-	 * @description Proxy token を作成する
+	 * @description Creates a proxy token
 	 */
 	async create(params: { scoped?: boolean } = {}): Promise<TokenData> {
 		const resp = await this.#client.cpClient.webhookTokenCreate({
@@ -306,7 +306,7 @@ export class WorkspaceProxyTokenManager {
 	}
 
 	/**
-	 * @description Proxy token 一覧を返す
+	 * @description Returns the list of proxy tokens
 	 */
 	async list(
 		params: { environmentName?: string } = {},
@@ -324,7 +324,7 @@ export class WorkspaceProxyTokenManager {
 	}
 
 	/**
-	 * @description Proxy token に Environment へのアクセスを許可する
+	 * @description Allows a proxy token to access an Environment
 	 */
 	async allow(tokenId: string, environmentName: string): Promise<void> {
 		const env = await this.#client.environments.fromName(environmentName);
@@ -335,7 +335,7 @@ export class WorkspaceProxyTokenManager {
 	}
 
 	/**
-	 * @description Proxy token の Environment へのアクセスを取り消す
+	 * @description Revokes a proxy token's access to an Environment
 	 */
 	async revoke(tokenId: string, environmentName: string): Promise<void> {
 		const env = await this.#client.environments.fromName(environmentName);
@@ -346,7 +346,7 @@ export class WorkspaceProxyTokenManager {
 	}
 
 	/**
-	 * @description Proxy token を削除する
+	 * @description Deletes a proxy token
 	 */
 	async delete(tokenId: string): Promise<void> {
 		await this.#client.cpClient.webhookTokenDelete({ tokenId });

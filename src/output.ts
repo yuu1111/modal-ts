@@ -1,11 +1,11 @@
 /**
- * @description SDK の出力表示を管理する最小 OutputManager
+ * @description Minimal OutputManager for SDK output display
  */
 export class OutputManager {
 	static #current: OutputManager | undefined;
 
 	/**
-	 * @description 現在の OutputManager を取得する
+	 * @description Gets the current OutputManager
 	 */
 	static get(): OutputManager {
 		if (!OutputManager.#current) {
@@ -24,21 +24,21 @@ export class OutputManager {
 	constructor(readonly enabled = true) {}
 
 	/**
-	 * @description 標準出力へ message を表示する
+	 * @description Prints a message to stdout
 	 */
 	print(message: unknown): void {
 		if (this.enabled) console.log(message);
 	}
 
 	/**
-	 * @description JSON を標準出力へ表示する
+	 * @description Prints JSON to stdout
 	 */
 	printJson(value: unknown): void {
 		if (this.enabled) console.log(JSON.stringify(value, undefined, 2));
 	}
 
 	/**
-	 * @description status 表示用 scope を返す
+	 * @description Returns a scope for status display
 	 */
 	status(message: string): { stop: () => void } {
 		this.print(message);
@@ -47,7 +47,7 @@ export class OutputManager {
 }
 
 /**
- * @description OutputManager を有効にして callback を実行する
+ * @description Enables the OutputManager and runs the callback
  */
 export async function enableOutput<T>(
 	callback?: () => T | Promise<T>,

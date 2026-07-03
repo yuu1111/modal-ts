@@ -18,11 +18,11 @@ import { mergeEnvIntoSecrets, type Secret } from "@/services/secret/secret";
 const textEncoder = new TextEncoder();
 
 /**
- * @description アプリのデプロイ設定
- * @property name - デプロイするアプリ名
- * @property environment - デプロイ先の環境名 @optional
- * @property functions - デプロイするFunction定義の配列 @optional
- * @property classes - デプロイするClass定義の配列 @optional
+ * @description App deployment settings
+ * @property name - App name to deploy
+ * @property environment - Target environment name @optional
+ * @property functions - Function definitions to deploy @optional
+ * @property classes - Class definitions to deploy @optional
  */
 export interface DeployAppParams {
 	name: string;
@@ -32,20 +32,20 @@ export interface DeployAppParams {
 }
 
 /**
- * @description 個別Functionのデプロイ設定
- * @property functionName - Function名
- * @property moduleName - Pythonモジュールパス
- * @property imageId - 使用するコンテナイメージID @optional
- * @property image - 使用するコンテナイメージ @optional
- * @property mountIds - アタッチするMountのID配列 @optional
- * @property secrets - アタッチするSecret配列 @optional
- * @property env - 環境変数として注入する値 @optional
- * @property secretIds - アタッチするSecretのID配列 @optional
- * @property minContainers - 最小コンテナ数(warm pool) @optional @default 0
- * @property schedule - 定期実行スケジュール @optional
- * @property schedulerPlacement - スケジューリング制約 @optional
- * @property experimentalOptions - 実験的オプション @optional
- * @property webhookConfig - Webhookエンドポイント設定 @optional
+ * @description Deployment settings for a single Function
+ * @property functionName - Function name
+ * @property moduleName - Python module path
+ * @property imageId - Container image ID to use @optional
+ * @property image - Container image to use @optional
+ * @property mountIds - Mount IDs to attach @optional
+ * @property secrets - Secrets to attach @optional
+ * @property env - Values to inject as environment variables @optional
+ * @property secretIds - Secret IDs to attach @optional
+ * @property minContainers - Minimum number of containers in the warm pool @optional @default 0
+ * @property schedule - Periodic execution schedule @optional
+ * @property schedulerPlacement - Scheduling constraints @optional
+ * @property experimentalOptions - Experimental options @optional
+ * @property webhookConfig - Webhook endpoint settings @optional
  */
 export interface DeployFunctionParams {
 	functionName: string;
@@ -66,19 +66,19 @@ export interface DeployFunctionParams {
 }
 
 /**
- * @description Classのデプロイ設定
- * @property className - Class名
- * @property moduleName - Pythonモジュールパス
- * @property methods - 公開するメソッド名の配列
- * @property imageId - 使用するコンテナイメージID @optional
- * @property image - 使用するコンテナイメージ @optional
- * @property mountIds - アタッチするMountのID配列 @optional
- * @property secrets - アタッチするSecret配列 @optional
- * @property env - 環境変数として注入する値 @optional
- * @property secretIds - アタッチするSecretのID配列 @optional
- * @property minContainers - 最小コンテナ数(warm pool) @optional @default 0
- * @property schedulerPlacement - スケジューリング制約 @optional
- * @property experimentalOptions - 実験的オプション @optional
+ * @description Class deployment settings
+ * @property className - Class name
+ * @property moduleName - Python module path
+ * @property methods - Names of methods to expose
+ * @property imageId - Container image ID to use @optional
+ * @property image - Container image to use @optional
+ * @property mountIds - Mount IDs to attach @optional
+ * @property secrets - Secrets to attach @optional
+ * @property env - Values to inject as environment variables @optional
+ * @property secretIds - Secret IDs to attach @optional
+ * @property minContainers - Minimum number of containers in the warm pool @optional @default 0
+ * @property schedulerPlacement - Scheduling constraints @optional
+ * @property experimentalOptions - Experimental options @optional
  */
 export interface DeployClassParams {
 	className: string;
@@ -98,9 +98,9 @@ export interface DeployClassParams {
 }
 
 /**
- * @description Mountにアップロードするファイルエントリ
- * @property remotePath - コンテナ内のファイルパス
- * @property content - ファイルの内容(文字列またはバイナリ)
+ * @description File entry to upload to a Mount
+ * @property remotePath - File path inside the container
+ * @property content - File content as text or binary data
  */
 export interface MountFileEntry {
 	remotePath: string;
@@ -108,10 +108,10 @@ export interface MountFileEntry {
 }
 
 /**
- * @description デプロイ結果
- * @property appId - デプロイされたアプリのID
- * @property functionIds - Function名からIDへのマッピング
- * @property classIds - Class名からIDへのマッピング
+ * @description Deployment result
+ * @property appId - ID of the deployed app
+ * @property functionIds - Mapping from Function names to IDs
+ * @property classIds - Mapping from Class names to IDs
  */
 export interface DeployResult {
 	appId: string;
@@ -120,19 +120,19 @@ export interface DeployResult {
 }
 
 /**
- * @description SHA-256ハッシュを16進文字列で返す
- * @param data - ハッシュ対象のバイナリデータ
- * @returns 16進数ハッシュ文字列
+ * @description Returns a SHA-256 hash as a hexadecimal string
+ * @param data - Binary data to hash
+ * @returns Hexadecimal hash string
  */
 function sha256(data: Uint8Array): string {
 	return createHash("sha256").update(data).digest("hex");
 }
 
 /**
- * @description ファイル群からMountを作成してIDを返す
- * @param cpClient - gRPCクライアント
- * @param appId - 紐付けるアプリID
- * @param files - アップロードするファイルエントリの配列
+ * @description Creates a Mount from files and returns its ID
+ * @param cpClient - gRPC client
+ * @param appId - App ID to associate with the Mount
+ * @param files - File entries to upload
  * @returns Mount ID
  */
 export async function createMount(
@@ -172,11 +172,11 @@ export async function createMount(
 }
 
 /**
- * @description Imageを取得または作成
- * @param cpClient - gRPCクライアント
- * @param appId - アプリID
- * @param dockerfileCommands - 追加のDockerfileコマンド (FROMの後に実行)
- * @param baseImage - ベースDockerイメージ @default "python:3.12-slim"
+ * @description Gets or creates an Image
+ * @param cpClient - gRPC client
+ * @param appId - App ID
+ * @param dockerfileCommands - Additional Dockerfile commands to run after FROM
+ * @param baseImage - Base Docker image @default "python:3.12-slim"
  */
 export async function getOrCreateImage(
 	cpClient: ModalGrpcClient,
@@ -196,10 +196,10 @@ export async function getOrCreateImage(
 }
 
 /**
- * @description 環境変数からSecretを作成してIDを返す
- * @param client - ModalClientインスタンス
- * @param name - Secret名
- * @param envDict - 環境変数のキーバリューマッピング
+ * @description Creates a Secret from environment variables and returns its ID
+ * @param client - ModalClient instance
+ * @param name - Secret name
+ * @param envDict - Key-value mapping of environment variables
  * @returns Secret ID
  */
 export async function createSecret(
@@ -221,7 +221,7 @@ export async function createSecret(
 }
 
 /**
- * @description gRPCペイロードのデフォルトシリアライズ形式
+ * @description Default serialization formats for gRPC payloads
  */
 const DEFAULT_DATA_FORMATS = [
 	DataFormat.DATA_FORMAT_PICKLE,
@@ -229,10 +229,10 @@ const DEFAULT_DATA_FORMATS = [
 ];
 
 /**
- * @description 単一FunctionをgRPC経由で作成する内部関数
- * @param cpClient - gRPCクライアント
- * @param appId - アプリID
- * @param fn - Function定義パラメータ
+ * @description Internal function that creates a single Function through gRPC
+ * @param cpClient - gRPC client
+ * @param appId - App ID
+ * @param fn - Function definition parameters
  * @returns functionId, definitionId, handleMetadata
  */
 async function createFunctionInternal(
@@ -290,10 +290,10 @@ async function createFunctionInternal(
 }
 
 /**
- * @description Appを取得または作成してappIdを返す
- * @param client - ModalClientインスタンス
- * @param name - アプリ名
- * @param environment - 環境名 @optional
+ * @description Gets or creates an App and returns its appId
+ * @param client - ModalClient instance
+ * @param name - App name
+ * @param environment - Environment name @optional
  * @returns App ID
  */
 export async function getOrCreateApp(
@@ -314,10 +314,10 @@ export async function getOrCreateApp(
 }
 
 /**
- * @description アプリをModal上にデプロイする
- * @param client - ModalClientインスタンス
- * @param params - デプロイ設定
- * @returns デプロイ結果(appId, functionIds, classIds)
+ * @description Deploys an app to Modal
+ * @param client - ModalClient instance
+ * @param params - Deployment settings
+ * @returns Deployment result with appId, functionIds, and classIds
  */
 export async function deployApp(
 	client: ModalClient,
@@ -531,9 +531,9 @@ export async function deployApp(
 }
 
 /**
- * @description 部分的なWebhookConfigをデフォルト値で補完する
- * @param partial - 部分的なWebhookConfig
- * @returns 完全なWebhookConfig
+ * @description Fills a partial WebhookConfig with default values
+ * @param partial - Partial WebhookConfig
+ * @returns Complete WebhookConfig
  */
 function buildWebhookConfig(partial: Partial<WebhookConfig>): WebhookConfig {
 	return {

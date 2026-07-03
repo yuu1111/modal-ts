@@ -1,21 +1,21 @@
 /**
- * @description Modal 向け CBOR シリアライゼーション
+ * @description CBOR serialization for Modal
  *
- * Python 側の CBOR 実装と互換性を保つ設定で cbor-x をラップする
+ * Wraps cbor-x with settings compatible with Python's CBOR implementation.
  */
 
 import { Decoder, Encoder, type Options } from "cbor-x";
 
 /**
- * @description cbor-x の型定義に未反映のオプションを含む拡張インターフェース
- * @property useTag259ForMaps - Map エンコード時に CBOR tag 259 を使うか
+ * @description Extended interface for options not represented in cbor-x types
+ * @property useTag259ForMaps - Whether to use CBOR tag 259 when encoding Maps
  */
 interface ExtendedOptions extends Options {
 	useTag259ForMaps?: boolean;
 }
 
 /**
- * @description Python CBOR 実装と互換性を保つための共通オプション
+ * @description Shared options for compatibility with Python's CBOR implementation
  */
 const cborOptions: ExtendedOptions = {
 	mapsAsObjects: true,
@@ -25,28 +25,28 @@ const cborOptions: ExtendedOptions = {
 };
 
 /**
- * @description CBOR エンコーダのシングルトンインスタンス
+ * @description Singleton CBOR encoder instance
  */
 const encoder = new Encoder(cborOptions);
 
 /**
- * @description CBOR デコーダのシングルトンインスタンス
+ * @description Singleton CBOR decoder instance
  */
 const decoder = new Decoder(cborOptions);
 
 /**
- * @description JavaScript の値を CBOR バイト列にエンコードする
- * @param value - エンコード対象
- * @returns CBOR エンコード済みバイト列
+ * @description Encodes a JavaScript value into CBOR bytes
+ * @param value - Value to encode
+ * @returns CBOR-encoded bytes
  */
 export function cborEncode(value: unknown): Buffer {
 	return encoder.encode(value);
 }
 
 /**
- * @description CBOR バイト列を JavaScript の値にデコードする
- * @param data - デコード対象
- * @returns デコード済みの値
+ * @description Decodes CBOR bytes into a JavaScript value
+ * @param data - Data to decode
+ * @returns Decoded value
  */
 export function cborDecode(data: Buffer | Uint8Array): unknown {
 	return decoder.decode(data);

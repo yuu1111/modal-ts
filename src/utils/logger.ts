@@ -1,10 +1,10 @@
 /**
- * @description ログの重要度レベル
+ * @description Log severity level
  */
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
 /**
- * @description ログレベルの数値マッピング
+ * @description Numeric mapping for log levels
  */
 const LOG_LEVELS: Record<LogLevel, number> = {
 	debug: 0,
@@ -14,7 +14,7 @@ const LOG_LEVELS: Record<LogLevel, number> = {
 };
 
 /**
- * @description ロガーインターフェース
+ * @description Logger interface
  */
 export interface Logger {
 	debug(message: string, ...args: unknown[]): void;
@@ -24,10 +24,10 @@ export interface Logger {
 }
 
 /**
- * @description ログレベル文字列をパースして正規化する
- * @param level - ログレベル文字列(空文字列の場合は "warn")
- * @returns 正規化されたログレベル
- * @throws 無効なログレベル値の場合
+ * @description Parses and normalizes a log level string
+ * @param level - Log level string; an empty string maps to "warn"
+ * @returns Normalized log level
+ * @throws When the log level value is invalid
  */
 export function parseLogLevel(level: string): LogLevel {
 	if (!level) {
@@ -51,7 +51,7 @@ export function parseLogLevel(level: string): LogLevel {
 }
 
 /**
- * @description レベルに応じてフィルタリングするデフォルトロガー実装
+ * @description Default logger implementation that filters by level
  */
 export class DefaultLogger implements Logger {
 	private levelValue: number;
@@ -114,7 +114,7 @@ export class DefaultLogger implements Logger {
 }
 
 /**
- * @description 既存のロガーにレベルフィルタリングを追加するラッパー
+ * @description Wrapper that adds level filtering to an existing logger
  */
 class FilteredLogger implements Logger {
 	private levelValue: number;
@@ -152,10 +152,10 @@ class FilteredLogger implements Logger {
 }
 
 /**
- * @description ロガーを作成する(既存ロガーがあればフィルタ付きラッパー、なければデフォルト)
- * @param logger - ラップ対象のロガー @optional
- * @param logLevel - ログレベル文字列 @optional @default ""
- * @returns 設定されたロガー
+ * @description Creates a logger, wrapping an existing logger with filtering or using the default
+ * @param logger - Logger to wrap @optional
+ * @param logLevel - Log level string @optional @default ""
+ * @returns Configured logger
  */
 export function createLogger(logger?: Logger, logLevel: string = ""): Logger {
 	const level = parseLogLevel(logLevel);
@@ -168,9 +168,9 @@ export function createLogger(logger?: Logger, logLevel: string = ""): Logger {
 }
 
 /**
- * @description 新しいデフォルトロガーを作成する
- * @param logLevel - ログレベル文字列 @optional @default ""
- * @returns デフォルトロガー
+ * @description Creates a new default logger
+ * @param logLevel - Log level string @optional @default ""
+ * @returns Default logger
  */
 export function newLogger(logLevel: string = ""): Logger {
 	return createLogger(undefined, logLevel);

@@ -1,11 +1,11 @@
 import { InvalidError } from "@/core/errors";
 
 /**
- * @description Modal Function/Cls のリトライポリシー設定
- * @property maxRetries - 最大リトライ回数 (0-10)
- * @property backoffCoefficient - バックオフ係数 @defaultValue 2.0
- * @property initialDelayMs - 初回リトライ遅延 @defaultValue 1000
- * @property maxDelayMs - 最大リトライ遅延 @defaultValue 60000
+ * @description Retry policy settings for Modal Function and Cls
+ * @property maxRetries - Maximum number of retries (0-10)
+ * @property backoffCoefficient - Backoff coefficient @defaultValue 2.0
+ * @property initialDelayMs - Initial retry delay @defaultValue 1000
+ * @property maxDelayMs - Maximum retry delay @defaultValue 60000
  */
 export class Retries {
 	readonly maxRetries: number;
@@ -14,8 +14,8 @@ export class Retries {
 	readonly maxDelayMs: number;
 
 	/**
-	 * @description リトライポリシーを構築する
-	 * @param params - リトライ設定
+	 * @description Constructs a retry policy
+	 * @param params - Retry settings
 	 */
 	constructor(params: {
 		maxRetries: number;
@@ -62,9 +62,9 @@ export class Retries {
 }
 
 /**
- * @description リトライ設定を正規化する(数値の場合は Retries インスタンスに変換)
- * @param retries - リトライ回数または Retries インスタンス
- * @returns 正規化された Retries(未定義の場合は undefined)
+ * @description Normalizes retry settings, converting numbers into Retries instances
+ * @param retries - Retry count or Retries instance
+ * @returns Normalized Retries, or undefined if omitted
  */
 export function parseRetries(
 	retries: number | Retries | undefined,

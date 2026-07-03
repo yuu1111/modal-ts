@@ -18,13 +18,13 @@ import {
 } from "@/generated/modal_proto/api";
 import { cborDecode } from "@/utils/serialization";
 
-// Python SDK の modal/_utils/function_utils.py に由来
+// Derived from Python SDK modal/_utils/function_utils.py.
 const outputsTimeoutMs = 55 * 1000;
 
 /**
- * @description コントロールプレーンまたはインプットプレーンへの入力送信を抽象化する。
- * コントロールプレーン: FunctionMap, FunctionRetryInputs, FunctionGetOutputs RPC を使用。
- * インプットプレーン: AttemptStart, AttemptRetry, AttemptAwait RPC を使用
+ * @description Abstracts input submission to the control plane or input plane.
+ * Control plane: uses FunctionMap, FunctionRetryInputs, and FunctionGetOutputs RPCs.
+ * Input plane: uses AttemptStart, AttemptRetry, and AttemptAwait RPCs.
  */
 export interface Invocation {
 	awaitOutput(timeoutMs?: number, index?: number): Promise<unknown>;
@@ -32,7 +32,7 @@ export interface Invocation {
 }
 
 /**
- * @description コントロールプレーン経由の Invocation 実装
+ * @description Invocation implementation through the control plane
  */
 export class ControlPlaneInvocation implements Invocation {
 	private readonly cpClient: ModalGrpcClient;
@@ -110,7 +110,7 @@ export class ControlPlaneInvocation implements Invocation {
 	}
 
 	async retry(retryCount: number): Promise<void> {
-		// 通常到達しないパス
+		// Normally unreachable path.
 		if (!this.input) {
 			throw new Error("Cannot retry Function invocation - input missing");
 		}
@@ -142,7 +142,7 @@ export class ControlPlaneInvocation implements Invocation {
 }
 
 /**
- * @description インプットプレーン経由の Invocation 実装
+ * @description Invocation implementation through the input plane
  */
 export class InputPlaneInvocation implements Invocation {
 	private readonly cpClient: ModalGrpcClient;
@@ -176,7 +176,7 @@ export class InputPlaneInvocation implements Invocation {
 			input,
 		});
 		const ipClient = client.ipClient(inputPlaneUrl);
-		// 単一入力の同期呼び出し
+		// Synchronous call for a single input.
 		const attemptStartResponse = await ipClient.attemptStart({
 			functionId,
 			input: functionPutInputsItem,
@@ -224,16 +224,16 @@ function timeNowSeconds() {
 }
 
 /**
- * @description 指定タイムアウトで出力を1件取得する関数のシグネチャ。
- * `pollFunctionOutput` がコントロールプレーンまたはインプットプレーンから取得する際に使用
+ * @description Signature for a function that gets one output with the specified timeout.
+ * Used by `pollFunctionOutput` when fetching from the control plane or input plane.
  */
 type GetOutput = (
 	timeoutMs: number,
 ) => Promise<FunctionGetOutputsItem | undefined>;
 
 /**
- * @description `getOutput` で出力をポーリングする。
- * タイムアウト未指定または55秒超の場合は55秒で区切って繰り返す
+ * @description Polls output with `getOutput`.
+ * When timeout is omitted or exceeds 55 seconds, repeats in 55-second chunks.
  */
 async function pollFunctionOutput(
 	cpClient: ModalGrpcClient,
@@ -288,7 +288,7 @@ async function processResult(
 		case GenericResult_GenericStatus.GENERIC_STATUS_INTERNAL_FAILURE:
 			throw new InternalFailure(`Internal failure: ${result.exception}`);
 		case GenericResult_GenericStatus.GENERIC_STATUS_SUCCESS:
-			// データのデシリアライズに進む
+			// Continue to data deserialization.
 			break;
 		default:
 			throw new RemoteError(`Remote error: ${result.exception}`);

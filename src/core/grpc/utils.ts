@@ -1,15 +1,15 @@
 import { ClientError, type ClientMiddleware, Status } from "nice-grpc";
 
 /**
- * @description gRPC呼び出しのタイムアウト設定
- * @property timeoutMs - タイムアウト(ミリ秒) @optional
+ * @description Timeout settings for gRPC calls
+ * @property timeoutMs - Timeout in milliseconds @optional
  */
 export type TimeoutOptions = {
 	timeoutMs?: number;
 };
 
 /**
- * @description gRPC呼び出しにタイムアウトを設定するミドルウェア
+ * @description Middleware that applies timeouts to gRPC calls
  */
 export const timeoutMiddleware: ClientMiddleware<TimeoutOptions> =
 	async function* timeoutMiddleware(call, options) {
@@ -50,7 +50,7 @@ export const timeoutMiddleware: ClientMiddleware<TimeoutOptions> =
 	};
 
 /**
- * @description リトライ対象のgRPCステータスコード
+ * @description gRPC status codes eligible for retry
  */
 export const retryableGrpcStatusCodes = new Set([
 	Status.DEADLINE_EXCEEDED,
@@ -61,9 +61,9 @@ export const retryableGrpcStatusCodes = new Set([
 ]);
 
 /**
- * @description エラーがリトライ可能なgRPCステータスコードかを判定する
- * @param err - 判定対象のエラー
- * @returns リトライ可能ならtrue
+ * @description Checks whether an error has a retryable gRPC status code
+ * @param err - Error to check
+ * @returns true when retryable
  */
 export function isRetryableGrpc(err: unknown) {
 	if (err instanceof ClientError) {
@@ -73,9 +73,9 @@ export function isRetryableGrpc(err: unknown) {
 }
 
 /**
- * @description AbortSignalでキャンセル可能なスリープ
- * @param ms - 待機時間(ミリ秒)
- * @param signal - キャンセル用シグナル @optional
+ * @description Sleep that can be cancelled with an AbortSignal
+ * @param ms - Wait duration in milliseconds
+ * @param signal - Cancellation signal @optional
  */
 export const sleep = (ms: number, signal?: AbortSignal) =>
 	new Promise<void>((resolve, reject) => {
@@ -92,12 +92,12 @@ export const sleep = (ms: number, signal?: AbortSignal) =>
 	});
 
 /**
- * @description gRPCリトライの動作設定
- * @property retries - リトライ回数 @optional @defaultValue 3
- * @property baseDelay - 初回遅延(ミリ秒) @optional @defaultValue 100
- * @property maxDelay - 最大遅延(ミリ秒) @optional @defaultValue 1000
- * @property delayFactor - 指数バックオフの乗数 @optional @defaultValue 2
- * @property additionalStatusCodes - 追加でリトライするステータスコード @optional
+ * @description Behavior settings for gRPC retries
+ * @property retries - Number of retries @optional @defaultValue 3
+ * @property baseDelay - Initial delay in milliseconds @optional @defaultValue 100
+ * @property maxDelay - Maximum delay in milliseconds @optional @defaultValue 1000
+ * @property delayFactor - Exponential backoff multiplier @optional @defaultValue 2
+ * @property additionalStatusCodes - Additional status codes to retry @optional
  */
 export type RetryOptions = {
 	retries?: number;

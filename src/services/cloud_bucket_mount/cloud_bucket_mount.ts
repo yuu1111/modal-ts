@@ -23,7 +23,7 @@ export type CloudBucketMountCreateParams = {
 };
 
 /**
- * @description {@link CloudBucketMount} の作成を管理するサービス
+ * @description Service for managing creation of {@link CloudBucketMount}
  */
 export class CloudBucketMountService {
 	readonly #client: ModalClient;
@@ -33,10 +33,10 @@ export class CloudBucketMountService {
 	}
 
 	/**
-	 * @description クラウドバケットマウントを作成する
-	 * @param bucketName - バケット名
-	 * @param params - マウントオプション
-	 * @returns 作成された CloudBucketMount
+	 * @description Creates a cloud bucket mount
+	 * @param bucketName - Bucket name
+	 * @param params - Mount options
+	 * @returns Created CloudBucketMount
 	 */
 	create(
 		bucketName: string,
@@ -92,7 +92,7 @@ export class CloudBucketMountService {
 }
 
 /**
- * @description Modal Function 内からクラウドストレージバケットにアクセスするためのマウント
+ * @description Mount for accessing a cloud storage bucket from inside a Modal Function
  */
 export class CloudBucketMount {
 	readonly bucketName: string;

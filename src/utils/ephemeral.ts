@@ -1,25 +1,25 @@
 /**
- * @description ハートビートの送信間隔(ミリ秒)
+ * @description Heartbeat interval in milliseconds
  */
 export const ephemeralObjectHeartbeatSleep = 300000;
 
 /**
- * @description ハートビート送信関数の型
+ * @description Type for heartbeat sender functions
  */
 export type HeartbeatFunction = () => Promise<unknown>;
 
 /**
- * @description エフェメラルオブジェクトのハートビートを定期送信するマネージャー
- * @property heartbeatFn - ハートビート送信関数
- * @property abortController - ハートビートループの停止制御
+ * @description Manager that periodically sends heartbeats for ephemeral objects
+ * @property heartbeatFn - Heartbeat sender function
+ * @property abortController - Stop controller for the heartbeat loop
  */
 export class EphemeralHeartbeatManager {
 	private readonly heartbeatFn: HeartbeatFunction;
 	private readonly abortController: AbortController;
 
 	/**
-	 * @description インスタンス生成と同時にハートビートループを開始する
-	 * @param heartbeatFn - ハートビート送信関数
+	 * @description Starts the heartbeat loop when the instance is created
+	 * @param heartbeatFn - Heartbeat sender function
 	 */
 	constructor(heartbeatFn: HeartbeatFunction) {
 		this.heartbeatFn = heartbeatFn;
@@ -29,7 +29,7 @@ export class EphemeralHeartbeatManager {
 	}
 
 	/**
-	 * @description ハートビートループを非同期で開始する
+	 * @description Starts the heartbeat loop asynchronously
 	 */
 	private start(): void {
 		const signal = this.abortController.signal;
@@ -38,10 +38,10 @@ export class EphemeralHeartbeatManager {
 				try {
 					await this.heartbeatFn();
 				} catch {
-					// 一時的なエラーでループを停止させない
+					// Do not stop the loop on transient errors.
 				}
 				await new Promise<void>((resolve) => {
-					// unref: ハートビートタイマーがプロセス終了を妨げないようにする
+					// unref: prevent the heartbeat timer from keeping the process alive.
 					const timer = setTimeout(() => {
 						signal.removeEventListener("abort", onAbort);
 						resolve();
@@ -59,7 +59,7 @@ export class EphemeralHeartbeatManager {
 	}
 
 	/**
-	 * @description ハートビートループを停止する
+	 * @description Stops the heartbeat loop
 	 */
 	stop(): void {
 		this.abortController.abort();

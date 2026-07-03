@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 /**
- * @description ファイルパスを Docker ignore 風の glob パターンで判定する matcher
+ * @description Matcher that checks file paths against Docker-ignore-style glob patterns
  */
 export class FilePatternMatcher {
 	readonly #patterns?: string[];
@@ -15,7 +15,7 @@ export class FilePatternMatcher {
 	}
 
 	/**
-	 * @description ignore file から遅延ロードする matcher を作る
+	 * @description Creates a matcher that lazily loads patterns from an ignore file
 	 */
 	static fromFile(filePath: string): FilePatternMatcher {
 		const matcher = new FilePatternMatcher();
@@ -28,7 +28,7 @@ export class FilePatternMatcher {
 	}
 
 	/**
-	 * @description matcher を反転する
+	 * @description Inverts the matcher
 	 */
 	invert(): FilePatternMatcher {
 		const matcher = new FilePatternMatcher(...(this.#patterns ?? []));
@@ -42,7 +42,7 @@ export class FilePatternMatcher {
 	}
 
 	/**
-	 * @description ディレクトリ走査時に安全に pruning できるかを返す
+	 * @description Returns whether directory traversal can be safely pruned
 	 */
 	canPruneDirectories(): boolean {
 		return (
@@ -55,7 +55,7 @@ export class FilePatternMatcher {
 	}
 
 	/**
-	 * @description filePath がいずれかの pattern に match するかを返す
+	 * @description Returns whether filePath matches any pattern
 	 */
 	matches(filePath: string): boolean {
 		const result = this.#matches(filePath);

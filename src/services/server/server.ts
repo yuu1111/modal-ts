@@ -3,8 +3,8 @@ import type { Function_ } from "@/services/function/function";
 import { aliasedNumber, environmentParam } from "@/utils/param_aliases";
 
 /**
- * @description Server.fromName() のオプションパラメータ
- * @property environment - Environment 名 @optional
+ * @description Optional parameters for Server.fromName()
+ * @property environment - Environment name @optional
  */
 export type ServerFromNameParams = {
 	environment?: string;
@@ -14,7 +14,7 @@ export type ServerFromNameParams = {
 };
 
 /**
- * @description Server の autoscaler 更新パラメータ
+ * @description Parameters for updating a Server autoscaler
  */
 export type ServerUpdateAutoscalerParams = {
 	targetConcurrency?: number;
@@ -47,7 +47,7 @@ export class Server {
 	}
 
 	/**
-	 * @description App 内の Server を名前で参照する
+	 * @description Looks up a Server inside an App by name
 	 */
 	static async fromName(
 		appName: string,
@@ -71,7 +71,7 @@ export class Server {
 	}
 
 	/**
-	 * @description Server の内部 object ID
+	 * @description Internal object ID for the Server
 	 */
 	get objectId(): string {
 		return this.#function.functionId;
@@ -82,7 +82,7 @@ export class Server {
 	}
 
 	/**
-	 * @description Server URL を取得する
+	 * @description Gets the Server URL
 	 */
 	async getUrl(): Promise<string | undefined> {
 		return await this.#function.getWebUrl();
@@ -93,7 +93,7 @@ export class Server {
 	}
 
 	/**
-	 * @description Server の autoscaler を更新する
+	 * @description Updates the Server autoscaler
 	 */
 	async updateAutoscaler(params: ServerUpdateAutoscalerParams): Promise<void> {
 		const minContainers = aliasedNumber(
@@ -152,7 +152,7 @@ export class Server {
 }
 
 /**
- * @description Server を管理するサービス
+ * @description Service for managing Servers
  */
 export class ServerService {
 	readonly #client: ModalClient;
@@ -162,7 +162,7 @@ export class ServerService {
 	}
 
 	/**
-	 * @description App 内の Server を名前で参照する
+	 * @description Looks up a Server inside an App by name
 	 */
 	async fromName(
 		appName: string,

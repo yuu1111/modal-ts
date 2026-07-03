@@ -4,7 +4,7 @@ import path from "node:path";
 import { parse as parseToml } from "smol-toml";
 
 /**
- * @description .modal.toml の1プロファイル分の生データ
+ * @description Raw data for one .modal.toml profile
  */
 interface RawProfile {
 	server_url?: string;
@@ -17,20 +17,20 @@ interface RawProfile {
 }
 
 /**
- * @description .modal.toml ファイルの生データ表現
+ * @description Raw representation of a .modal.toml file
  */
 interface Config {
 	[profile: string]: RawProfile;
 }
 
 /**
- * @description `Config` と環境変数から解決された設定オブジェクト
- * @property serverUrl - Modal APIサーバーのURL
- * @property tokenId - 認証トークンID @optional
- * @property tokenSecret - 認証トークンシークレット @optional
- * @property environment - Modal環境名 @optional
- * @property imageBuilderVersion - イメージビルダーのバージョン @optional
- * @property logLevel - ログレベル @optional
+ * @description Settings resolved from `Config` and environment variables
+ * @property serverUrl - Modal API server URL
+ * @property tokenId - Auth token ID @optional
+ * @property tokenSecret - Auth token secret @optional
+ * @property environment - Modal environment name @optional
+ * @property imageBuilderVersion - Image builder version @optional
+ * @property logLevel - Log level @optional
  */
 export interface Profile {
 	serverUrl: string;
@@ -42,9 +42,9 @@ export interface Profile {
 }
 
 /**
- * @description プロファイルのサーバーURLがローカルホストかどうかを判定する
- * @param profile - 判定対象のプロファイル
- * @returns ローカルホストの場合 true
+ * @description Checks whether the profile server URL points to localhost
+ * @param profile - Profile to check
+ * @returns true when the URL points to localhost
  */
 export function isLocalhost(profile: Profile): boolean {
 	const url = new URL(profile.serverUrl);
@@ -58,8 +58,8 @@ export function isLocalhost(profile: Profile): boolean {
 }
 
 /**
- * @description Modal設定ファイル(.modal.toml)のパスを返す
- * @returns 設定ファイルの絶対パス(環境変数 MODAL_CONFIG_PATH が優先)
+ * @description Returns the Modal config file path (.modal.toml)
+ * @returns Absolute config file path, preferring the MODAL_CONFIG_PATH environment variable
  */
 export function configFilePath(): string {
 	const configPath = process.env.MODAL_CONFIG_PATH;
@@ -70,8 +70,8 @@ export function configFilePath(): string {
 }
 
 /**
- * @description 設定ファイルを読み込みパースする
- * @returns パースされた設定オブジェクト(ファイルが存在しない場合は空オブジェクト)
+ * @description Reads and parses the config file
+ * @returns Parsed config object, or an empty object when the file does not exist
  */
 function readConfigFile(): Config {
 	try {
@@ -86,17 +86,17 @@ function readConfigFile(): Config {
 }
 
 /**
- * @description 起動時に同期的に読み込まれた設定データ
+ * @description Config data synchronously loaded at startup
  *
- * CJS出力でのトップレベル await を避けるため同期読み込みを使用。
- * .modal.toml は小さく一度だけ読まれるためパフォーマンスへの影響は軽微。
+ * Synchronous loading avoids top-level await in the CJS output.
+ * .modal.toml is small and read only once, so the performance impact is minor.
  */
 const config: Config = readConfigFile();
 
 /**
- * @description 指定されたプロファイル名(または自動検出)から設定を解決する
- * @param profileName - プロファイル名(省略時はアクティブまたは "default" を使用)
- * @returns 環境変数とTOML設定をマージしたプロファイル
+ * @description Resolves settings from the specified profile name or auto-detection
+ * @param profileName - Profile name; when omitted, uses the active profile or "default"
+ * @returns Profile merged from environment variables and TOML settings
  */
 export function getProfile(profileName?: string): Profile {
 	if (!profileName) {
@@ -106,7 +106,7 @@ export function getProfile(profileName?: string): Profile {
 				break;
 			}
 		}
-		// アクティブなプロファイルがなければ "default" にフォールバック
+		// Fall back to "default" when there is no active profile.
 		if (!profileName && Object.hasOwn(config, "default")) {
 			profileName = "default";
 		}

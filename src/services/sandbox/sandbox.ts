@@ -74,9 +74,9 @@ import {
 } from "./sandbox_tunnel";
 
 /**
- * @description {@link Sandbox} を管理するサービス
+ * @description Service for managing {@link Sandbox}
  *
- * 通常はクライアント経由でのみアクセスする:
+ * Usually accessed only through the client:
  * ```typescript
  * const modal = new ModalClient();
  * const sb = await modal.sandboxes.create(app, image);
@@ -105,11 +105,11 @@ export class SandboxService {
 	}
 
 	/**
-	 * @description 指定したAppとImageで新しいSandboxを作成する
-	 * @param app - Appインスタンス
-	 * @param image - コンテナイメージ
-	 * @param params - Sandbox作成パラメータ
-	 * @returns 作成されたSandbox
+	 * @description Creates a new Sandbox with the specified App and Image
+	 * @param app - App instance
+	 * @param image - Container image
+	 * @param params - Sandbox creation parameters
+	 * @returns Created Sandbox
 	 */
 	async create(
 		app: App,
@@ -151,11 +151,11 @@ export class SandboxService {
 	}
 
 	/**
-	 * @description 実験的 V2 backend で Sandbox を作成する
-	 * @param app - Appインスタンス
-	 * @param image - コンテナイメージ
-	 * @param params - Sandbox作成パラメータ
-	 * @returns 作成された V2 Sandbox
+	 * @description Creates a Sandbox with the experimental V2 backend
+	 * @param app - App instance
+	 * @param image - Container image
+	 * @param params - Sandbox creation parameters
+	 * @returns Created V2 Sandbox
 	 */
 	async experimentalCreate(
 		app: App,
@@ -214,10 +214,10 @@ export class SandboxService {
 	}
 
 	/**
-	 * @description IDから実行中のSandboxを取得する
+	 * @description Gets a running Sandbox by ID
 	 * @param sandboxId - Sandbox ID
-	 * @returns Sandboxインスタンス
-	 * @throws NotFoundError 指定されたSandboxが存在しない場合
+	 * @returns Sandbox instance
+	 * @throws NotFoundError when the specified Sandbox does not exist
 	 */
 	async fromId(sandboxId: string): Promise<Sandbox> {
 		const isV2 = Sandbox.isV2SandboxId(sandboxId);
@@ -241,12 +241,12 @@ export class SandboxService {
 	}
 
 	/**
-	 * @description デプロイ済みApp内の名前付きSandboxを取得する
-	 * @param appName - アプリ名
-	 * @param name - Sandbox名
-	 * @param params - オプションパラメータ
-	 * @returns Sandboxインスタンス
-	 * @throws NotFoundError 指定されたSandboxが存在しない場合
+	 * @description Gets a named Sandbox in a deployed App
+	 * @param appName - App name
+	 * @param name - Sandbox name
+	 * @param params - Optional parameters
+	 * @returns Sandbox instance
+	 * @throws NotFoundError when the specified Sandbox does not exist
 	 */
 	async fromName(
 		appName: string,
@@ -277,8 +277,8 @@ export class SandboxService {
 	}
 
 	/**
-	 * @description 現在の環境またはApp IDのSandbox一覧を返す
-	 * @param params - フィルタリングパラメータ
+	 * @description Returns Sandboxes for the current environment or App ID
+	 * @param params - Filtering parameters
 	 */
 	async *list(
 		params: SandboxListParams = {},
@@ -315,8 +315,8 @@ export class SandboxService {
 	}
 
 	/**
-	 * @description 実験的 V2 Sandbox の一覧を返す
-	 * @param params - フィルタリングパラメータ
+	 * @description Returns the list of experimental V2 Sandboxes
+	 * @param params - Filtering parameters
 	 */
 	async *experimentalList(
 		params: SandboxExperimentalListParams,
@@ -348,7 +348,7 @@ export class SandboxService {
 }
 
 /**
- * @description 数秒で起動するModal上のセキュアで隔離されたコンテナ
+ * @description Secure, isolated container on Modal that starts in seconds
  */
 export class Sandbox {
 	readonly #client: ModalClient;
@@ -435,7 +435,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Sandboxの標準入力ストリーム
+	 * @description Standard input stream for the Sandbox
 	 */
 	get stdin(): ModalWriteStream<string> {
 		if (!this.#stdin) {
@@ -447,7 +447,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Sandboxの標準出力ストリーム
+	 * @description Standard output stream for the Sandbox
 	 */
 	get stdout(): ModalReadStream<string> {
 		if (!this.#stdout) {
@@ -471,7 +471,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Sandboxの標準エラー出力ストリーム
+	 * @description Standard error stream for the Sandbox
 	 */
 	get stderr(): ModalReadStream<string> {
 		if (!this.#stderr) {
@@ -495,7 +495,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Sandbox filesystem API の namespace
+	 * @description Namespace for the Sandbox filesystem API
 	 */
 	get filesystem(): SandboxFilesystem {
 		if (!this.#filesystem) {
@@ -507,7 +507,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Sandbox 内 sidecar container API の namespace
+	 * @description Namespace for sidecar container APIs inside the Sandbox
 	 */
 	get experimentalSidecars(): SidecarService {
 		if (!this.#experimentalSidecars) {
@@ -528,8 +528,8 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Sandboxにタグ(キーバリューペア)を設定する
-	 * @param tags - タグのキーバリューマッピング
+	 * @description Sets tags as key/value pairs on the Sandbox
+	 * @param tags - Key/value mapping of tags
 	 */
 	async setTags(tags: Record<string, string>): Promise<void> {
 		this.#ensureAttached();
@@ -553,8 +553,8 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Sandboxに設定されているタグを取得する
-	 * @returns タグのキーバリューマッピング
+	 * @description Gets tags set on the Sandbox
+	 * @returns Key/value mapping of tags
 	 */
 	async getTags(): Promise<Record<string, string>> {
 		this.#ensureAttached();
@@ -579,9 +579,9 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Sandbox ファイルシステム内のファイルを開く
-	 * @param path - 開くファイルのパス
-	 * @param mode - ファイルオープンモード (r, w, a, r+, w+, a+)
+	 * @description Opens a file in the Sandbox filesystem
+	 * @param path - File path to open
+	 * @param mode - File open mode (r, w, a, r+, w+, a+)
 	 * @returns {@link SandboxFile}
 	 */
 	async open(path: string, mode: SandboxFileMode = "r"): Promise<SandboxFile> {
@@ -594,7 +594,7 @@ export class Sandbox {
 			},
 			taskId,
 		});
-		// Open リクエストでは file descriptor は必ず設定される
+		// Open requests always set a file descriptor.
 		const fileDescriptor = resp.response.fileDescriptor as string;
 		return new SandboxFile(this.#client, fileDescriptor, taskId);
 	}
@@ -774,8 +774,8 @@ export class Sandbox {
 		try {
 			return await promise;
 		} finally {
-			// 成功時: 解決済みPromiseの保持を防ぐ
-			// 失敗時: 後続の呼び出しでリトライできるようクリア
+			// On success: avoid retaining the resolved Promise.
+			// On failure: clear it so later calls can retry.
 			if (this.#commandRouterClientPromise === promise) {
 				this.#commandRouterClientPromise = undefined;
 			}
@@ -783,7 +783,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Sandbox への HTTP 接続用トークンを作成する
+	 * @description Creates a token for HTTP connections to the Sandbox
 	 */
 	async createConnectToken(
 		params?: SandboxCreateConnectTokenParams,
@@ -805,8 +805,8 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description readinessプローブが成功するまでブロック
-	 * @param timeoutMs - 最大待機時間(ミリ秒) @default 300000
+	 * @description Blocks until the readiness probe succeeds
+	 * @param timeoutMs - Maximum wait time in milliseconds @default 300000
 	 */
 	async waitUntilReady(timeoutMs = 300_000): Promise<void> {
 		this.#ensureAttached();
@@ -849,9 +849,9 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Sandboxを終了する
-	 * @param params - オプションパラメータ(waitでexit codeを返す)
-	 * @returns wait: trueの場合はexit code
+	 * @description Terminates the Sandbox
+	 * @param params - Optional parameters; wait returns the exit code
+	 * @returns Exit code when wait is true
 	 */
 	async terminate(): Promise<undefined>;
 	async terminate(params: { wait: true }): Promise<number>;
@@ -872,7 +872,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Sandboxとの接続を切断しローカルリソースを解放する(Sandbox自体はModal上で継続動作)
+	 * @description Disconnects from the Sandbox and releases local resources. The Sandbox continues running on Modal
 	 */
 	detach(): void {
 		this.#commandRouterClient?.close();
@@ -883,7 +883,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Sandboxの終了を待機してexit codeを返す
+	 * @description Waits for the Sandbox to exit and returns its exit code
 	 * @returns exit code
 	 */
 	async wait(
@@ -926,10 +926,10 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description SandboxのTunnelメタデータを取得する
-	 * @param timeoutMs - タイムアウト(ミリ秒) @default 50000
-	 * @returns コンテナポートをキーとしたTunnelのマッピング
-	 * @throws SandboxTimeoutError タイムアウト時
+	 * @description Gets Tunnel metadata for the Sandbox
+	 * @param timeoutMs - Timeout in milliseconds @default 50000
+	 * @returns Mapping of container ports to Tunnels
+	 * @throws SandboxTimeoutError on timeout
 	 */
 	async tunnels(timeoutMs = 50000): Promise<Record<number, Tunnel>> {
 		this.#ensureAttached();
@@ -959,9 +959,9 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Sandbox のファイルシステムをスナップショットする。
-	 * 返された {@link Image} で同じファイルシステムの新しい Sandbox を起動できる
-	 * @param paramsOrTimeoutMs - スナップショット操作のパラメータ、または旧形式のタイムアウト(ミリ秒)
+	 * @description Snapshots the Sandbox filesystem.
+	 * The returned {@link Image} can start a new Sandbox with the same filesystem.
+	 * @param paramsOrTimeoutMs - Snapshot operation parameters, or legacy timeout in milliseconds
 	 * @returns {@link Image}
 	 */
 	async snapshotFilesystem(
@@ -1019,9 +1019,9 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Sandbox ファイルシステムのパスに {@link Image} をマウントする
-	 * @param path - マウント先のパス
-	 * @param image - マウントする {@link Image}。未指定なら空ディレクトリをマウント
+	 * @description Mounts an {@link Image} at a path in the Sandbox filesystem
+	 * @param path - Destination mount path
+	 * @param image - {@link Image} to mount. Mounts an empty directory when omitted
 	 */
 	async mountImage(
 		path: string,
@@ -1059,8 +1059,8 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Sandbox ファイルシステムのパスにマウントされた Image をアンマウントする
-	 * @param path - マウントされていたパス
+	 * @description Unmounts an Image mounted at a path in the Sandbox filesystem
+	 * @param path - Previously mounted path
 	 */
 	async unmountImage(path: string): Promise<void> {
 		this.#ensureAttached();
@@ -1081,9 +1081,9 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description 実行中の Sandbox 内のディレクトリをスナップショットし新しい {@link Image} を作成する
-	 * @param path - スナップショット対象のディレクトリパス
-	 * @param params - スナップショットパラメータ
+	 * @description Snapshots a directory inside the running Sandbox and creates a new {@link Image}
+	 * @param path - Directory path to snapshot
+	 * @param params - Snapshot parameters
 	 * @returns {@link Image}
 	 */
 	async snapshotDirectory(
@@ -1120,8 +1120,8 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Sandbox の outbound network policy を更新する
-	 * @param params - network policy パラメータ
+	 * @description Updates the outbound network policy for the Sandbox
+	 * @param params - Network policy parameters
 	 */
 	async updateNetworkPolicy(
 		params: SandboxUpdateNetworkPolicyParams,
@@ -1151,7 +1151,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Sandbox にマウントされた Volume を最新コミット状態へ reload する
+	 * @description Reloads Volumes mounted on the Sandbox to the latest committed state
 	 */
 	async reloadVolumes(): Promise<void> {
 		this.#ensureAttached();
@@ -1204,8 +1204,8 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Sandbox が終了したかを確認する。
-	 * 実行中なら `null`、終了済みなら exit code を返す
+	 * @description Checks whether the Sandbox has exited.
+	 * Returns `null` while running, or the exit code after exit.
 	 */
 	async poll(): Promise<number | null> {
 		this.#ensureAttached();
@@ -1222,7 +1222,7 @@ export class Sandbox {
 			return null;
 		}
 
-		// subprocess API に合わせてステータスを exit code に変換
+		// Convert status to an exit code to match the subprocess API.
 		if (result.status === GenericResult_GenericStatus.GENERIC_STATUS_TIMEOUT) {
 			return 124;
 		} else if (

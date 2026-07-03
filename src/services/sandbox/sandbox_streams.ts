@@ -4,18 +4,18 @@ import { isRetryableGrpc, sleep } from "@/core/grpc/utils";
 import type { FileDescriptor } from "@/generated/modal_proto/api";
 import { encodeIfString } from "@/utils/streams";
 
-// SandboxGetLogs リトライ時のバックオフ設定
+// Backoff settings when retrying SandboxGetLogs.
 const SB_LOGS_INITIAL_DELAY_MS = 10;
 const SB_LOGS_DELAY_FACTOR = 2;
 const SB_LOGS_MAX_RETRIES = 10;
 
-// Python SDK の _StreamReader (object_type == "sandbox") に相当
+// Equivalent to the Python SDK _StreamReader (object_type == "sandbox").
 /**
- * @description Sandbox の stdout/stderr をストリーミング読み取りする
- * @param cpClient - gRPCクライアント
+ * @description Streams reads from Sandbox stdout/stderr
+ * @param cpClient - gRPC client
  * @param sandboxId - Sandbox ID
- * @param fileDescriptor - 読み取り対象のファイルディスクリプタ
- * @param signal - キャンセル用シグナル @optional
+ * @param fileDescriptor - File descriptor to read
+ * @param signal - Cancellation signal @optional
  */
 export async function* outputStreamSb(
 	cpClient: ModalGrpcClient,
@@ -41,7 +41,7 @@ export async function* outputStreamSb(
 				},
 			);
 			for await (const batch of outputIterator) {
-				// 読み取り成功 — バックオフカウンタをリセット
+				// Read succeeded. Reset the backoff counter.
 				delayMs = SB_LOGS_INITIAL_DELAY_MS;
 				retriesRemaining = SB_LOGS_MAX_RETRIES;
 				lastIndex = batch.entryId;
@@ -55,16 +55,16 @@ export async function* outputStreamSb(
 				}
 			}
 		} catch (err) {
-			// キャンセル済みならエラー種別を問わず正常終了
+			// If cancelled, exit cleanly regardless of the error type.
 			if (signal?.aborted) {
 				return;
 			}
 			if (isRetryableGrpc(err) && retriesRemaining > 0) {
-				// 連続リトライを避けるため短い指数バックオフ
+				// Short exponential backoff to avoid tight retries.
 				try {
 					await sleep(delayMs, signal);
 				} catch {
-					// スリープ中のキャンセル — 正常終了
+					// Cancelled while sleeping. Exit cleanly.
 					return;
 				}
 				delayMs *= SB_LOGS_DELAY_FACTOR;
@@ -77,8 +77,8 @@ export async function* outputStreamSb(
 }
 
 /**
- * @description Sandbox の stdin に書き込むための WritableStream を返す
- * @param cpClient - gRPCクライアント
+ * @description Returns a WritableStream for writing to Sandbox stdin
+ * @param cpClient - gRPC client
  * @param sandboxId - Sandbox ID
  */
 export function inputStreamSb(
@@ -106,12 +106,12 @@ export function inputStreamSb(
 }
 
 /**
- * @description ContainerProcess の stdout/stderr をストリーミング読み取りする
- * @param commandRouterClient - TaskCommandRouterクライアント
- * @param taskId - タスクID
- * @param execId - 実行ID
- * @param fileDescriptor - 読み取り対象のファイルディスクリプタ
- * @param deadline - デッドライン(エポックミリ秒) @optional
+ * @description Streams reads from ContainerProcess stdout/stderr
+ * @param commandRouterClient - TaskCommandRouter client
+ * @param taskId - Task ID
+ * @param execId - Exec ID
+ * @param fileDescriptor - File descriptor to read
+ * @param deadline - Deadline in epoch milliseconds @optional
  */
 export async function* outputStreamCp(
 	commandRouterClient: TaskCommandRouterClientImpl,
@@ -131,10 +131,10 @@ export async function* outputStreamCp(
 }
 
 /**
- * @description ContainerProcess の stdin に書き込むための WritableStream を返す
- * @param commandRouterClient - TaskCommandRouterクライアント
- * @param taskId - タスクID
- * @param execId - 実行ID
+ * @description Returns a WritableStream for writing to ContainerProcess stdin
+ * @param commandRouterClient - TaskCommandRouter client
+ * @param taskId - Task ID
+ * @param execId - Exec ID
  */
 export function inputStreamCp<R extends string | Uint8Array>(
 	commandRouterClient: TaskCommandRouterClientImpl,

@@ -1,31 +1,32 @@
 /**
- * @description protocol 3, 4, 5 対応の最小 pickle コーデック
+ * @description Minimal pickle codec supporting protocols 3, 4, and 5
  *
- * JSON 互換プリミティブ(null, bool, number, string, 配列, プレーンオブジェクト)
- * と Uint8Array をサポートする。エンコーダは protocol 3/4/5 を出力でき(デフォルト 4),
- * デコーダは最初の PROTO が 3/4/5 でサポート済み opcode のみ使用する pickle を読み取る。
- * 完全な Python pickler ではないが, 軽量データ交換には十分。
+ * Supports JSON-compatible primitives (null, bool, number, string, arrays,
+ * plain objects) and Uint8Array. The encoder can emit protocols 3/4/5
+ * (default 4), and the decoder reads pickles whose first PROTO is 3/4/5 and
+ * that use only supported opcodes. This is not a complete Python pickler, but
+ * it is sufficient for lightweight data exchange.
  */
 
 /**
- * @description エンコード用 UTF-8 変換シングルトン
+ * @description UTF-8 conversion singleton for encoding
  */
 const textEncoder = new TextEncoder();
 
 /**
- * @description デコード用 UTF-8 変換シングルトン
+ * @description UTF-8 conversion singleton for decoding
  */
 const textDecoder = new TextDecoder();
 
 /**
- * @description float64BE 書き込み用の再利用バッファ
+ * @description Reusable buffer for float64BE writes
  */
 const scratchBuf = new ArrayBuffer(8);
 const scratchDv = new DataView(scratchBuf);
 const scratchBytes = new Uint8Array(scratchBuf);
 
 /**
- * @description pickle 処理固有のエラー
+ * @description Error specific to pickle processing
  */
 class PickleError extends Error {
 	constructor(message: string) {
@@ -35,7 +36,7 @@ class PickleError extends Error {
 }
 
 /**
- * @description pickle opcode 定義 (単バイト値)
+ * @description Pickle opcode definitions as single-byte values
  */
 enum Op {
 	PROTO = 0x80,
@@ -74,30 +75,30 @@ enum Op {
 }
 
 /**
- * @description pickle バイナリ出力を組み立てるバッファ
+ * @description Buffer that builds pickle binary output
  */
 class Writer {
 	private out: number[] = [];
 
 	/**
-	 * @description 1 バイト書き込み
-	 * @param b - 書き込む値 (下位 8 ビットのみ使用)
+	 * @description Writes one byte
+	 * @param b - Value to write; only the low 8 bits are used
 	 */
 	byte(b: number) {
 		this.out.push(b & 0xff);
 	}
 
 	/**
-	 * @description バイト列をそのまま書き込み
-	 * @param arr - 書き込むバイト列
+	 * @description Writes bytes as-is
+	 * @param arr - Bytes to write
 	 */
 	bytes(arr: Uint8Array | number[]) {
 		for (const b of arr) this.byte(b as number);
 	}
 
 	/**
-	 * @description 32 ビット符号なし整数をリトルエンディアンで書き込み
-	 * @param x - 書き込む値
+	 * @description Writes a 32-bit unsigned integer in little-endian order
+	 * @param x - Value to write
 	 */
 	uint32LE(x: number) {
 		this.byte(x);
@@ -107,8 +108,8 @@ class Writer {
 	}
 
 	/**
-	 * @description 64 ビット符号なし整数をリトルエンディアンで書き込み
-	 * @param n - 書き込む値
+	 * @description Writes a 64-bit unsigned integer in little-endian order
+	 * @param n - Value to write
 	 */
 	uint64LE(n: number | bigint) {
 		let v = BigInt(n);
@@ -119,8 +120,8 @@ class Writer {
 	}
 
 	/**
-	 * @description 64 ビット浮動小数点数をビッグエンディアンで書き込み
-	 * @param v - 書き込む値
+	 * @description Writes a 64-bit floating-point number in big-endian order
+	 * @param v - Value to write
 	 */
 	float64BE(v: number) {
 		scratchDv.setFloat64(0, v, false);
@@ -128,8 +129,8 @@ class Writer {
 	}
 
 	/**
-	 * @description バッファ内容を Uint8Array として取得
-	 * @returns 蓄積されたバイト列
+	 * @description Returns the buffer contents as a Uint8Array
+	 * @returns Accumulated bytes
 	 */
 	toUint8(): Uint8Array {
 		return new Uint8Array(this.out);
@@ -137,7 +138,7 @@ class Writer {
 }
 
 /**
- * @description pickle バイナリデータの順次読み取りカーソル
+ * @description Cursor for sequentially reading pickle binary data
  */
 class Reader {
 	constructor(
@@ -146,17 +147,17 @@ class Reader {
 	) {}
 
 	/**
-	 * @description バッファ末尾に達したか
-	 * @returns 末尾なら true
+	 * @description Checks whether the cursor reached the end of the buffer
+	 * @returns true at the end
 	 */
 	eof() {
 		return this.pos >= this.buf.length;
 	}
 
 	/**
-	 * @description 1 バイト読み取り
-	 * @returns 読み取った値
-	 * @throws データ末尾を超えた場合
+	 * @description Reads one byte
+	 * @returns Read value
+	 * @throws When reading past the end of data
 	 */
 	byte(): number {
 		const value = this.buf[this.pos++];
@@ -167,9 +168,9 @@ class Reader {
 	}
 
 	/**
-	 * @description n バイトの subarray を返す (ゼロコピー)
-	 * @param n - 読み取るバイト数
-	 * @returns バッファの部分ビュー
+	 * @description Returns an n-byte subarray without copying
+	 * @param n - Number of bytes to read
+	 * @returns Partial view into the buffer
 	 */
 	take(n: number) {
 		const s = this.buf.subarray(this.pos, this.pos + n);
@@ -178,8 +179,8 @@ class Reader {
 	}
 
 	/**
-	 * @description 32 ビット符号なし整数をリトルエンディアンで読み取り
-	 * @returns 読み取った値
+	 * @description Reads a 32-bit unsigned integer in little-endian order
+	 * @returns Read value
 	 */
 	uint32LE() {
 		const b0 = this.byte(),
@@ -190,8 +191,8 @@ class Reader {
 	}
 
 	/**
-	 * @description 64 ビット符号なし整数をリトルエンディアンで読み取り
-	 * @returns 読み取った値 (number 精度に収まる範囲)
+	 * @description Reads a 64-bit unsigned integer in little-endian order
+	 * @returns Read value within number precision
 	 */
 	uint64LE() {
 		const lo = this.uint32LE() >>> 0;
@@ -200,8 +201,8 @@ class Reader {
 	}
 
 	/**
-	 * @description 32 ビット符号付き整数をリトルエンディアンで読み取り
-	 * @returns 読み取った値
+	 * @description Reads a 32-bit signed integer in little-endian order
+	 * @returns Read value
 	 */
 	int32LE() {
 		const v = new DataView(
@@ -214,8 +215,8 @@ class Reader {
 	}
 
 	/**
-	 * @description 64 ビット浮動小数点数をビッグエンディアンで読み取り
-	 * @returns 読み取った値
+	 * @description Reads a 64-bit floating-point number in big-endian order
+	 * @returns Read value
 	 */
 	float64BE() {
 		const v = new DataView(
@@ -229,15 +230,15 @@ class Reader {
 }
 
 /**
- * @description pickle protocol バージョン
+ * @description Pickle protocol version
  */
 export type Protocol = 3 | 4 | 5;
 
 /**
- * @description JS 値を pickle opcode 列に再帰的にエンコードする
- * @param val - エンコード対象の値
- * @param w - 出力先 Writer
- * @param proto - 使用する protocol バージョン
+ * @description Recursively encodes a JS value into pickle opcodes
+ * @param val - Value to encode
+ * @param w - Destination Writer
+ * @param proto - Protocol version to use
  */
 function encodeValue(val: unknown, w: Writer, proto: Protocol) {
 	if (val === null || val === undefined) {
@@ -332,9 +333,9 @@ function encodeValue(val: unknown, w: Writer, proto: Protocol) {
 }
 
 /**
- * @description protocol 4 以上のとき MEMOIZE opcode を出力する
- * @param w - 出力先 Writer
- * @param proto - 使用中の protocol バージョン
+ * @description Emits a MEMOIZE opcode when protocol 4 or newer is used
+ * @param w - Destination Writer
+ * @param proto - Active protocol version
  */
 function maybeMemoize(w: Writer, proto: Protocol) {
 	if (proto >= 4) {
@@ -343,10 +344,10 @@ function maybeMemoize(w: Writer, proto: Protocol) {
 }
 
 /**
- * @description JS 値を pickle バイト列にシリアライズする
- * @param obj - シリアライズ対象
- * @param protocol - pickle protocol バージョン @defaultValue 4
- * @returns pickle バイト列
+ * @description Serializes a JS value into pickle bytes
+ * @param obj - Value to serialize
+ * @param protocol - Pickle protocol version @defaultValue 4
+ * @returns Pickle bytes
  */
 export function dumps(obj: unknown, protocol: Protocol = 4): Uint8Array {
 	if (![3, 4, 5].includes(protocol))
@@ -357,7 +358,7 @@ export function dumps(obj: unknown, protocol: Protocol = 4): Uint8Array {
 	w.byte(Op.PROTO);
 	w.byte(protocol);
 	if (protocol === 5) {
-		// CPython が proto-5 と認識するためにゼロ長 FRAME を出力
+		// Emit a zero-length FRAME so CPython recognizes this as proto-5.
 		w.byte(Op.FRAME);
 		w.uint64LE(0);
 	}
@@ -367,9 +368,9 @@ export function dumps(obj: unknown, protocol: Protocol = 4): Uint8Array {
 }
 
 /**
- * @description pickle バイト列を JS 値にデシリアライズする
- * @param buf - pickle データ
- * @returns デシリアライズ済みの値
+ * @description Deserializes pickle bytes into a JS value
+ * @param buf - Pickle data
+ * @returns Deserialized value
  */
 export function loads(buf: Uint8Array): unknown {
 	const r = new Reader(buf);
@@ -389,7 +390,7 @@ export function loads(buf: Uint8Array): unknown {
 		r.uint64LE(); // FRAME size - we stream-read instead
 	}
 
-	// Symbol を使うことで MARK とユーザーデータを混同しない
+	// Use a Symbol so MARK is not confused with user data.
 	const MARK = Symbol("pickle-mark");
 
 	while (!r.eof()) {

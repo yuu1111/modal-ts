@@ -37,49 +37,49 @@ import { checkForRenamedParams } from "@/utils/validation";
 import type { Probe } from "./sandbox_probe";
 
 /**
- * @description stdin は常に存在するが、stdout/stderr を不要なら無視できる。
- * デフォルトは "pipe" (Node.js の挙動に準拠)。
- * "ignore" に設定すると出力ストリームは空になる
+ * @description stdin always exists, but stdout/stderr can be ignored when not needed.
+ * The default is "pipe", matching Node.js behavior.
+ * When set to "ignore", output streams are empty.
  */
 export type StdioBehavior = "pipe" | "ignore";
 
 /**
- * @description Sandbox またはコンテナプロセスから読み取るデータの種類を指定する。
- * "text" は UTF-8 テキスト、"binary" は生バイト列 (Uint8Array) として読み取る
+ * @description Specifies the kind of data read from a Sandbox or container process.
+ * "text" reads UTF-8 text, and "binary" reads raw bytes as Uint8Array.
  */
 export type StreamMode = "text" | "binary";
 
 /**
- * @description Sandbox作成時のパラメータ
- * @property cpu - 物理CPUコアの予約数(小数可) @optional
- * @property cpuLimit - 物理CPUコアのハードリミット(小数可) @optional
- * @property memoryMiB - メモリ予約量 (MiB) @optional
- * @property memoryLimitMiB - メモリのハードリミット (MiB) @optional
- * @property gpu - GPU予約 (例: "A100", "T4:2", "A100-80GB:4") @optional
- * @property timeoutMs - Sandboxの最大生存時間(ミリ秒) @optional @defaultValue 300000
- * @property idleTimeoutMs - アイドル状態で終了するまでの時間(ミリ秒) @optional
- * @property workdir - 作業ディレクトリ @optional
- * @property command - メインプロセスのコマンド引数。未指定時は無期限スリープ @optional
- * @property env - 環境変数 @optional
- * @property secrets - 環境変数として注入する Secret の配列 @optional
- * @property volumes - Volume のマウントポイント @optional
- * @property cloudBucketMounts - CloudBucketMount のマウントポイント @optional
- * @property pty - PTY を有効にする @optional
- * @property encryptedPorts - TLS で暗号化されたトンネルポートの一覧 @optional
- * @property h2Ports - HTTP/2 で暗号化されたトンネルポートの一覧 @optional
- * @property unencryptedPorts - 暗号化なしのトンネルポートの一覧 @optional
- * @property blockNetwork - 全ネットワークアクセスをブロックする @optional
- * @property cidrAllowlist - アクセスを許可する CIDR の一覧。blockNetwork とは併用不可 @optional
- * @property cloud - 使用するクラウドプロバイダー @optional
- * @property regions - 実行するリージョン @optional
- * @property schedulerPlacement - スケジューリング制約 @optional
- * @property verbose - 詳細ログを有効にする @optional
- * @property proxy - Sandbox の前段に配置する Proxy @optional
- * @property name - Sandbox の名前(App 内で一意) @optional
- * @property experimentalOptions - 実験的オプション @optional
- * @property customDomain - カスタムドメイン(Enterprise 限定) @optional
- * @property readinessProbe - 接続受付可能かを判定する Probe @optional
- * @property includeOidcIdentityToken - OIDC ID トークンを含める @optional
+ * @description Parameters for creating a Sandbox
+ * @property cpu - Reserved physical CPU cores, fractional values allowed @optional
+ * @property cpuLimit - Hard limit for physical CPU cores, fractional values allowed @optional
+ * @property memoryMiB - Reserved memory in MiB @optional
+ * @property memoryLimitMiB - Hard memory limit in MiB @optional
+ * @property gpu - GPU reservation, for example "A100", "T4:2", or "A100-80GB:4" @optional
+ * @property timeoutMs - Maximum Sandbox lifetime in milliseconds @optional @defaultValue 300000
+ * @property idleTimeoutMs - Time in milliseconds before idle termination @optional
+ * @property workdir - Working directory @optional
+ * @property command - Main process command arguments. Sleeps forever when omitted @optional
+ * @property env - Environment variables @optional
+ * @property secrets - Secrets to inject as environment variables @optional
+ * @property volumes - Volume mount points @optional
+ * @property cloudBucketMounts - CloudBucketMount mount points @optional
+ * @property pty - Enable PTY @optional
+ * @property encryptedPorts - Tunnel ports encrypted with TLS @optional
+ * @property h2Ports - Tunnel ports encrypted with HTTP/2 @optional
+ * @property unencryptedPorts - Unencrypted tunnel ports @optional
+ * @property blockNetwork - Block all network access @optional
+ * @property cidrAllowlist - CIDR allowlist. Cannot be used with blockNetwork @optional
+ * @property cloud - Cloud provider to use @optional
+ * @property regions - Regions to run in @optional
+ * @property schedulerPlacement - Scheduling constraints @optional
+ * @property verbose - Enable verbose logs @optional
+ * @property proxy - Proxy placed in front of the Sandbox @optional
+ * @property name - Sandbox name, unique within the App @optional
+ * @property experimentalOptions - Experimental options @optional
+ * @property customDomain - Custom domain, Enterprise only @optional
+ * @property readinessProbe - Probe that determines whether the Sandbox can accept connections @optional
+ * @property includeOidcIdentityToken - Include an OIDC ID token @optional
  */
 export type SandboxCreateParams = {
 	cpu?: number;
@@ -136,10 +136,10 @@ export type SandboxCreateParams = {
 };
 
 /**
- * @description client.sandboxes.list()のオプションパラメータ
- * @property appId - 特定の App で絞り込む @optional
- * @property tags - 指定したタグを全て含む Sandbox のみ返す @optional
- * @property environment - 環境名。未指定なら現在のプロファイルを使用 @optional
+ * @description Optional parameters for client.sandboxes.list()
+ * @property appId - Filter by a specific App @optional
+ * @property tags - Return only Sandboxes containing all specified tags @optional
+ * @property environment - Environment name. Uses the current profile when omitted @optional
  */
 export type SandboxListParams = {
 	appId?: string;
@@ -152,23 +152,23 @@ export type SandboxExperimentalListParams = {
 };
 
 /**
- * @description client.sandboxes.fromName()のオプションパラメータ
- * @property environment - 環境名 @optional
+ * @description Optional parameters for client.sandboxes.fromName()
+ * @property environment - Environment name @optional
  */
 export type SandboxFromNameParams = {
 	environment?: string;
 };
 
 /**
- * @description Sandbox.exec()のオプションパラメータ
- * @property mode - 入出力ストリームのテキスト/バイナリエンコーディング @optional
- * @property stdout - 標準出力のパイプ/無視 @optional
- * @property stderr - 標準エラーのパイプ/無視 @optional
- * @property workdir - コマンド実行時の作業ディレクトリ @optional
- * @property timeoutMs - プロセスのタイムアウト(ミリ秒) @optional @defaultValue 0
- * @property env - コマンド実行時の環境変数 @optional
- * @property secrets - 環境変数として注入する Secret の配列 @optional
- * @property pty - PTY を有効にする @optional
+ * @description Optional parameters for Sandbox.exec()
+ * @property mode - Text or binary encoding for input/output streams @optional
+ * @property stdout - Pipe or ignore stdout @optional
+ * @property stderr - Pipe or ignore stderr @optional
+ * @property workdir - Working directory for command execution @optional
+ * @property timeoutMs - Process timeout in milliseconds @optional @defaultValue 0
+ * @property env - Environment variables for command execution @optional
+ * @property secrets - Secrets to inject as environment variables @optional
+ * @property pty - Enable PTY @optional
  */
 export type SandboxExecParams = {
 	mode?: StreamMode;
@@ -183,8 +183,8 @@ export type SandboxExecParams = {
 };
 
 /**
- * @description Sandbox.terminate()のオプションパラメータ
- * @property wait - true なら Sandbox の終了を待ち exit code を返す @optional
+ * @description Optional parameters for Sandbox.terminate()
+ * @property wait - When true, waits for Sandbox termination and returns the exit code @optional
  */
 export type SandboxTerminateParams = {
 	wait?: boolean;
@@ -212,8 +212,8 @@ export type SandboxUpdateNetworkPolicyParams = {
 };
 
 /**
- * @description デフォルトのPTY設定を返す
- * @returns PTYInfoプロトメッセージ
+ * @description Returns the default PTY settings
+ * @returns PTYInfo proto message
  */
 export function defaultSandboxPTYInfo(): PTYInfo {
 	return PTYInfo.create({
@@ -228,20 +228,20 @@ export function defaultSandboxPTYInfo(): PTYInfo {
 	});
 }
 
-// Linux の exec に渡せる引数の最大バイト数。
-// サーバー側の制限だが変更される可能性は低い(getconf ARG_MAX で確認可能)。
+// Maximum number of argument bytes that can be passed to Linux exec.
+// This is a server-side limit, but is unlikely to change and can be checked with getconf ARG_MAX.
 //
-// 本番環境での検証では制限は 131072 バイト (2**17)。
-// 引数以外のコマンドラインオーバーヘッド('runsc exec ...' 等)を考慮し 2**16 を使用。
+// Production validation shows a limit of 131072 bytes (2**17).
+// Use 2**16 to account for command-line overhead outside the arguments, such as 'runsc exec ...'.
 /**
- * @description execの引数がLinuxのARG_MAX制限を超えないか検証する
- * @param args - コマンド引数の配列
- * @throws InvalidError 引数の合計長がARG_MAXを超える場合
+ * @description Validates that exec arguments do not exceed the Linux ARG_MAX limit
+ * @param args - Command arguments
+ * @throws InvalidError when the total argument length exceeds ARG_MAX
  */
 export function validateExecArgs(args: string[]): void {
 	const ARG_MAX_BYTES = 2 ** 16;
 
-	// "[Errno 7] Argument list too long" エラーを防止
+	// Prevent "[Errno 7] Argument list too long" errors.
 	const totalArgLen = args.reduce((sum, arg) => sum + arg.length, 0);
 	if (totalArgLen > ARG_MAX_BYTES) {
 		throw new InvalidError(
@@ -266,11 +266,11 @@ function secondsAliasToMs(
 }
 
 /**
- * @description SandboxCreateParamsからgRPCリクエストを構築する
- * @param appId - アプリID
- * @param imageId - コンテナイメージID
- * @param params - Sandbox作成パラメータ
- * @returns SandboxCreateRequestプロトメッセージ
+ * @description Builds a gRPC request from SandboxCreateParams
+ * @param appId - App ID
+ * @param imageId - Container image ID
+ * @param params - Sandbox creation parameters
+ * @returns SandboxCreateRequest proto message
  */
 export async function buildSandboxCreateRequestProto(
 	appId: string,
@@ -352,7 +352,7 @@ export async function buildSandboxCreateRequestProto(
 			"include_oidc_identity_token",
 		) ?? false;
 
-	// gRPC API は秒単位の整数値のみ受け付ける
+	// The gRPC API accepts only integer second values.
 	if (timeoutMs !== undefined && timeoutMs <= 0) {
 		throw new Error(`timeoutMs must be positive, got ${timeoutMs}`);
 	}
@@ -514,8 +514,8 @@ export async function buildSandboxCreateRequestProto(
 		}
 	}
 
-	// 公開インターフェースは将来の拡張のため Record<string, any> だが、
-	// 現在の proto は Record<string, boolean> のみサポートするためここで検証する
+	// The public interface is Record<string, any> for future extension,
+	// but the current proto supports only Record<string, boolean>, so validate here.
 	const protoExperimentalOptions: Record<string, boolean> = experimentalOptions
 		? Object.entries(experimentalOptions).reduce(
 				(acc, [name, value]) => {
@@ -577,11 +577,11 @@ export async function buildSandboxCreateRequestProto(
 }
 
 /**
- * @description SandboxCreateParamsからV2 Sandbox作成リクエストを構築する
- * @param appId - アプリID
- * @param imageId - コンテナイメージID
- * @param params - Sandbox作成パラメータ
- * @returns SandboxCreateV2Requestプロトメッセージ
+ * @description Builds a V2 Sandbox creation request from SandboxCreateParams
+ * @param appId - App ID
+ * @param imageId - Container image ID
+ * @param params - Sandbox creation parameters
+ * @returns SandboxCreateV2Request proto message
  */
 export async function buildSandboxCreateV2RequestProto(
 	appId: string,
@@ -606,12 +606,12 @@ export async function buildSandboxCreateV2RequestProto(
 }
 
 /**
- * @description SandboxExecParamsからTaskExecStartRequestを構築する
- * @param taskId - タスクID
- * @param execId - 実行ID
- * @param command - 実行するコマンドと引数
- * @param params - execパラメータ
- * @returns TaskExecStartRequestプロトメッセージ
+ * @description Builds a TaskExecStartRequest from SandboxExecParams
+ * @param taskId - Task ID
+ * @param execId - Exec ID
+ * @param command - Command and arguments to run
+ * @param params - Exec parameters
+ * @returns TaskExecStartRequest proto message
  */
 export function buildTaskExecStartRequestProto(
 	taskId: string,

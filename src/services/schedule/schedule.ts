@@ -4,7 +4,7 @@ import {
 } from "@/generated/modal_proto/api";
 
 /**
- * @description Modal Function の定期実行スケジュール
+ * @description Periodic execution schedule for a Modal Function
  */
 export abstract class Schedule {
 	readonly #proto: ScheduleProtoMessage;
@@ -17,7 +17,7 @@ export abstract class Schedule {
 	}
 
 	/**
-	 * @description gRPC に渡す proto 表現を返す
+	 * @description Returns the proto representation passed to gRPC
 	 */
 	toProto(): ScheduleProtoMessage {
 		return this.#proto;
@@ -25,20 +25,20 @@ export abstract class Schedule {
 }
 
 /**
- * @description Cron スケジュールの作成パラメータ
- * @property timezone - IANA タイムゾーン名 @optional @defaultValue "UTC"
+ * @description Parameters for creating a Cron schedule
+ * @property timezone - IANA time zone name @optional @defaultValue "UTC"
  */
 export type CronParams = {
 	timezone?: string;
 };
 
 /**
- * @description Unix cron 形式の定期実行スケジュール
+ * @description Periodic execution schedule in Unix cron format
  */
 export class Cron extends Schedule {
 	/**
-	 * @param cronString - Unix cron 形式の式
-	 * @param params - オプションパラメータ
+	 * @param cronString - Expression in Unix cron format
+	 * @param params - Optional parameters
 	 */
 	constructor(cronString: string, params: CronParams = {}) {
 		super(
@@ -53,14 +53,14 @@ export class Cron extends Schedule {
 }
 
 /**
- * @description Period スケジュールの作成パラメータ
- * @property years - 年間隔 @optional
- * @property months - 月間隔 @optional
- * @property weeks - 週間隔 @optional
- * @property days - 日間隔 @optional
- * @property hours - 時間間隔 @optional
- * @property minutes - 分間隔 @optional
- * @property seconds - 秒間隔。小数可 @optional
+ * @description Parameters for creating a Period schedule
+ * @property years - Year interval @optional
+ * @property months - Month interval @optional
+ * @property weeks - Week interval @optional
+ * @property days - Day interval @optional
+ * @property hours - Hour interval @optional
+ * @property minutes - Minute interval @optional
+ * @property seconds - Second interval; fractional values allowed @optional
  */
 export type PeriodParams = {
 	years?: number;
@@ -73,11 +73,11 @@ export type PeriodParams = {
 };
 
 /**
- * @description 相対時間間隔で指定する定期実行スケジュール
+ * @description Periodic execution schedule specified by a relative time interval
  */
 export class Period extends Schedule {
 	/**
-	 * @param params - 期間指定
+	 * @param params - Duration specification
 	 */
 	constructor(params: PeriodParams) {
 		super(

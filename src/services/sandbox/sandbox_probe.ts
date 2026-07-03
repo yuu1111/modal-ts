@@ -2,8 +2,8 @@ import { InvalidError } from "@/core/errors";
 import { aliasedNumber } from "@/utils/param_aliases";
 
 /**
- * @description Probe作成時のパラメータ
- * @property intervalMs - ヘルスチェック間隔(ミリ秒) @defaultValue 100
+ * @description Parameters for creating a Probe
+ * @property intervalMs - Health check interval in milliseconds @defaultValue 100
  */
 export type ProbeParams = {
 	intervalMs?: number;
@@ -11,7 +11,7 @@ export type ProbeParams = {
 };
 
 /**
- * @description Sandbox のreadiness判定に使うプローブ
+ * @description Probe used to determine Sandbox readiness
  */
 export class Probe {
 	readonly #tcpPort?: number;
@@ -35,9 +35,9 @@ export class Probe {
 	}
 
 	/**
-	 * @description TCPポートへの接続でreadiness判定するProbeを作成
-	 * @param port - チェック対象のポート番号 (1-65535)
-	 * @param params - プローブパラメータ
+	 * @description Creates a Probe that determines readiness by connecting to a TCP port
+	 * @param port - Port number to check (1-65535)
+	 * @param params - Probe parameters
 	 */
 	static withTcp(
 		port: number,
@@ -58,9 +58,9 @@ export class Probe {
 	}
 
 	/**
-	 * @description コマンド実行でreadiness判定するProbeを作成
-	 * @param argv - 実行するコマンドと引数
-	 * @param params - プローブパラメータ
+	 * @description Creates a Probe that determines readiness by running a command
+	 * @param argv - Command and arguments to run
+	 * @param params - Probe parameters
 	 */
 	static withExec(
 		argv: string[],
@@ -88,7 +88,7 @@ export class Probe {
 				intervalMs: this.#intervalMs,
 			};
 		}
-		// コンストラクタで tcpPort か execArgv のどちらかが必ず設定される
+		// The constructor always sets either tcpPort or execArgv.
 		const argv = this.#execArgv as string[];
 		return {
 			execCommand: { argv },

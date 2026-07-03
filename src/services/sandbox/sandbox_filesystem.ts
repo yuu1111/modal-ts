@@ -8,14 +8,14 @@ import type {
 } from "@/generated/modal_proto/api";
 
 /**
- * @description ファイルシステムAPIがサポートするファイルオープンモード
+ * @description File open modes supported by the filesystem API
  */
 export type SandboxFileMode = "r" | "w" | "a" | "r+" | "w+" | "a+";
 
 /**
- * @description {@link Sandbox} ファイルシステム内の開かれたファイルを表す
+ * @description Represents an open file in a {@link Sandbox} filesystem
  *
- * Node.js の `fsPromises.FileHandle` に類似した読み書き操作を提供する。
+ * Provides read and write operations similar to Node.js `fsPromises.FileHandle`.
  */
 export class SandboxFile {
 	readonly #client: ModalClient;
@@ -30,8 +30,8 @@ export class SandboxFile {
 	}
 
 	/**
-	 * @description ファイルからデータを読み取る
-	 * @returns 読み取ったデータのバイト配列
+	 * @description Reads data from the file
+	 * @returns Read data as bytes
 	 */
 	async read(): Promise<Uint8Array> {
 		const resp = await runFilesystemExec(this.#client.cpClient, {
@@ -54,8 +54,8 @@ export class SandboxFile {
 	}
 
 	/**
-	 * @description ファイルにデータを書き込む
-	 * @param data - 書き込むバイト配列
+	 * @description Writes data to the file
+	 * @param data - Bytes to write
 	 */
 	async write(data: Uint8Array): Promise<void> {
 		await runFilesystemExec(this.#client.cpClient, {
@@ -68,7 +68,7 @@ export class SandboxFile {
 	}
 
 	/**
-	 * @description バッファされたデータをファイルにフラッシュする
+	 * @description Flushes buffered data to the file
 	 */
 	async flush(): Promise<void> {
 		await runFilesystemExec(this.#client.cpClient, {
@@ -80,7 +80,7 @@ export class SandboxFile {
 	}
 
 	/**
-	 * @description ファイルハンドルを閉じる
+	 * @description Closes the file handle
 	 */
 	async close(): Promise<void> {
 		await runFilesystemExec(this.#client.cpClient, {
@@ -93,10 +93,10 @@ export class SandboxFile {
 }
 
 /**
- * @description Sandbox ファイルシステム操作を実行しレスポンスを収集する
- * @param cpClient - gRPC クライアント
- * @param request - 実行リクエスト
- * @returns 出力チャンクとレスポンス
+ * @description Executes a Sandbox filesystem operation and collects the response
+ * @param cpClient - gRPC client
+ * @param request - Execution request
+ * @returns Output chunks and response
  */
 export async function runFilesystemExec(
 	cpClient: ModalGrpcClient,
@@ -130,7 +130,7 @@ export async function runFilesystemExec(
 					throw new SandboxFilesystemError(batch.error.errorMessage);
 				}
 			}
-			// gRPC ストリームが eof 送信前に切断されることがある(一時的なネットワーク断)
+			// The gRPC stream can disconnect before sending eof due to transient network breaks.
 			if (!completed) {
 				if (retries > 0) {
 					retries--;

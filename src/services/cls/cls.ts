@@ -29,9 +29,9 @@ import { parseRetries, type Retries } from "@/utils/retries";
 import { checkForRenamedParams } from "@/utils/validation";
 
 /**
- * @description {@link ClsService#fromName client.cls.fromName()} のオプションパラメータ
- * @property environment - Modal環境名 @optional
- * @property createIfMissing - 存在しない場合に作成するかどうか @optional
+ * @description Optional parameters for {@link ClsService#fromName client.cls.fromName()}
+ * @property environment - Modal environment name @optional
+ * @property createIfMissing - Whether to create when missing @optional
  */
 export type ClsFromNameParams = {
 	environment?: string;
@@ -120,21 +120,21 @@ export class ClsService {
 }
 
 /**
- * @description Cls のランタイムオプション上書きパラメータ
- * @property cpu - CPU コア数 @optional
- * @property cpuLimit - CPU コア数の上限 @optional
- * @property memoryMiB - メモリ(MiB) @optional
- * @property memoryLimitMiB - メモリ上限(MiB) @optional
- * @property gpu - GPU 設定文字列 @optional
- * @property env - 環境変数 @optional
- * @property secrets - シークレット @optional
- * @property volumes - ボリュームマウント @optional
- * @property retries - リトライポリシー @optional
- * @property maxContainers - 最大コンテナ数 @optional
- * @property bufferContainers - バッファコンテナ数 @optional
- * @property scaledownWindowMs - スケールダウン待機時間(ミリ秒) @optional
- * @property timeoutMs - タイムアウト(ミリ秒) @optional
- * @property schedulerPlacement - スケジューリング制約 @optional
+ * @description Parameters for overriding Cls runtime options
+ * @property cpu - CPU core count @optional
+ * @property cpuLimit - Upper limit for CPU cores @optional
+ * @property memoryMiB - Memory in MiB @optional
+ * @property memoryLimitMiB - Memory limit in MiB @optional
+ * @property gpu - GPU settings string @optional
+ * @property env - Environment variables @optional
+ * @property secrets - Secrets @optional
+ * @property volumes - Volume mounts @optional
+ * @property retries - Retry policy @optional
+ * @property maxContainers - Maximum container count @optional
+ * @property bufferContainers - Buffer container count @optional
+ * @property scaledownWindowMs - Scale-down wait time in milliseconds @optional
+ * @property timeoutMs - Timeout in milliseconds @optional
+ * @property schedulerPlacement - Scheduling constraints @optional
  */
 export type ClsWithOptionsParams = {
 	cpu?: number;
@@ -158,9 +158,9 @@ export type ClsWithOptionsParams = {
 };
 
 /**
- * @description Cls の同時実行設定パラメータ
- * @property maxInputs - 最大同時入力数
- * @property targetInputs - 目標同時入力数 @optional
+ * @description Concurrency settings for Cls
+ * @property maxInputs - Maximum concurrent input count
+ * @property targetInputs - Target concurrent input count @optional
  */
 export type ClsWithConcurrencyParams = {
 	maxInputs?: number;
@@ -170,9 +170,9 @@ export type ClsWithConcurrencyParams = {
 };
 
 /**
- * @description Cls のダイナミックバッチング設定パラメータ
- * @property maxBatchSize - 最大バッチサイズ
- * @property waitMs - バッチ待機時間(ミリ秒)
+ * @description Dynamic batching settings for Cls
+ * @property maxBatchSize - Maximum batch size
+ * @property waitMs - Batch wait time in milliseconds
  */
 export type ClsWithBatchingParams = {
 	maxBatchSize?: number;
@@ -182,7 +182,7 @@ export type ClsWithBatchingParams = {
 };
 
 /**
- * @description Cls サービスの内部オプション(公開パラメータ + 内部フィールド)
+ * @description Internal Cls service options, combining public parameters and internal fields
  */
 type ServiceOptions = ClsWithOptionsParams & {
 	maxConcurrentInputs?: number;
@@ -196,7 +196,7 @@ type ServiceOptions = ClsWithOptionsParams & {
 };
 
 /**
- * @description デプロイ済みの Modal Cls を表すクラス
+ * @description Represents a deployed Modal Cls
  */
 export class Cls {
 	#client: ModalClient;
@@ -280,9 +280,9 @@ export class Cls {
 	}
 
 	/**
-	 * @description パラメータやランタイムオプションを適用した Cls インスタンスを生成する
-	 * @param parameters - Cls コンストラクタに渡すパラメータ
-	 * @returns Cls インスタンス
+	 * @description Creates a Cls instance with parameters and runtime options applied
+	 * @param parameters - Parameters passed to the Cls constructor
+	 * @returns Cls instance
 	 */
 	async instance(
 		parameters: Record<string, unknown> = {},
@@ -307,9 +307,9 @@ export class Cls {
 	}
 
 	/**
-	 * @description 静的な Function 設定をランタイムで上書きする
-	 * @param options - 上書きオプション
-	 * @returns 新しいオプションが適用された Cls
+	 * @description Overrides static Function settings at runtime
+	 * @param options - Override options
+	 * @returns Cls with the new options applied
 	 */
 	withOptions(options: ClsWithOptionsParams): Cls {
 		const merged = mergeServiceOptions(this.#serviceOptions, options);
@@ -326,9 +326,9 @@ export class Cls {
 	}
 
 	/**
-	 * @description 同時実行設定を有効化または上書きした Cls を返す
-	 * @param params - 同時実行パラメータ
-	 * @returns 同時実行設定が適用された Cls
+	 * @description Returns a Cls with concurrency settings enabled or overridden
+	 * @param params - Concurrency parameters
+	 * @returns Cls with concurrency settings applied
 	 */
 	withConcurrency(params: ClsWithConcurrencyParams): Cls {
 		const maxInputs = aliasedNumber(params, "maxInputs", "max_inputs");
@@ -350,9 +350,9 @@ export class Cls {
 	}
 
 	/**
-	 * @description ダイナミックバッチングを有効化または上書きした Cls を返す
-	 * @param params - バッチングパラメータ
-	 * @returns バッチング設定が適用された Cls
+	 * @description Returns a Cls with dynamic batching enabled or overridden
+	 * @param params - Batching parameters
+	 * @returns Cls with batching settings applied
 	 */
 	withBatching(params: ClsWithBatchingParams): Cls {
 		const maxBatchSize = aliasedNumber(
@@ -378,9 +378,9 @@ export class Cls {
 	}
 
 	/**
-	 * @description パラメータを Cls 関数にバインドする
-	 * @param parameters - バインドするパラメータ
-	 * @returns バインドされた関数ID
+	 * @description Binds parameters to the Cls function
+	 * @param parameters - Parameters to bind
+	 * @returns Bound function ID
 	 */
 	async #bindParameters(parameters: Record<string, unknown>): Promise<string> {
 		const mergedSecrets = await mergeEnvIntoSecrets(
@@ -405,10 +405,10 @@ export class Cls {
 }
 
 /**
- * @description Cls パラメータスキーマに基づいてパラメータセットをエンコードする
- * @param schema - パラメータスキーマ
- * @param params - エンコードするパラメータ
- * @returns シリアライズされたバイト列
+ * @description Encodes a parameter set based on the Cls parameter schema
+ * @param schema - Parameter schema
+ * @param params - Parameters to encode
+ * @returns Serialized bytes
  */
 export function encodeParameterSet(
 	schema: ClassParameterSpec[],
@@ -425,10 +425,10 @@ export function encodeParameterSet(
 }
 
 /**
- * @description ベースオプションに差分をマージする
- * @param base - ベースオプション
- * @param diff - マージする差分
- * @returns マージ結果(空の場合は undefined)
+ * @description Merges a diff into base options
+ * @param base - Base options
+ * @param diff - Diff to merge
+ * @returns Merged result, or undefined when empty
  */
 function mergeServiceOptions(
 	base: ServiceOptions | undefined,
@@ -502,9 +502,9 @@ function normalizeServiceOptions(options: ServiceOptions): ServiceOptions {
 }
 
 /**
- * @description ServiceOptions から gRPC FunctionOptions プロトコルバッファを構築する
- * @param options - サービスオプション
- * @returns FunctionOptions プロトメッセージ(オプションが空の場合は undefined)
+ * @description Builds a gRPC FunctionOptions protobuf from ServiceOptions
+ * @param options - Service options
+ * @returns FunctionOptions proto message, or undefined when options are empty
  */
 async function buildFunctionOptionsProto(
 	options?: ServiceOptions,
@@ -632,10 +632,10 @@ async function buildFunctionOptionsProto(
 }
 
 /**
- * @description パラメータスペックに基づいて単一パラメータをエンコードする
- * @param paramSpec - パラメータのスキーマ定義
- * @param value - エンコードする値
- * @returns エンコードされたパラメータ値
+ * @description Encodes a single parameter based on its parameter spec
+ * @param paramSpec - Parameter schema definition
+ * @param value - Value to encode
+ * @returns Encoded parameter value
  */
 function encodeParameter(
 	paramSpec: ClassParameterSpec,
@@ -694,7 +694,7 @@ function encodeParameter(
 }
 
 /**
- * @description デプロイ済み Modal {@link Cls} のインスタンス(パラメータ適用済み)
+ * @description Instance of a deployed Modal {@link Cls} with parameters applied
  */
 export class ClsInstance {
 	#methods: Map<string, Function_>;
@@ -704,10 +704,10 @@ export class ClsInstance {
 	}
 
 	/**
-	 * @description 名前を指定してメソッドを取得する
-	 * @param name - メソッド名
-	 * @returns メソッドに対応する Function
-	 * @throws メソッドが見つからない場合は {@link NotFoundError}
+	 * @description Gets a method by name
+	 * @param name - Method name
+	 * @returns Function corresponding to the method
+	 * @throws {@link NotFoundError} when the method is not found
 	 */
 	method(name: string): Function_ {
 		const method = this.#methods.get(name);

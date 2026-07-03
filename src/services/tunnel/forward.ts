@@ -4,10 +4,10 @@ import { TunnelType } from "@/generated/modal_proto/api";
 import { Tunnel } from "@/services/sandbox/sandbox_tunnel";
 
 /**
- * @description forward() のパラメータ
- * @property unencrypted - TCP の非暗号化ポートも公開する @optional
- * @property h2Enabled - TLS tunnel で HTTP/2 を有効にする @optional
- * @property client - 使用する ModalClient @optional
+ * @description Parameters for forward()
+ * @property unencrypted - Also expose an unencrypted TCP port @optional
+ * @property h2Enabled - Enable HTTP/2 on the TLS tunnel @optional
+ * @property client - ModalClient to use @optional
  */
 export type ForwardParams = {
 	unencrypted?: boolean;
@@ -16,7 +16,7 @@ export type ForwardParams = {
 };
 
 /**
- * @description Modal コンテナ内の port を公開 tunnel として forward する
+ * @description Forwards a port inside a Modal container as a public tunnel
  */
 export async function forward<T>(
 	port: number,

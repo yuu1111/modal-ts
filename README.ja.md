@@ -8,6 +8,8 @@ PythonランタイムなしでJS/TSプロジェクトからModalを利用でき�
 [modal-labs/modal-client](https://github.com/modal-labs/modal-client) (Apache-2.0)
 のJavaScript/TypeScript SDKをベースにしています。
 
+ドキュメント: [English guides](./docs/en/README.md) / [日本語ガイド](./docs/ja/README.md)。
+
 ## modal-tsを使う理由
 
 `modal-ts` は、アプリのセットアップにPythonランタイムを持ち込みたくない

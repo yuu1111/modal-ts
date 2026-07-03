@@ -1,49 +1,49 @@
 /**
- * @description `ReadableStream` に便利なメソッドを追加したラッパーインターフェース
+ * @description Wrapper interface that adds convenience methods to `ReadableStream`
  *
- * `.readText()` でストリーム全体を文字列として読み取り、
- * `.readBytes()` でバイナリデータとして読み取ることができる
+ * `.readText()` reads the entire stream as a string,
+ * and `.readBytes()` reads it as binary data.
  *
  * Background: https://developer.mozilla.org/en-US/docs/Web/API/Streams_API
  */
 export interface ModalReadStream<R = unknown> extends ReadableStream<R> {
 	/**
-	 * @description ストリーム全体を文字列として読み取る
+	 * @description Reads the entire stream as a string
 	 */
 	readText(): Promise<string>;
 
 	/**
-	 * @description ストリーム全体をバイト配列として読み取る
+	 * @description Reads the entire stream as bytes
 	 */
 	readBytes(): Promise<Uint8Array>;
 }
 
 /**
- * @description `WritableStream` に便利なメソッドを追加したラッパーインターフェース
+ * @description Wrapper interface that adds convenience methods to `WritableStream`
  *
- * `.writeText()` で文字列を書き込み、
- * `.writeBytes()` でバイナリデータを書き込むことができる
+ * `.writeText()` writes a string,
+ * and `.writeBytes()` writes binary data.
  *
  * Background: https://developer.mozilla.org/en-US/docs/Web/API/Streams_API
  */
 export interface ModalWriteStream<R = unknown> extends WritableStream<R> {
 	/**
-	 * @description テキストストリームに文字列を書き込む
-	 * @param text - 書き込む文字列
+	 * @description Writes a string to a text stream
+	 * @param text - String to write
 	 */
 	writeText(text: string): Promise<void>;
 
 	/**
-	 * @description バイトストリームにバイト配列を書き込む
-	 * @param bytes - 書き込むバイト配列
+	 * @description Writes bytes to a byte stream
+	 * @param bytes - Bytes to write
 	 */
 	writeBytes(bytes: Uint8Array): Promise<void>;
 }
 
 /**
- * @description ReadableStream を ModalReadStream に変換する
- * @param stream - 変換元の ReadableStream
- * @returns 便利メソッド付きの ModalReadStream
+ * @description Converts a ReadableStream into a ModalReadStream
+ * @param stream - Source ReadableStream
+ * @returns ModalReadStream with convenience methods
  */
 export function toModalReadStream<
 	R extends string | Uint8Array = string | Uint8Array,
@@ -52,9 +52,9 @@ export function toModalReadStream<
 }
 
 /**
- * @description WritableStream を ModalWriteStream に変換する
- * @param stream - 変換元の WritableStream
- * @returns 便利メソッド付きの ModalWriteStream
+ * @description Converts a WritableStream into a ModalWriteStream
+ * @param stream - Source WritableStream
+ * @returns ModalWriteStream with convenience methods
  */
 export function toModalWriteStream<
 	R extends string | Uint8Array = string | Uint8Array,
@@ -63,21 +63,21 @@ export function toModalWriteStream<
 }
 
 /**
- * @description 文字列なら UTF-8 バイト列に変換し、Uint8Array はそのまま返す
- * @param chunk - 変換対象
- * @returns バイト列
+ * @description Converts strings to UTF-8 bytes and returns Uint8Array values unchanged
+ * @param chunk - Value to convert
+ * @returns Bytes
  */
 export function encodeIfString(chunk: Uint8Array | string): Uint8Array {
 	return typeof chunk === "string" ? encoder.encode(chunk) : chunk;
 }
 
 /**
- * @description モジュール共有の TextEncoder インスタンス
+ * @description Module-shared TextEncoder instance
  */
 const encoder = new TextEncoder();
 
 /**
- * @description ModalReadStream に追加する読み取り用メソッド群
+ * @description Read methods added to ModalReadStream
  */
 const readMixin = {
 	async readText<R extends string | Uint8Array>(
@@ -134,9 +134,9 @@ const readMixin = {
 };
 
 /**
- * @description 呼び出しごとに writer ロックを取得・解放する単発書き込みヘルパー
- * @param stream - 書き込み先の WritableStream
- * @param chunk - 書き込むデータ
+ * @description One-shot write helper that acquires and releases a writer lock per call
+ * @param stream - Destination WritableStream
+ * @param chunk - Data to write
  */
 async function writeChunk<R>(
 	stream: WritableStream<R>,
@@ -151,7 +151,7 @@ async function writeChunk<R>(
 }
 
 /**
- * @description ModalWriteStream に追加する書き込み用メソッド群
+ * @description Write methods added to ModalWriteStream
  */
 const writeMixin = {
 	async writeText<R extends string | Uint8Array>(
@@ -170,13 +170,13 @@ const writeMixin = {
 };
 
 /**
- * @description AsyncIterable から ReadableStream を構築する
+ * @description Builds a ReadableStream from an AsyncIterable
  *
- * ストリームがキャンセルされた場合、イテレータの return() を呼び出して
- * ソース側のクリーンアップを即座に行う。
- * @param iterable - 変換元の非同期イテラブル
- * @param onCancel - キャンセル時に呼ばれるコールバック
- * @returns バイトストリーム
+ * When the stream is cancelled, calls the iterator's return() method
+ * so the source can clean up immediately.
+ * @param iterable - Source async iterable
+ * @param onCancel - Callback invoked on cancellation
+ * @returns Byte stream
  */
 export function streamConsumingIter(
 	iterable: AsyncIterable<Uint8Array>,

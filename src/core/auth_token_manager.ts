@@ -1,23 +1,23 @@
 import type { Logger } from "@/utils/logger";
 
 /**
- * @description AuthTokenManagerが使用するgRPCクライアントの最小インターフェース
+ * @description Minimal gRPC client interface used by AuthTokenManager
  */
 export interface AuthClient {
 	authTokenGet(request: Record<string, never>): Promise<{ token?: string }>;
 }
 
 /**
- * @description 現在時刻をUNIX秒で返す
+ * @description Returns the current time in Unix seconds
  */
 function nowSeconds(): number {
 	return Math.floor(Date.now() / 1000);
 }
 
 /**
- * @description JWTトークンからexpクレーム(UNIX秒)を抽出する
- * @param token - JWTトークン文字列
- * @returns expクレームの値、取得できない場合はnull
+ * @description Extracts the exp claim in Unix seconds from a JWT token
+ * @param token - JWT token string
+ * @returns exp claim value, or null when it cannot be read
  */
 export function decodeJwtExp(token: string): number | null {
 	try {
@@ -41,22 +41,22 @@ export function decodeJwtExp(token: string): number | null {
 }
 
 /**
- * @description トークン有効期限の何秒前からリフレッシュを開始するか
+ * @description Seconds before token expiry when refresh should begin
  */
 export const REFRESH_WINDOW = 5 * 60;
 /**
- * @description expクレームがない場合のデフォルト有効期間(秒)
+ * @description Default lifetime in seconds when the exp claim is missing
  */
 export const DEFAULT_EXPIRY_OFFSET = 20 * 60;
 
 /**
- * @description 認証トークンの遅延リフレッシュ管理
+ * @description Lazy refresh manager for auth tokens
  *
- * getToken呼び出し時にトークンの状態に応じて3つの動作をとる:
- *  1. 有効かつ期限に余裕あり: 即座に返却
- *  2. 未取得または期限切れ: 全呼び出し元が新トークン取得完了までブロック(取得は1回のみ)
- *  3. 有効だがREFRESH_WINDOW以内: リフレッシュ未実行なら呼び出し元がトリガー、
- *     他の並行呼び出し元には旧トークンを返却
+ * getToken takes one of three paths based on token state:
+ *  1. Valid with enough lifetime remaining: return immediately.
+ *  2. Missing or expired: block all callers until a new token is fetched once.
+ *  3. Valid but within REFRESH_WINDOW: trigger refresh if it has not started,
+ *     and return the old token to other concurrent callers.
  */
 export class AuthTokenManager {
 	private client: AuthClient;
@@ -71,8 +71,8 @@ export class AuthTokenManager {
 	}
 
 	/**
-	 * @description 有効な認証トークンを返す。必要に応じてリフレッシュを実行する
-	 * @returns 認証トークン文字列
+	 * @description Returns a valid auth token, refreshing it when needed
+	 * @returns Auth token string
 	 */
 	async getToken(): Promise<string> {
 		if (!this.currentToken || this.isExpired()) {
@@ -91,11 +91,11 @@ export class AuthTokenManager {
 	}
 
 	/**
-	 * @description 同時に1つだけトークン取得を実行する排他制御付きリフレッシュ
+	 * @description Refresh with mutual exclusion so only one token fetch runs at a time
 	 *
-	 * 並行呼び出し元は同一のPromiseをawaitする。
-	 * 別の呼び出し元が既にリフレッシュ済みならRPCをスキップする。
-	 * @returns 現在の認証トークン
+	 * Concurrent callers await the same Promise.
+	 * If another caller already refreshed the token, the RPC is skipped.
+	 * @returns Current auth token
 	 */
 	private async lockedRefreshToken(): Promise<string> {
 		if (!this.refreshPromise) {
@@ -115,7 +115,7 @@ export class AuthTokenManager {
 	}
 
 	/**
-	 * @description サーバーから新しい認証トークンを取得して保存する
+	 * @description Fetches and stores a new auth token from the server
 	 */
 	private async fetchToken(): Promise<void> {
 		const response = await this.client.authTokenGet({});
@@ -134,7 +134,7 @@ export class AuthTokenManager {
 			this.tokenExpiry = exp;
 		} else {
 			this.logger.warn("x-modal-auth-token does not contain exp field");
-			// expクレームがない場合はデフォルトの有効期間を設定して続行
+			// Continue with the default lifetime when the exp claim is missing.
 			this.tokenExpiry = nowSeconds() + DEFAULT_EXPIRY_OFFSET;
 		}
 
@@ -151,33 +151,33 @@ export class AuthTokenManager {
 	}
 
 	/**
-	 * @description トークンが有効期限切れかどうかを判定する
-	 * @returns 期限切れならtrue
+	 * @description Checks whether the token is expired
+	 * @returns true when expired
 	 */
 	isExpired(): boolean {
 		return nowSeconds() >= this.tokenExpiry;
 	}
 
 	/**
-	 * @description トークンがリフレッシュ対象(REFRESH_WINDOW以内)かを判定する
-	 * @returns リフレッシュが必要ならtrue
+	 * @description Checks whether the token should be refreshed within REFRESH_WINDOW
+	 * @returns true when refresh is needed
 	 */
 	private needsRefresh(): boolean {
 		return nowSeconds() >= this.tokenExpiry - REFRESH_WINDOW;
 	}
 
 	/**
-	 * @description 現在保持しているトークン文字列を返す
-	 * @returns 認証トークン(未取得時は空文字列)
+	 * @description Returns the currently stored token string
+	 * @returns Auth token, or an empty string when no token has been fetched
 	 */
 	getCurrentToken(): string {
 		return this.currentToken;
 	}
 
 	/**
-	 * @description トークンと有効期限を直接設定する
-	 * @param token - 認証トークン文字列
-	 * @param expiry - 有効期限(UNIX秒)
+	 * @description Directly sets the token and expiry
+	 * @param token - Auth token string
+	 * @param expiry - Expiry in Unix seconds
 	 */
 	setToken(token: string, expiry: number): void {
 		this.currentToken = token;

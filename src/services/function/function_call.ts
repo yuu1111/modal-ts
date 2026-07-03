@@ -4,9 +4,9 @@ import { checkForRenamedParams } from "@/utils/validation";
 import { ControlPlaneInvocation } from "./invocation";
 
 /**
- * @description {@link FunctionCall} を管理するサービス
+ * @description Service for managing {@link FunctionCall}
  *
- * 通常はクライアント経由でのみアクセスする:
+ * Usually accessed only through the client:
  * ```typescript
  * const modal = new ModalClient();
  * const functionCall = await modal.functionCalls.fromId("123");
@@ -19,16 +19,16 @@ export class FunctionCallService {
 	}
 
 	/**
-	 * @description IDからFunctionCallを取得する
+	 * @description Gets a FunctionCall by ID
 	 * @param functionCallId - FunctionCall ID
-	 * @returns FunctionCallインスタンス
+	 * @returns FunctionCall instance
 	 */
 	async fromId(functionCallId: string): Promise<FunctionCall> {
 		return new FunctionCall(this.#client, functionCallId);
 	}
 
 	/**
-	 * @description {@link FunctionCallService#fromId} の Python 互換 alias
+	 * @description Python-compatible alias for {@link FunctionCallService#fromId}
 	 */
 	async from_id(functionCallId: string): Promise<FunctionCall> {
 		return await this.fromId(functionCallId);
@@ -36,8 +36,8 @@ export class FunctionCallService {
 }
 
 /**
- * @description FunctionCall.get()のオプションパラメータ
- * @property timeoutMs - 結果待ちのタイムアウト(ミリ秒) @optional
+ * @description Optional parameters for FunctionCall.get()
+ * @property timeoutMs - Timeout in milliseconds for waiting on the result @optional
  */
 export type FunctionCallGetParams = {
 	timeoutMs?: number;
@@ -45,8 +45,8 @@ export type FunctionCallGetParams = {
 };
 
 /**
- * @description FunctionCall.cancel()のオプションパラメータ
- * @property terminateContainers - コンテナも終了するか @optional
+ * @description Optional parameters for FunctionCall.cancel()
+ * @property terminateContainers - Whether to terminate containers too @optional
  */
 export type FunctionCallCancelParams = {
 	terminateContainers?: boolean;
@@ -54,8 +54,8 @@ export type FunctionCallCancelParams = {
 };
 
 /**
- * @description Modal FunctionCall を表す。指定された入力での {@link Function_} 呼び出しであり、
- * 非同期に結果を取得({@link FunctionCall#get})またはキャンセル({@link FunctionCall#cancel})できる
+ * @description Represents a Modal FunctionCall, a {@link Function_} invocation for a given input,
+ * whose result can be retrieved asynchronously with {@link FunctionCall#get} or cancelled with {@link FunctionCall#cancel}
  */
 export class FunctionCall {
 	readonly functionCallId: string;
@@ -71,7 +71,7 @@ export class FunctionCall {
 	}
 
 	/**
-	 * @description FunctionCall ID から handle を作る Python 互換 static helper
+	 * @description Python-compatible static helper that creates a handle from a FunctionCall ID
 	 */
 	static from_id(functionCallId: string): FunctionCall {
 		return new FunctionCall(getDefaultClient(), functionCallId);
@@ -82,9 +82,9 @@ export class FunctionCall {
 	}
 
 	/**
-	 * @description FunctionCallの結果を取得する(タイムアウト付き待機可)
-	 * @param params - オプションパラメータ
-	 * @returns Function実行結果
+	 * @description Gets the FunctionCall result, optionally waiting with a timeout
+	 * @param params - Optional parameters
+	 * @returns Function execution result
 	 */
 	async get(params: FunctionCallGetParams = {}): Promise<unknown> {
 		checkForRenamedParams(params, { timeout: "timeoutMs" });
@@ -97,7 +97,7 @@ export class FunctionCall {
 	}
 
 	/**
-	 * @description FunctionCall に含まれる input 数を返す
+	 * @description Returns the number of inputs included in the FunctionCall
 	 */
 	async numInputs(): Promise<number> {
 		if (this.#numInputs !== undefined) return this.#numInputs;
@@ -110,14 +110,14 @@ export class FunctionCall {
 	}
 
 	/**
-	 * @description {@link FunctionCall#numInputs} の Python 互換 alias
+	 * @description Python-compatible alias for {@link FunctionCall#numInputs}
 	 */
 	async num_inputs(): Promise<number> {
 		return await this.numInputs();
 	}
 
 	/**
-	 * @description Function call graph を返す
+	 * @description Returns the function call graph
 	 */
 	async getCallGraph(): Promise<unknown> {
 		const cpClient = this.#client?.cpClient || getDefaultClient().cpClient;
@@ -127,14 +127,14 @@ export class FunctionCall {
 	}
 
 	/**
-	 * @description {@link FunctionCall#getCallGraph} の Python 互換 alias
+	 * @description Python-compatible alias for {@link FunctionCall#getCallGraph}
 	 */
 	async get_call_graph(): Promise<unknown> {
 		return await this.getCallGraph();
 	}
 
 	/**
-	 * @description 複数 input の結果を index 順に iterate する
+	 * @description Iterates results for multiple inputs in index order
 	 * @param params - start/end index
 	 */
 	async *iter(
@@ -159,8 +159,8 @@ export class FunctionCall {
 	}
 
 	/**
-	 * @description 複数の FunctionCall の結果を順序を保って待つ
-	 * @param functionCalls - FunctionCall の配列
+	 * @description Waits for multiple FunctionCall results while preserving order
+	 * @param functionCalls - Array of FunctionCalls
 	 */
 	static async gather(...functionCalls: FunctionCall[]): Promise<unknown[]>;
 	static async gather(functionCalls: FunctionCall[]): Promise<unknown[]>;
@@ -174,8 +174,8 @@ export class FunctionCall {
 	}
 
 	/**
-	 * @description 実行中のFunctionCallをキャンセルする
-	 * @param params - オプションパラメータ
+	 * @description Cancels a running FunctionCall
+	 * @param params - Optional parameters
 	 */
 	async cancel(params: FunctionCallCancelParams = {}) {
 		const cpClient = this.#client?.cpClient || getDefaultClient().cpClient;

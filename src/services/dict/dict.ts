@@ -14,9 +14,9 @@ import {
 import { loads as pickleDecode, dumps as pickleEncode } from "@/utils/pickle";
 
 /**
- * @description {@link DictService#fromName client.dicts.fromName()} のオプションパラメータ
- * @property environment - 使用する環境名
- * @property createIfMissing - 存在しない場合に自動作成するかどうか
+ * @description Optional parameters for {@link DictService#fromName client.dicts.fromName()}
+ * @property environment - Environment name to use
+ * @property createIfMissing - Whether to create automatically when missing
  */
 export type DictFromNameParams = {
 	environment?: string;
@@ -27,9 +27,9 @@ export type DictFromNameParams = {
 };
 
 /**
- * @description {@link DictService#create client.dicts.create()} のオプションパラメータ
- * @property environment - 使用する環境名
- * @property allowExisting - 既に存在する場合に成功として扱うか
+ * @description Optional parameters for {@link DictService#create client.dicts.create()}
+ * @property environment - Environment name to use
+ * @property allowExisting - Whether to treat an existing Dict as success
  */
 export type DictCreateParams = {
 	environment?: string;
@@ -40,10 +40,10 @@ export type DictCreateParams = {
 };
 
 /**
- * @description {@link DictService#list client.dicts.list()} のオプションパラメータ
- * @property environment - 使用する環境名
- * @property maxObjects - 最大取得件数
- * @property createdBefore - この Unix 秒より前に作成された Dict だけを返す
+ * @description Optional parameters for {@link DictService#list client.dicts.list()}
+ * @property environment - Environment name to use
+ * @property maxObjects - Maximum number of objects to fetch
+ * @property createdBefore - Return only Dicts created before this Unix timestamp
  */
 export type DictListParams = {
 	environment?: string;
@@ -56,9 +56,9 @@ export type DictListParams = {
 };
 
 /**
- * @description {@link DictService#delete client.dicts.delete()} のオプションパラメータ
- * @property environment - 使用する環境名
- * @property allowMissing - 存在しない場合にエラーを抑制するかどうか
+ * @description Optional parameters for {@link DictService#delete client.dicts.delete()}
+ * @property environment - Environment name to use
+ * @property allowMissing - Whether to suppress errors when the Dict does not exist
  */
 export type DictDeleteParams = {
 	environment?: string;
@@ -69,8 +69,8 @@ export type DictDeleteParams = {
 };
 
 /**
- * @description {@link DictService#ephemeral client.dicts.ephemeral()} のオプションパラメータ
- * @property environment - 使用する環境名
+ * @description Optional parameters for {@link DictService#ephemeral client.dicts.ephemeral()}
+ * @property environment - Environment name to use
  */
 export type DictEphemeralParams = {
 	environment?: string;
@@ -79,7 +79,7 @@ export type DictEphemeralParams = {
 };
 
 /**
- * @description Dict オブジェクトのメタデータ
+ * @description Metadata for a Dict object
  */
 export type DictInfo = {
 	name?: string;
@@ -88,7 +88,7 @@ export type DictInfo = {
 };
 
 /**
- * @description {@link Dict} を管理するサービス
+ * @description Service for managing {@link Dict}
  */
 export class DictService {
 	readonly #client: ModalClient;
@@ -98,9 +98,9 @@ export class DictService {
 	}
 
 	/**
-	 * @description 名前付き Dict を作成する
-	 * @param name - Dict 名
-	 * @param params - オプションパラメータ
+	 * @description Creates a named Dict
+	 * @param name - Dict name
+	 * @param params - Optional parameters
 	 */
 	async create(name: string, params: DictCreateParams = {}): Promise<void> {
 		await this.#client.cpClient.dictGetOrCreate({
@@ -117,8 +117,8 @@ export class DictService {
 	}
 
 	/**
-	 * @description 名前のない一時的な Dict を作成する
-	 * @param params - オプションパラメータ
+	 * @description Creates an unnamed ephemeral Dict
+	 * @param params - Optional parameters
 	 */
 	async ephemeral(params: DictEphemeralParams = {}): Promise<Dict> {
 		const resp = await this.#client.cpClient.dictGetOrCreate({
@@ -133,7 +133,7 @@ export class DictService {
 	}
 
 	/**
-	 * @description IDで Dict を参照する
+	 * @description Looks up a Dict by ID
 	 * @param dictId - Dict ID
 	 */
 	async fromId(dictId: string): Promise<Dict> {
@@ -156,9 +156,9 @@ export class DictService {
 	}
 
 	/**
-	 * @description 名前で Dict を参照する
-	 * @param name - Dict 名
-	 * @param params - オプションパラメータ
+	 * @description Looks up a Dict by name
+	 * @param name - Dict name
+	 * @param params - Optional parameters
 	 */
 	async fromName(name: string, params: DictFromNameParams = {}): Promise<Dict> {
 		try {
@@ -193,8 +193,8 @@ export class DictService {
 	}
 
 	/**
-	 * @description 名前付き Dict の一覧を取得する
-	 * @param params - オプションパラメータ
+	 * @description Lists named Dicts
+	 * @param params - Optional parameters
 	 */
 	async list(params: DictListParams = {}): Promise<Dict[]> {
 		const maxObjects = aliasedNumber(params, "maxObjects", "max_objects");
@@ -237,9 +237,9 @@ export class DictService {
 	}
 
 	/**
-	 * @description 名前付き Dict を削除する
-	 * @param name - Dict 名
-	 * @param params - オプションパラメータ
+	 * @description Deletes a named Dict
+	 * @param name - Dict name
+	 * @param params - Optional parameters
 	 */
 	async delete(name: string, params: DictDeleteParams = {}): Promise<void> {
 		try {
@@ -258,7 +258,7 @@ export class DictService {
 }
 
 /**
- * @description 分散 key-value store
+ * @description Distributed key-value store
  */
 export class Dict {
 	readonly #client: ModalClient;
@@ -332,14 +332,14 @@ export class Dict {
 	}
 
 	/**
-	 * @description Dict のメタデータを返す
+	 * @description Returns Dict metadata
 	 */
 	info(): DictInfo {
 		return this.#info ?? dictInfoFromMetadata(undefined, this.name);
 	}
 
 	/**
-	 * @description 一時的な Dict の heartbeat を停止する
+	 * @description Stops the heartbeat for an ephemeral Dict
 	 */
 	closeEphemeral(): void {
 		if (this.#ephemeralHbManager) {
@@ -350,14 +350,14 @@ export class Dict {
 	}
 
 	/**
-	 * @description Dict の値をすべて削除する
+	 * @description Removes all values from the Dict
 	 */
 	async clear(): Promise<void> {
 		await this.#client.cpClient.dictClear({ dictId: this.dictId });
 	}
 
 	/**
-	 * @description key が存在するか返す
+	 * @description Returns whether a key exists
 	 * @param key - key
 	 */
 	async contains(key: unknown): Promise<boolean> {
@@ -369,9 +369,9 @@ export class Dict {
 	}
 
 	/**
-	 * @description key の値を取得する
+	 * @description Gets the value for a key
 	 * @param key - key
-	 * @param defaultValue - key が存在しない場合に返す値
+	 * @param defaultValue - Value returned when the key does not exist
 	 */
 	async get(key: unknown, ...defaultValue: [unknown?]): Promise<unknown> {
 		const resp = await this.#client.cpClient.dictGet({
@@ -387,7 +387,7 @@ export class Dict {
 	}
 
 	/**
-	 * @description key/value を保存する
+	 * @description Stores a key/value pair
 	 * @param key - key
 	 * @param value - value
 	 */
@@ -408,9 +408,9 @@ export class Dict {
 	}
 
 	/**
-	 * @description 複数の key/value を保存する
+	 * @description Stores multiple key/value pairs
 	 * @param entries - entries
-	 * @param params - ifNotExists 指定時は既存 key を上書きしない
+	 * @param params - When ifNotExists is set, existing keys are not overwritten
 	 */
 	async update(
 		entries: Iterable<[unknown, unknown]> | Record<string, unknown>,
@@ -433,9 +433,9 @@ export class Dict {
 	}
 
 	/**
-	 * @description key を削除し、存在すれば値を返す
+	 * @description Removes a key and returns its value if present
 	 * @param key - key
-	 * @param defaultValue - key が存在しない場合に返す値
+	 * @param defaultValue - Value returned when the key does not exist
 	 */
 	async pop(key: unknown, ...defaultValue: [unknown?]): Promise<unknown> {
 		const resp = await this.#client.cpClient.dictPop({
@@ -451,7 +451,7 @@ export class Dict {
 	}
 
 	/**
-	 * @description Dict 内の entry 数を返す
+	 * @description Returns the number of entries in the Dict
 	 */
 	async len(): Promise<number> {
 		const resp = await this.#client.cpClient.dictLen({ dictId: this.dictId });
@@ -459,7 +459,7 @@ export class Dict {
 	}
 
 	/**
-	 * @description Dict の key を iterate する
+	 * @description Iterates Dict keys
 	 */
 	async *keys(): AsyncGenerator<unknown, void, unknown> {
 		for await (const entry of this.#client.cpClient.dictContents({
@@ -472,7 +472,7 @@ export class Dict {
 	}
 
 	/**
-	 * @description Dict の value を iterate する
+	 * @description Iterates Dict values
 	 */
 	async *values(): AsyncGenerator<unknown, void, unknown> {
 		for await (const entry of this.#client.cpClient.dictContents({
@@ -485,7 +485,7 @@ export class Dict {
 	}
 
 	/**
-	 * @description Dict の key/value を iterate する
+	 * @description Iterates Dict key/value pairs
 	 */
 	async *items(): AsyncGenerator<[unknown, unknown], void, unknown> {
 		for await (const entry of this.#client.cpClient.dictContents({

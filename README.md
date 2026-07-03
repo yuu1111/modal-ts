@@ -8,6 +8,8 @@ Use Modal from JS/TS projects without a Python runtime.
 Based on the JavaScript/TypeScript SDK from
 [modal-labs/modal-client](https://github.com/modal-labs/modal-client) (Apache-2.0).
 
+Docs: [English guides](./docs/en/README.md) / [Japanese guides](./docs/ja/README.md).
+
 ## Why modal-ts
 
 `modal-ts` packages Modal for JavaScript and TypeScript projects that do not

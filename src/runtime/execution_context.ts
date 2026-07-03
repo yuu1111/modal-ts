@@ -1,28 +1,28 @@
 import { getDefaultClient, type ModalClient } from "@/core/client";
 
 /**
- * @description 現在の process が Modal Function 実行中でなければ true
+ * @description true when the current process is not running inside a Modal Function
  */
 export function isLocal(): boolean {
 	return !process.env.MODAL_TASK_ID && !process.env.MODAL_FUNCTION_CALL_ID;
 }
 
 /**
- * @description 現在処理中の input ID を返す
+ * @description Returns the currently processed input ID
  */
 export function currentInputId(): string | undefined {
 	return process.env.MODAL_INPUT_ID || undefined;
 }
 
 /**
- * @description 現在処理中の FunctionCall ID を返す
+ * @description Returns the currently processed FunctionCall ID
  */
 export function currentFunctionCallId(): string | undefined {
 	return process.env.MODAL_FUNCTION_CALL_ID || undefined;
 }
 
 /**
- * @description Modal Function 内の対話モードを有効化する
+ * @description Enables interactive mode inside a Modal Function
  */
 export async function interact(
 	client: ModalClient = getDefaultClient(),

@@ -21,9 +21,9 @@ import {
 const VOLUME_BLOCK_SIZE = 8 * 1024 * 1024;
 
 /**
- * @description {@link VolumeService#fromName client.volumes.fromName()} のオプションパラメータ
- * @property environment - 使用する環境名
- * @property createIfMissing - 存在しない場合に自動作成するかどうか
+ * @description Optional parameters for {@link VolumeService#fromName client.volumes.fromName()}
+ * @property environment - Environment name to use
+ * @property createIfMissing - Whether to create automatically when missing
  */
 export type VolumeFromNameParams = {
 	environment?: string;
@@ -52,8 +52,8 @@ export type VolumeListParams = {
 };
 
 /**
- * @description {@link VolumeService#ephemeral client.volumes.ephemeral()} のオプションパラメータ
- * @property environment - 使用する環境名
+ * @description Optional parameters for {@link VolumeService#ephemeral client.volumes.ephemeral()}
+ * @property environment - Environment name to use
  */
 export type VolumeEphemeralParams = {
 	environment?: string;
@@ -62,9 +62,9 @@ export type VolumeEphemeralParams = {
 };
 
 /**
- * @description {@link VolumeService#delete client.volumes.delete()} のオプションパラメータ
- * @property environment - 使用する環境名
- * @property allowMissing - 存在しない場合にエラーを抑制するかどうか
+ * @description Optional parameters for {@link VolumeService#delete client.volumes.delete()}
+ * @property environment - Environment name to use
+ * @property allowMissing - Whether to suppress errors when the Volume does not exist
  */
 export type VolumeDeleteParams = {
 	environment?: string;
@@ -75,8 +75,8 @@ export type VolumeDeleteParams = {
 };
 
 /**
- * @description {@link VolumeService#rename client.volumes.rename()} のオプションパラメータ
- * @property environment - 使用する環境名
+ * @description Optional parameters for {@link VolumeService#rename client.volumes.rename()}
+ * @property environment - Environment name to use
  */
 export type VolumeRenameParams = {
 	environment?: string;
@@ -85,9 +85,9 @@ export type VolumeRenameParams = {
 };
 
 /**
- * @description Volume をマウントするときのオプション
- * @property readOnly - コンテナ内で読み取り専用にするか
- * @property subPath - Volume 内の一部ディレクトリだけをマウントするパス
+ * @description Options for mounting a Volume
+ * @property readOnly - Whether to make it read-only inside the container
+ * @property subPath - Path for mounting only part of the Volume
  */
 export type VolumeMountOptions = {
 	readOnly?: boolean;
@@ -122,10 +122,10 @@ export class VolumeService {
 	}
 
 	/**
-	 * @description 名前で {@link Volume} を参照する
-	 * @param name - Volume の名前
-	 * @param params - オプションパラメータ
-	 * @returns Volume インスタンス
+	 * @description Looks up a {@link Volume} by name
+	 * @param name - Volume name
+	 * @param params - Optional parameters
+	 * @returns Volume instance
 	 */
 	async fromName(name: string, params?: VolumeFromNameParams): Promise<Volume> {
 		try {
@@ -243,9 +243,9 @@ export class VolumeService {
 	}
 
 	/**
-	 * @description 名前のない一時的な {@link Volume} を作成する。closeEphemeral() が呼ばれるかプロセスが終了するまで存続する
-	 * @param params - オプションパラメータ
-	 * @returns 一時的な Volume インスタンス
+	 * @description Creates an unnamed ephemeral {@link Volume}. It lasts until closeEphemeral() is called or the process exits
+	 * @param params - Optional parameters
+	 * @returns Ephemeral Volume instance
 	 */
 	async ephemeral(params: VolumeEphemeralParams = {}): Promise<Volume> {
 		const resp = await this.#client.cpClient.volumeGetOrCreate({
@@ -273,9 +273,9 @@ export class VolumeService {
 	}
 
 	/**
-	 * @description 名前付き {@link Volume} を削除する。削除は不可逆で、現在使用中の App にも影響する
-	 * @param name - 削除する Volume の名前
-	 * @param params - オプションパラメータ
+	 * @description Deletes a named {@link Volume}. Deletion is irreversible and affects any App currently using it
+	 * @param name - Name of the Volume to delete
+	 * @param params - Optional parameters
 	 */
 	async delete(name: string, params?: VolumeDeleteParams): Promise<void> {
 		try {
@@ -303,10 +303,10 @@ export class VolumeService {
 	}
 
 	/**
-	 * @description 名前付き {@link Volume} の名前を変更する
-	 * @param oldName - 変更前の Volume 名
-	 * @param newName - 変更後の Volume 名
-	 * @param params - オプションパラメータ
+	 * @description Renames a named {@link Volume}
+	 * @param oldName - Previous Volume name
+	 * @param newName - New Volume name
+	 * @param params - Optional parameters
 	 */
 	async rename(
 		oldName: string,
@@ -326,7 +326,7 @@ export class VolumeService {
 }
 
 /**
- * @description Modal {@link Function_ Function} にマウント可能な永続ストレージを提供する Volume
+ * @description Volume providing persistent storage that can be mounted on a Modal {@link Function_ Function}
  */
 export class Volume {
 	readonly #client?: ModalClient;
@@ -433,8 +433,8 @@ export class Volume {
 	}
 
 	/**
-	 * @description Volume を読み取り専用でマウントするよう設定する
-	 * @returns 読み取り専用に設定された新しい Volume インスタンス
+	 * @description Configures the Volume to mount as read-only
+	 * @returns New Volume instance configured as read-only
 	 */
 	readOnly(): Volume {
 		return this.withMountOptions({ readOnly: true });
@@ -445,9 +445,9 @@ export class Volume {
 	}
 
 	/**
-	 * @description Volume のマウントオプションを設定する
-	 * @param params - マウントオプション。未指定の項目は既存設定を引き継ぐ
-	 * @returns マウントオプションが適用された新しい Volume インスタンス
+	 * @description Sets mount options for the Volume
+	 * @param params - Mount options. Omitted fields keep the existing settings
+	 * @returns New Volume instance with mount options applied
 	 */
 	withMountOptions(params: VolumeMountOptions = {}): Volume {
 		let subPath = this._mountOptions.subPath;
@@ -482,7 +482,7 @@ export class Volume {
 	}
 
 	/**
-	 * @description 一時的な Volume を削除する。一時的な Volume でのみ使用可能
+	 * @description Deletes an ephemeral Volume. Only available for ephemeral Volumes
 	 */
 	closeEphemeral(): void {
 		if (this.#ephemeralHbManager) {
@@ -804,7 +804,7 @@ export type VolumeFileEntry = {
 };
 
 /**
- * @description Volume のマウント設定から gRPC VolumeMount を構築する
+ * @description Builds a gRPC VolumeMount from Volume mount settings
  * @internal
  */
 export function volumeToMountProto(

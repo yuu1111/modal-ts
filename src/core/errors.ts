@@ -1,5 +1,5 @@
 /**
- * @description Modal SDK エラーの基底クラス。サブクラスの名前を自動設定する
+ * @description Base class for Modal SDK errors. Automatically sets the subclass name
  */
 export class ModalError extends Error {
 	constructor(message: string) {
@@ -9,7 +9,7 @@ export class ModalError extends Error {
 }
 
 /**
- * @description 操作が許容時間を超過した
+ * @description The operation exceeded the allowed time
  */
 export class TimeoutError extends ModalError {
 	constructor(message = "Operation timed out") {
@@ -18,87 +18,87 @@ export class TimeoutError extends ModalError {
 }
 
 /**
- * @description Function実行が許容時間を超過した
+ * @description Function execution exceeded the allowed time
  */
 export class FunctionTimeoutError extends ModalError {}
 
 /**
- * @description Modalサーバーエラー、またはPython例外
+ * @description Modal server error or Python exception
  */
 export class RemoteError extends ModalError {}
 
 /**
- * @description リトライ可能なModal内部エラー
+ * @description Retryable internal Modal error
  */
 export class InternalFailure extends ModalError {}
 
 /**
- * @description リソースが見つからない
+ * @description Resource was not found
  */
 export class NotFoundError extends ModalError {}
 
 /**
- * @description リソースが既に存在する
+ * @description Resource already exists
  */
 export class AlreadyExistsError extends ModalError {}
 
 /**
- * @description リクエストまたは操作が不正
+ * @description Request or operation is invalid
  */
 export class InvalidError extends ModalError {}
 
 /**
- * @description Queueが空
+ * @description Queue is empty
  */
 export class QueueEmptyError extends ModalError {}
 
 /**
- * @description Queueが満杯
+ * @description Queue is full
  */
 export class QueueFullError extends ModalError {}
 
 /**
- * @description 不正なSandbox FileSystem操作
+ * @description Invalid Sandbox filesystem operation
  */
 export class SandboxFilesystemError extends ModalError {}
 
 /**
- * @description Sandbox filesystem のパスが見つからない
+ * @description Sandbox filesystem path was not found
  */
 export class SandboxFilesystemNotFoundError extends SandboxFilesystemError {}
 
 /**
- * @description Sandbox filesystem のディレクトリが空ではない
+ * @description Sandbox filesystem directory is not empty
  */
 export class SandboxFilesystemDirectoryNotEmptyError extends SandboxFilesystemError {}
 
 /**
- * @description Sandbox filesystem の対象がディレクトリ
+ * @description Sandbox filesystem target is a directory
  */
 export class SandboxFilesystemIsADirectoryError extends SandboxFilesystemError {}
 
 /**
- * @description Sandbox filesystem の対象がディレクトリではない
+ * @description Sandbox filesystem target is not a directory
  */
 export class SandboxFilesystemNotADirectoryError extends SandboxFilesystemError {}
 
 /**
- * @description Sandbox filesystem の操作権限がない
+ * @description Sandbox filesystem operation is not permitted
  */
 export class SandboxFilesystemPermissionError extends SandboxFilesystemError {}
 
 /**
- * @description Sandbox filesystem のファイルサイズが大きすぎる
+ * @description Sandbox filesystem file is too large
  */
 export class SandboxFilesystemFileTooLargeError extends SandboxFilesystemError {}
 
 /**
- * @description Sandbox filesystem のパスが既に存在する
+ * @description Sandbox filesystem path already exists
  */
 export class SandboxFilesystemPathAlreadyExistsError extends SandboxFilesystemError {}
 
 /**
- * @description Sandbox操作が許容時間を超過した
+ * @description Sandbox operation exceeded the allowed time
  */
 export class SandboxTimeoutError extends ModalError {
 	constructor(message = "Sandbox operation timed out") {
@@ -107,7 +107,7 @@ export class SandboxTimeoutError extends ModalError {
 }
 
 /**
- * @description デタッチされたSandboxへの操作を試みた
+ * @description An operation was attempted on a detached sandbox
  */
 export class ClientClosedError extends ModalError {
 	constructor(message = "Unable to perform operation on a detached sandbox") {

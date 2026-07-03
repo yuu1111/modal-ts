@@ -11,9 +11,9 @@ import { EphemeralHeartbeatManager } from "@/utils/ephemeral";
 import { aliasedBoolean, environmentParam } from "@/utils/param_aliases";
 
 /**
- * @description {@link NetworkFileSystemService#fromName client.networkFileSystems.fromName()} のオプションパラメータ
- * @property environment - 使用する環境名
- * @property createIfMissing - 存在しない場合に自動作成するかどうか
+ * @description Optional parameters for {@link NetworkFileSystemService#fromName client.networkFileSystems.fromName()}
+ * @property environment - Environment name to use
+ * @property createIfMissing - Whether to create automatically when missing
  */
 export type NetworkFileSystemFromNameParams = {
 	environment?: string;
@@ -24,9 +24,9 @@ export type NetworkFileSystemFromNameParams = {
 };
 
 /**
- * @description {@link NetworkFileSystemService#create client.networkFileSystems.create()} のオプションパラメータ
- * @property environment - 使用する環境名
- * @property allowExisting - 既に存在する場合に成功として扱うか
+ * @description Optional parameters for {@link NetworkFileSystemService#create client.networkFileSystems.create()}
+ * @property environment - Environment name to use
+ * @property allowExisting - Whether to treat an existing NetworkFileSystem as success
  */
 export type NetworkFileSystemCreateParams = {
 	environment?: string;
@@ -37,8 +37,8 @@ export type NetworkFileSystemCreateParams = {
 };
 
 /**
- * @description {@link NetworkFileSystemService#list client.networkFileSystems.list()} のオプションパラメータ
- * @property environment - 使用する環境名
+ * @description Optional parameters for {@link NetworkFileSystemService#list client.networkFileSystems.list()}
+ * @property environment - Environment name to use
  */
 export type NetworkFileSystemListParams = {
 	environment?: string;
@@ -47,9 +47,9 @@ export type NetworkFileSystemListParams = {
 };
 
 /**
- * @description {@link NetworkFileSystemService#delete client.networkFileSystems.delete()} のオプションパラメータ
- * @property environment - 使用する環境名
- * @property allowMissing - 存在しない場合にエラーを抑制するかどうか
+ * @description Optional parameters for {@link NetworkFileSystemService#delete client.networkFileSystems.delete()}
+ * @property environment - Environment name to use
+ * @property allowMissing - Whether to suppress errors when the NetworkFileSystem does not exist
  */
 export type NetworkFileSystemDeleteParams = {
 	environment?: string;
@@ -60,8 +60,8 @@ export type NetworkFileSystemDeleteParams = {
 };
 
 /**
- * @description {@link NetworkFileSystemService#ephemeral client.networkFileSystems.ephemeral()} のオプションパラメータ
- * @property environment - 使用する環境名
+ * @description Optional parameters for {@link NetworkFileSystemService#ephemeral client.networkFileSystems.ephemeral()}
+ * @property environment - Environment name to use
  */
 export type NetworkFileSystemEphemeralParams = {
 	environment?: string;
@@ -70,7 +70,7 @@ export type NetworkFileSystemEphemeralParams = {
 };
 
 /**
- * @description NetworkFileSystem の file entry
+ * @description File entry for NetworkFileSystem
  */
 export type NetworkFileSystemFileEntry = {
 	path: string;
@@ -80,7 +80,7 @@ export type NetworkFileSystemFileEntry = {
 };
 
 /**
- * @description deprecated NetworkFileSystem を管理するサービス
+ * @description Service for managing deprecated NetworkFileSystem objects
  */
 export class NetworkFileSystemService {
 	readonly #client: ModalClient;
@@ -90,7 +90,7 @@ export class NetworkFileSystemService {
 	}
 
 	/**
-	 * @description 名前付き NetworkFileSystem を作成する
+	 * @description Creates a named NetworkFileSystem
 	 */
 	async create(
 		name: string,
@@ -110,7 +110,7 @@ export class NetworkFileSystemService {
 	}
 
 	/**
-	 * @description 名前のない一時的な NetworkFileSystem を作成する
+	 * @description Creates an unnamed ephemeral NetworkFileSystem
 	 */
 	async ephemeral(
 		params: NetworkFileSystemEphemeralParams = {},
@@ -133,7 +133,7 @@ export class NetworkFileSystemService {
 	}
 
 	/**
-	 * @description 名前で NetworkFileSystem を参照する
+	 * @description Looks up a NetworkFileSystem by name
 	 */
 	async fromName(
 		name: string,
@@ -177,7 +177,7 @@ export class NetworkFileSystemService {
 	}
 
 	/**
-	 * @description 名前付き NetworkFileSystem の一覧を取得する
+	 * @description Lists named NetworkFileSystems
 	 */
 	async list(
 		params: NetworkFileSystemListParams = {},
@@ -196,7 +196,7 @@ export class NetworkFileSystemService {
 	}
 
 	/**
-	 * @description 名前付き NetworkFileSystem を削除する
+	 * @description Deletes a named NetworkFileSystem
 	 */
 	async delete(
 		name: string,
@@ -287,7 +287,7 @@ export class NetworkFileSystem {
 	}
 
 	/**
-	 * @description 一時的な NetworkFileSystem の heartbeat を停止する
+	 * @description Stops the heartbeat for an ephemeral NetworkFileSystem
 	 */
 	closeEphemeral(): void {
 		if (this.#ephemeralHbManager) {
@@ -298,7 +298,7 @@ export class NetworkFileSystem {
 	}
 
 	/**
-	 * @description file を書き込む
+	 * @description Writes a file
 	 */
 	async writeFile(remotePath: string, data: Uint8Array): Promise<number> {
 		const resp = await this.#client.cpClient.sharedVolumePutFile({
@@ -321,7 +321,7 @@ export class NetworkFileSystem {
 	}
 
 	/**
-	 * @description local file を NetworkFileSystem に追加する
+	 * @description Adds a local file to the NetworkFileSystem
 	 */
 	async addLocalFile(localPath: string, remotePath?: string): Promise<number> {
 		const data = await readFile(localPath);
@@ -336,7 +336,7 @@ export class NetworkFileSystem {
 	}
 
 	/**
-	 * @description local directory を NetworkFileSystem に再帰的に追加する
+	 * @description Recursively adds a local directory to the NetworkFileSystem
 	 */
 	async addLocalDir(localPath: string, remotePath?: string): Promise<number> {
 		const rootRemotePath = remotePath ?? `/${basename(localPath)}`;
@@ -358,7 +358,7 @@ export class NetworkFileSystem {
 	}
 
 	/**
-	 * @description file を読み込む
+	 * @description Reads a file
 	 */
 	async readFile(path: string): Promise<Uint8Array> {
 		const resp = await this.#client.cpClient.sharedVolumeGetFile({
@@ -386,7 +386,7 @@ export class NetworkFileSystem {
 	}
 
 	/**
-	 * @description path 配下の file entry を iterate する
+	 * @description Iterates file entries under a path
 	 */
 	async *iterdir(
 		path: string,
@@ -404,7 +404,7 @@ export class NetworkFileSystem {
 	}
 
 	/**
-	 * @description path 配下の file entry 一覧を返す
+	 * @description Returns the list of file entries under a path
 	 */
 	async listdir(path: string): Promise<NetworkFileSystemFileEntry[]> {
 		const entries: NetworkFileSystemFileEntry[] = [];
@@ -413,7 +413,7 @@ export class NetworkFileSystem {
 	}
 
 	/**
-	 * @description file を削除する
+	 * @description Removes a file
 	 */
 	async removeFile(
 		path: string,

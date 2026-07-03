@@ -203,9 +203,9 @@ async function localMountLayerFiles(
 }
 
 /**
- * @description {@link Image} を管理するサービス
+ * @description Service for managing {@link Image}
  *
- * 通常はクライアント経由でのみアクセスする:
+ * Usually accessed only through the client:
  * ```typescript
  * const modal = new ModalClient();
  * const image = await modal.images.fromRegistry("alpine");
@@ -218,9 +218,9 @@ export class ImageService {
 	}
 
 	/**
-	 * @description Image ID から {@link Image} を作成する
+	 * @description Creates an {@link Image} from an Image ID
 	 * @param imageId - Image ID
-	 * @returns Image インスタンス
+	 * @returns Image instance
 	 */
 	async fromId(imageId: string): Promise<Image> {
 		try {
@@ -234,17 +234,17 @@ export class ImageService {
 	}
 
 	/**
-	 * @description {@link ImageService#fromId} の Python 互換 alias
+	 * @description Python-compatible alias for {@link ImageService#fromId}
 	 */
 	async from_id(imageId: string): Promise<Image> {
 		return await this.fromId(imageId);
 	}
 
 	/**
-	 * @description publish 済みの名前付き Image を参照する
-	 * @param name - Image 名。`name:tag` 形式も指定可能。タグ未指定時は `latest`
-	 * @param params - オプションパラメータ
-	 * @returns Image インスタンス
+	 * @description References a published named Image
+	 * @param name - Image name. `name:tag` is supported; defaults to `latest` when no tag is specified
+	 * @param params - Optional parameters
+	 * @returns Image instance
 	 */
 	async fromName(
 		name: string,
@@ -263,7 +263,7 @@ export class ImageService {
 	}
 
 	/**
-	 * @description {@link ImageService#fromName} の Python 互換 alias
+	 * @description Python-compatible alias for {@link ImageService#fromName}
 	 */
 	async from_name(
 		name: string,
@@ -273,10 +273,10 @@ export class ImageService {
 	}
 
 	/**
-	 * @description レジストリタグから {@link Image} を作成する。認証用に {@link Secret} を指定可能
-	 * @param tag - Image のレジストリタグ
-	 * @param secret - レジストリ認証用の Secret
-	 * @returns Image インスタンス
+	 * @description Creates an {@link Image} from a registry tag. A {@link Secret} can be provided for authentication
+	 * @param tag - Registry tag for the Image
+	 * @param secret - Secret for registry authentication
+	 * @returns Image instance
 	 */
 	fromRegistry(tag: string, secret?: Secret): Image {
 		return this.#fromRegistryWith(
@@ -287,17 +287,17 @@ export class ImageService {
 	}
 
 	/**
-	 * @description {@link ImageService#fromRegistry} の Python 互換 alias
+	 * @description Python-compatible alias for {@link ImageService#fromRegistry}
 	 */
 	from_registry(tag: string, secret?: Secret): Image {
 		return this.fromRegistry(tag, secret);
 	}
 
 	/**
-	 * @description AWS ECR のレジストリタグから {@link Image} を作成する
-	 * @param tag - Image のレジストリタグ
-	 * @param secret - AWS 認証用の Secret
-	 * @returns Image インスタンス
+	 * @description Creates an {@link Image} from an AWS ECR registry tag
+	 * @param tag - Registry tag for the Image
+	 * @param secret - Secret for AWS authentication
+	 * @returns Image instance
 	 */
 	fromAwsEcr(tag: string, secret: Secret): Image {
 		return this.#fromRegistryWith(
@@ -308,17 +308,17 @@ export class ImageService {
 	}
 
 	/**
-	 * @description {@link ImageService#fromAwsEcr} の Python 互換 alias
+	 * @description Python-compatible alias for {@link ImageService#fromAwsEcr}
 	 */
 	from_aws_ecr(tag: string, secret: Secret): Image {
 		return this.fromAwsEcr(tag, secret);
 	}
 
 	/**
-	 * @description GCP Artifact Registry のレジストリタグから {@link Image} を作成する
-	 * @param tag - Image のレジストリタグ
-	 * @param secret - GCP 認証用の Secret
-	 * @returns Image インスタンス
+	 * @description Creates an {@link Image} from a GCP Artifact Registry tag
+	 * @param tag - Registry tag for the Image
+	 * @param secret - Secret for GCP authentication
+	 * @returns Image instance
 	 */
 	fromGcpArtifactRegistry(tag: string, secret: Secret): Image {
 		return this.#fromRegistryWith(
@@ -329,15 +329,15 @@ export class ImageService {
 	}
 
 	/**
-	 * @description {@link ImageService#fromGcpArtifactRegistry} の Python 互換 alias
+	 * @description Python-compatible alias for {@link ImageService#fromGcpArtifactRegistry}
 	 */
 	from_gcp_artifact_registry(tag: string, secret: Secret): Image {
 		return this.fromGcpArtifactRegistry(tag, secret);
 	}
 
 	/**
-	 * @description 空の scratch image を作成する
-	 * @param params - オプションパラメータ
+	 * @description Creates an empty scratch image
+	 * @param params - Optional parameters
 	 */
 	fromScratch(
 		params: { forceBuild?: boolean; force_build?: boolean } = {},
@@ -349,15 +349,15 @@ export class ImageService {
 	}
 
 	/**
-	 * @description {@link ImageService#fromScratch} の Python 互換 alias
+	 * @description Python-compatible alias for {@link ImageService#fromScratch}
 	 */
 	from_scratch(params: { forceBuild?: boolean } = {}): Image {
 		return this.fromScratch(params);
 	}
 
 	/**
-	 * @description Python Debian slim ベースの Image を作成する
-	 * @param params - Python version と build オプション
+	 * @description Creates an Image based on Python Debian slim
+	 * @param params - Python version and build options
 	 */
 	debianSlim(
 		params: {
@@ -388,7 +388,7 @@ export class ImageService {
 	}
 
 	/**
-	 * @description {@link ImageService#debianSlim} の Python 互換 alias
+	 * @description Python-compatible alias for {@link ImageService#debianSlim}
 	 */
 	debian_slim(
 		params: { pythonVersion?: string; forceBuild?: boolean } = {},
@@ -397,7 +397,7 @@ export class ImageService {
 	}
 
 	/**
-	 * @description local Dockerfile から Image を作成する
+	 * @description Creates an Image from a local Dockerfile
 	 */
 	fromDockerfile(
 		dockerfilePath: string,
@@ -440,7 +440,7 @@ export class ImageService {
 	}
 
 	/**
-	 * @description {@link ImageService#fromDockerfile} の Python 互換 alias
+	 * @description Python-compatible alias for {@link ImageService#fromDockerfile}
 	 */
 	from_dockerfile(
 		dockerfilePath: string,
@@ -450,7 +450,7 @@ export class ImageService {
 	}
 
 	/**
-	 * @description Micromamba base image を作成する
+	 * @description Creates a Micromamba base image
 	 */
 	micromamba(
 		params: {
@@ -495,9 +495,9 @@ export class ImageService {
 	}
 
 	/**
-	 * @description ID で {@link Image} を削除する。削除は不可逆で、Function/Sandbox からの使用を妨げる。中間レイヤーは削除されない
-	 * @param imageId - 削除する Image の ID
-	 * @param _ - 将来の拡張用パラメータ
+	 * @description Deletes an {@link Image} by ID. Deletion is irreversible and prevents use from Functions and Sandboxes. Intermediate layers are not deleted
+	 * @param imageId - ID of the Image to delete
+	 * @param _ - Parameters reserved for future extension
 	 */
 	async delete(imageId: string, _: ImageDeleteParams = {}): Promise<void> {
 		try {
@@ -511,13 +511,13 @@ export class ImageService {
 }
 
 /**
- * @description {@link ImageService#delete client.images.delete()} のオプションパラメータ
+ * @description Optional parameters for {@link ImageService#delete client.images.delete()}
  */
 export type ImageDeleteParams = Record<never, never>;
 
 /**
- * @description {@link ImageService#fromName client.images.fromName()} のオプションパラメータ
- * @property environment - Image を解決する Modal 環境名
+ * @description Optional parameters for {@link ImageService#fromName client.images.fromName()}
+ * @property environment - Modal environment name for resolving the Image
  */
 export type ImageFromNameParams = {
 	environment?: string;
@@ -526,8 +526,8 @@ export type ImageFromNameParams = {
 };
 
 /**
- * @description {@link Image#publish Image.publish()} のオプションパラメータ
- * @property environment - Image を publish する Modal 環境名
+ * @description Optional parameters for {@link Image#publish Image.publish()}
+ * @property environment - Modal environment name for publishing the Image
  */
 export type ImagePublishParams = {
 	environment?: string;
@@ -536,49 +536,49 @@ export type ImagePublishParams = {
 };
 
 /**
- * @description {@link Image#dockerfileCommands Image.dockerfileCommands()} のオプションパラメータ
- * @property env - ビルド環境に設定する環境変数
- * @property secrets - ビルド環境で環境変数として利用可能にする {@link Secret} の配列
- * @property gpu - ビルド環境の GPU 予約 (例: "A100", "T4:2", "A100-80GB:4")
- * @property forceBuild - キャッシュを無視してビルドするかどうか
+ * @description Optional parameters for {@link Image#dockerfileCommands Image.dockerfileCommands()}
+ * @property env - Environment variables to set in the build environment
+ * @property secrets - {@link Secret} objects made available as environment variables in the build environment
+ * @property gpu - GPU reservation for the build environment, for example "A100", "T4:2", or "A100-80GB:4"
+ * @property forceBuild - Whether to ignore cache when building
  */
 export type ImageDockerfileCommandsParams = {
 	/**
-	 * @description ビルド環境に設定する環境変数
+	 * @description Environment variables to set in the build environment
 	 */
 	env?: Record<string, string>;
 
 	/**
-	 * @description ビルド環境で環境変数として利用可能にする {@link Secret} の配列
+	 * @description {@link Secret} objects made available as environment variables in the build environment
 	 */
 	secrets?: Secret[];
 
 	/**
-	 * @description ビルド環境の GPU 予約 (例: "A100", "T4:2", "A100-80GB:4")
+	 * @description GPU reservation for the build environment, for example "A100", "T4:2", or "A100-80GB:4"
 	 */
 	gpu?: string;
 
 	/**
-	 * @description キャッシュを無視してビルドする ('docker build --no-cache' に相当)
+	 * @description Builds without using cache, equivalent to 'docker build --no-cache'
 	 */
 	forceBuild?: boolean;
 	force_build?: boolean;
 
 	/**
-	 * @description Docker build context に含める local file mapping
+	 * @description Local file mapping to include in the Docker build context
 	 */
 	contextFiles?: Record<string, LocalPathSpec>;
 	context_files?: Record<string, LocalPathSpec>;
 
 	/**
-	 * @description Dockerfile ARG に渡す build arguments
+	 * @description Build arguments passed to Dockerfile ARG
 	 */
 	buildArgs?: Record<string, string>;
 	build_args?: Record<string, string>;
 };
 
 /**
- * @description Image builder の共通オプション
+ * @description Shared options for image builders
  */
 export type ImageBuildStepParams = ImageDockerfileCommandsParams;
 
@@ -636,12 +636,12 @@ function packageInstallArgs(params: PythonPackageOptions): string {
 }
 
 /**
- * @description 単一の Image レイヤーとそのビルド設定を表す
- * @property commands - Dockerfile コマンドの配列
- * @property env - 環境変数
- * @property secrets - ビルド環境で利用する Secret の配列
- * @property gpuConfig - GPU 設定
- * @property forceBuild - キャッシュ無視フラグ
+ * @description Represents a single Image layer and its build settings
+ * @property commands - Dockerfile commands
+ * @property env - Environment variables
+ * @property secrets - Secrets used in the build environment
+ * @property gpuConfig - GPU settings
+ * @property forceBuild - Cache bypass flag
  */
 type Layer = {
 	commands: string[];
@@ -655,7 +655,7 @@ type Layer = {
 };
 
 /**
- * @description {@link Sandbox} の起動に使用するコンテナイメージ
+ * @description Container image used to start a {@link Sandbox}
  */
 export class Image {
 	#client: ModalClient;
@@ -817,10 +817,10 @@ export class Image {
 	}
 
 	/**
-	 * @description 任意の Dockerfile コマンドで Image を拡張する。各呼び出しは順次ビルドされる新しいレイヤーを作成する
-	 * @param commands - Dockerfile コマンドの文字列配列
-	 * @param params - このレイヤーのビルド設定
-	 * @returns 新しい Image インスタンス
+	 * @description Extends the Image with arbitrary Dockerfile commands. Each call creates a new layer built in sequence
+	 * @param commands - Dockerfile command strings
+	 * @param params - Build settings for this layer
+	 * @returns New Image instance
 	 */
 	dockerfileCommands(
 		commands: string[],
@@ -865,7 +865,7 @@ export class Image {
 	}
 
 	/**
-	 * @description {@link Image#dockerfileCommands} の Python 互換 alias
+	 * @description Python-compatible alias for {@link Image#dockerfileCommands}
 	 */
 	dockerfile_commands(
 		commands: string[],
@@ -875,9 +875,9 @@ export class Image {
 	}
 
 	/**
-	 * @description Debian package を apt で install する
-	 * @param packages - package 名
-	 * @param params - build step オプション
+	 * @description Installs Debian packages with apt
+	 * @param packages - Package names
+	 * @param params - Build step options
 	 */
 	aptInstall(packages: string[], params?: ImageBuildStepParams): Image {
 		if (packages.length === 0) return this;
@@ -891,16 +891,16 @@ export class Image {
 	}
 
 	/**
-	 * @description {@link Image#aptInstall} の Python 互換 alias
+	 * @description Python-compatible alias for {@link Image#aptInstall}
 	 */
 	apt_install(packages: string[], params?: ImageBuildStepParams): Image {
 		return this.aptInstall(packages, params);
 	}
 
 	/**
-	 * @description Python package を pip で install する
-	 * @param packages - package 名
-	 * @param params - build step オプション
+	 * @description Installs Python packages with pip
+	 * @param packages - Package names
+	 * @param params - Build step options
 	 */
 	pipInstall(packages: string[], params: PythonPackageOptions = {}): Image {
 		if (packages.length === 0) return this;
@@ -915,7 +915,7 @@ export class Image {
 	}
 
 	/**
-	 * @description {@link Image#pipInstall} の Python 互換 alias
+	 * @description Python-compatible alias for {@link Image#pipInstall}
 	 */
 	pip_install(
 		packages: string[],
@@ -925,7 +925,7 @@ export class Image {
 	}
 
 	/**
-	 * @description private git repository を pip install する
+	 * @description Installs private git repositories with pip
 	 */
 	pipInstallPrivateRepos(
 		repositories: string[],
@@ -1023,7 +1023,7 @@ export class Image {
 	}
 
 	/**
-	 * @description {@link Image#pipInstallPrivateRepos} の Python 互換 alias
+	 * @description Python-compatible alias for {@link Image#pipInstallPrivateRepos}
 	 */
 	pip_install_private_repos(
 		repositories: string[],
@@ -1033,7 +1033,7 @@ export class Image {
 	}
 
 	/**
-	 * @description local file を Image layer に追加する
+	 * @description Adds a local file to an Image layer
 	 */
 	addLocalFile(
 		localPath: string,
@@ -1075,7 +1075,7 @@ export class Image {
 	}
 
 	/**
-	 * @description {@link Image#addLocalFile} の Python 互換 alias
+	 * @description Python-compatible alias for {@link Image#addLocalFile}
 	 */
 	add_local_file(
 		localPath: string,
@@ -1086,7 +1086,7 @@ export class Image {
 	}
 
 	/**
-	 * @description local directory を Image layer に再帰的に追加する
+	 * @description Recursively adds a local directory to an Image layer
 	 */
 	addLocalDir(
 		localPath: string,
@@ -1125,7 +1125,7 @@ export class Image {
 	}
 
 	/**
-	 * @description {@link Image#addLocalDir} の Python 互換 alias
+	 * @description Python-compatible alias for {@link Image#addLocalDir}
 	 */
 	add_local_dir(
 		localPath: string,
@@ -1136,7 +1136,7 @@ export class Image {
 	}
 
 	/**
-	 * @description local Python module/package を `/root` 配下に追加する
+	 * @description Adds a local Python module/package under `/root`
 	 */
 	addLocalPythonSource(
 		modules: string[],
@@ -1169,7 +1169,7 @@ export class Image {
 	}
 
 	/**
-	 * @description {@link Image#addLocalPythonSource} の Python 互換 alias
+	 * @description Python-compatible alias for {@link Image#addLocalPythonSource}
 	 */
 	add_local_python_source(
 		modules: string[],
@@ -1179,7 +1179,7 @@ export class Image {
 	}
 
 	/**
-	 * @description requirements.txt から pip install する
+	 * @description Installs with pip from requirements.txt
 	 */
 	pipInstallFromRequirements(
 		requirementsTxt: string,
@@ -1200,7 +1200,7 @@ export class Image {
 	}
 
 	/**
-	 * @description {@link Image#pipInstallFromRequirements} の Python 互換 alias
+	 * @description Python-compatible alias for {@link Image#pipInstallFromRequirements}
 	 */
 	pip_install_from_requirements(
 		requirementsTxt: string,
@@ -1210,7 +1210,7 @@ export class Image {
 	}
 
 	/**
-	 * @description pyproject.toml の project dependencies を pip install する
+	 * @description Installs project dependencies from pyproject.toml with pip
 	 */
 	pipInstallFromPyproject(
 		pyprojectToml: string,
@@ -1238,7 +1238,7 @@ export class Image {
 	}
 
 	/**
-	 * @description {@link Image#pipInstallFromPyproject} の Python 互換 alias
+	 * @description Python-compatible alias for {@link Image#pipInstallFromPyproject}
 	 */
 	pip_install_from_pyproject(
 		pyprojectToml: string,
@@ -1253,7 +1253,7 @@ export class Image {
 	}
 
 	/**
-	 * @description uv pip install を使って package を install する
+	 * @description Installs packages using uv pip install
 	 */
 	uvPipInstall(
 		packages: string[] = [],
@@ -1303,7 +1303,7 @@ export class Image {
 	}
 
 	/**
-	 * @description {@link Image#uvPipInstall} の Python 互換 alias
+	 * @description Python-compatible alias for {@link Image#uvPipInstall}
 	 */
 	uv_pip_install(
 		packages: string[] = [],
@@ -1313,7 +1313,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Poetry pyproject から dependency を install する
+	 * @description Installs dependencies from a Poetry pyproject
 	 */
 	poetryInstallFromFile(
 		pyprojectToml: string,
@@ -1377,7 +1377,7 @@ export class Image {
 	}
 
 	/**
-	 * @description {@link Image#poetryInstallFromFile} の Python 互換 alias
+	 * @description Python-compatible alias for {@link Image#poetryInstallFromFile}
 	 */
 	poetry_install_from_file(
 		pyprojectToml: string,
@@ -1387,7 +1387,7 @@ export class Image {
 	}
 
 	/**
-	 * @description uv sync で pyproject/uv.lock dependency を install する
+	 * @description Installs pyproject/uv.lock dependencies with uv sync
 	 */
 	uvSync(
 		projectDir = ".",
@@ -1430,7 +1430,7 @@ export class Image {
 	}
 
 	/**
-	 * @description {@link Image#uvSync} の Python 互換 alias
+	 * @description Python-compatible alias for {@link Image#uvSync}
 	 */
 	uv_sync(
 		projectDir = ".",
@@ -1440,7 +1440,7 @@ export class Image {
 	}
 
 	/**
-	 * @description micromamba install で conda package を追加する
+	 * @description Adds conda packages with micromamba install
 	 */
 	micromambaInstall(
 		packages: string[] = [],
@@ -1472,7 +1472,7 @@ export class Image {
 	}
 
 	/**
-	 * @description {@link Image#micromambaInstall} の Python 互換 alias
+	 * @description Python-compatible alias for {@link Image#micromambaInstall}
 	 */
 	micromamba_install(
 		packages: string[] = [],
@@ -1482,14 +1482,14 @@ export class Image {
 	}
 
 	/**
-	 * @description Image を任意の callback で変換する
+	 * @description Transforms the Image with an arbitrary callback
 	 */
 	pipe(fn: (image: Image) => Image): Image {
 		return fn(this);
 	}
 
 	/**
-	 * @description build step として command を実行する
+	 * @description Runs a command as a build step
 	 */
 	runFunction(
 		command: string | string[],
@@ -1499,7 +1499,7 @@ export class Image {
 	}
 
 	/**
-	 * @description {@link Image#runFunction} の Python 互換 alias
+	 * @description Python-compatible alias for {@link Image#runFunction}
 	 */
 	run_function(
 		command: string | string[],
@@ -1509,16 +1509,16 @@ export class Image {
 	}
 
 	/**
-	 * @description Python の Image.imports() に近い構文互換 helper
+	 * @description Syntax-compatible helper close to Python's Image.imports()
 	 */
 	imports<T>(callback: () => T): T {
 		return callback();
 	}
 
 	/**
-	 * @description shell command を RUN layer として実行する
-	 * @param commands - 実行する command
-	 * @param params - build step オプション
+	 * @description Runs shell commands as a RUN layer
+	 * @param commands - Commands to run
+	 * @param params - Build step options
 	 */
 	runCommands(commands: string[], params?: ImageBuildStepParams): Image {
 		if (commands.length === 0) return this;
@@ -1529,15 +1529,15 @@ export class Image {
 	}
 
 	/**
-	 * @description {@link Image#runCommands} の Python 互換 alias
+	 * @description Python-compatible alias for {@link Image#runCommands}
 	 */
 	run_commands(commands: string[], params?: ImageBuildStepParams): Image {
 		return this.runCommands(commands, params);
 	}
 
 	/**
-	 * @description Image に ENV directive を追加する
-	 * @param vars - 環境変数
+	 * @description Adds ENV directives to the Image
+	 * @param vars - Environment variables
 	 */
 	env(vars: Record<string, string>): Image {
 		for (const [key, value] of Object.entries(vars)) {
@@ -1553,15 +1553,15 @@ export class Image {
 	}
 
 	/**
-	 * @description Image の WORKDIR を設定する
-	 * @param path - container 内 path
+	 * @description Sets the Image WORKDIR
+	 * @param path - Path inside the container
 	 */
 	workdir(path: string): Image {
 		return this.dockerfileCommands([`WORKDIR ${shellQuote(path)}`]);
 	}
 
 	/**
-	 * @description Image の CMD を JSON array form で設定する
+	 * @description Sets the Image CMD in JSON array form
 	 * @param command - argv tokens
 	 */
 	cmd(command: string[]): Image {
@@ -1572,7 +1572,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Image の ENTRYPOINT を JSON array form で設定する
+	 * @description Sets the Image ENTRYPOINT in JSON array form
 	 * @param command - argv tokens
 	 */
 	entrypoint(command: string[]): Image {
@@ -1583,7 +1583,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Image の SHELL を JSON array form で設定する
+	 * @description Sets the Image SHELL in JSON array form
 	 * @param command - argv tokens
 	 */
 	shell(command: string[]): Image {
@@ -1594,13 +1594,13 @@ export class Image {
 	}
 
 	/**
-	 * @description Modal 上で Image を即座にビルドする
-	 * @param app - ビルドに使用する App
-	 * @returns ビルドされた Image インスタンス
+	 * @description Builds the Image immediately on Modal
+	 * @param app - App to use for the build
+	 * @returns Built Image instance
 	 */
 	async build(app: App): Promise<Image> {
 		if (this.imageId !== "") {
-			// Image ID で既にビルド済み
+			// Already built by Image ID.
 			return this;
 		}
 
@@ -1661,10 +1661,10 @@ export class Image {
 			let result: GenericResult;
 
 			if (resp.result?.status) {
-				// ビルド済み
+				// Built.
 				result = resp.result;
 			} else {
-				// 未ビルドまたはビルド中 — 完了を待機
+				// Not built or still building. Wait for completion.
 				let lastEntryId = "";
 				let resultJoined: GenericResult | undefined;
 				while (!resultJoined) {
@@ -1678,7 +1678,7 @@ export class Image {
 							resultJoined = item.result;
 							break;
 						}
-						// ログ行と進捗更新は無視
+						// Ignore log lines and progress updates.
 					}
 				}
 				result = resultJoined;
@@ -1710,7 +1710,7 @@ export class Image {
 				);
 			}
 
-			// 次のレイヤーのベースイメージとして使用
+			// Use as the base image for the next layer.
 			baseImageId = resp.imageId;
 		}
 		if (!baseImageId)
@@ -1721,7 +1721,7 @@ export class Image {
 	}
 
 	/**
-	 * @description 既に参照済みの Image handle を返す Python 互換 helper
+	 * @description Python-compatible helper that returns an already referenced Image handle
 	 */
 	async hydrate(): Promise<Image> {
 		if (this.#imageId === "") {
@@ -1733,9 +1733,9 @@ export class Image {
 	}
 
 	/**
-	 * @description ビルド済み Image を安定した名前とタグで publish する
-	 * @param name - publish する Image 名。`name:tag` 形式も指定可能。タグ未指定時は `latest`
-	 * @param params - オプションパラメータ
+	 * @description Publishes a built Image with a stable name and tag
+	 * @param name - Image name to publish. `name:tag` is supported; defaults to `latest` when no tag is specified
+	 * @param params - Optional parameters
 	 */
 	async publish(name: string, params: ImagePublishParams = {}): Promise<void> {
 		const tag = parseNamedImageRef(name);

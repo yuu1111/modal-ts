@@ -52,7 +52,7 @@ type SandboxSidecarAccess = {
 };
 
 /**
- * @description Sidecar 作成パラメータ
+ * @description Sidecar creation parameters
  */
 export type SidecarCreateParams = {
 	command?: string[];
@@ -63,26 +63,26 @@ export type SidecarCreateParams = {
 };
 
 /**
- * @description Sidecar 取得パラメータ
+ * @description Sidecar lookup parameters
  */
 export type SidecarGetParams = {
 	includeTerminated?: boolean;
 };
 
 /**
- * @description Sidecar 一覧パラメータ
+ * @description Sidecar list parameters
  */
 export type SidecarListParams = {
 	includeTerminated?: boolean;
 };
 
 /**
- * @description Sidecar 内 exec パラメータ
+ * @description Exec parameters inside a Sidecar
  */
 export type SidecarExecParams = SandboxExecParams;
 
 /**
- * @description Sidecar 終了パラメータ
+ * @description Sidecar termination parameters
  */
 export type SidecarTerminateParams = {
 	wait?: boolean;
@@ -134,7 +134,7 @@ function sidecarContainerFromProto(
 }
 
 /**
- * @description Sandbox 内の sidecar container を作成・管理するサービス
+ * @description Service for creating and managing sidecar containers inside a Sandbox
  */
 export class SidecarService {
 	readonly #access: SandboxSidecarAccess;
@@ -145,10 +145,10 @@ export class SidecarService {
 	}
 
 	/**
-	 * @description Sidecar container を起動する
-	 * @param name - Sandbox 内で一意な sidecar 名
-	 * @param image - 起動するビルド済み Image
-	 * @param params - 作成パラメータ
+	 * @description Starts a sidecar container
+	 * @param name - Sidecar name unique within the Sandbox
+	 * @param image - Built Image to start
+	 * @param params - Creation parameters
 	 */
 	async create(
 		name: string,
@@ -214,7 +214,7 @@ export class SidecarService {
 	}
 
 	/**
-	 * @description 名前で sidecar container を取得する
+	 * @description Gets a sidecar container by name
 	 */
 	async get(
 		name: string,
@@ -247,7 +247,7 @@ export class SidecarService {
 	}
 
 	/**
-	 * @description sidecar container の一覧を返す
+	 * @description Returns the list of sidecar containers
 	 */
 	async list(params?: SidecarListParams): Promise<SidecarContainer[]> {
 		const [taskId, client] = await this.#access.commandRouter();
@@ -265,7 +265,7 @@ export class SidecarService {
 }
 
 /**
- * @description Sandbox 内で動作する sidecar container のハンドル
+ * @description Handle for a sidecar container running inside a Sandbox
  */
 export class SidecarContainer {
 	readonly containerId: string;
@@ -311,7 +311,7 @@ export class SidecarContainer {
 	): Promise<ContainerProcess<Uint8Array>>;
 
 	/**
-	 * @description sidecar container 内でコマンドを実行する
+	 * @description Executes a command inside the sidecar container
 	 */
 	async exec(
 		command: string[],
@@ -321,7 +321,7 @@ export class SidecarContainer {
 	}
 
 	/**
-	 * @description sidecar container 用 filesystem API
+	 * @description Filesystem API for the sidecar container
 	 */
 	get filesystem(): SandboxFilesystem {
 		if (!this.#filesystem) {
@@ -333,7 +333,7 @@ export class SidecarContainer {
 	}
 
 	/**
-	 * @description sidecar container の終了を待ち exit code を返す
+	 * @description Waits for the sidecar container to exit and returns its exit code
 	 */
 	async wait(
 		params: {
@@ -388,7 +388,7 @@ export class SidecarContainer {
 	}
 
 	/**
-	 * @description sidecar container の終了状態を確認する。実行中なら null
+	 * @description Checks the sidecar container exit status. Returns null while running
 	 */
 	async poll(): Promise<number | null> {
 		if (
@@ -421,7 +421,7 @@ export class SidecarContainer {
 	async terminate(params: { wait: true }): Promise<number>;
 
 	/**
-	 * @description sidecar container を停止する
+	 * @description Stops the sidecar container
 	 */
 	async terminate(
 		params?: SidecarTerminateParams,

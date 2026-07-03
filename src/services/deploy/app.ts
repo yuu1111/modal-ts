@@ -4,9 +4,9 @@ import { GPUConfig, ObjectCreationType } from "@/generated/modal_proto/api";
 import { aliasedBoolean, environmentParam } from "@/utils/param_aliases";
 
 /**
- * @description {@link App} を管理するサービス
+ * @description Service for managing {@link App}
  *
- * 通常はクライアント経由でのみアクセスする:
+ * Usually accessed only through the client:
  * ```typescript
  * const modal = new ModalClient();
  * const app = await modal.apps.fromName("my-app");
@@ -19,11 +19,11 @@ export class AppService {
 	}
 
 	/**
-	 * @description 名前でデプロイ済み {@link App} を参照する。存在しなければ作成も可能
-	 * @param name - App の名前
-	 * @param params - オプションパラメータ
-	 * @returns App インスタンス
-	 * @throws NotFoundError 指定された App が存在しない場合
+	 * @description Looks up a deployed {@link App} by name and can create it when missing
+	 * @param name - App name
+	 * @param params - Optional parameters
+	 * @returns App instance
+	 * @throws NotFoundError when the specified App does not exist
 	 */
 	async fromName(name: string, params: AppFromNameParams = {}): Promise<App> {
 		try {
@@ -57,7 +57,7 @@ export class AppService {
 }
 
 /**
- * @description {@link AppService#fromName client.apps.fromName()} のオプションパラメータ
+ * @description Optional parameters for {@link AppService#fromName client.apps.fromName()}
  */
 export type AppFromNameParams = {
 	environment?: string;
@@ -68,9 +68,9 @@ export type AppFromNameParams = {
 };
 
 /**
- * @description GPU 設定文字列を GPUConfig オブジェクトにパースする
- * @param gpu - "type" または "type:count" 形式の GPU 文字列 (例: "T4", "A100:2")
- * @returns GPUConfig オブジェクト。GPU 未指定なら空の設定
+ * @description Parses a GPU settings string into a GPUConfig object
+ * @param gpu - GPU string in "type" or "type:count" format, for example "T4" or "A100:2"
+ * @returns GPUConfig object, or an empty config when no GPU is specified
  */
 export function parseGpuConfig(gpu: string | undefined): GPUConfig {
 	if (!gpu) {
@@ -98,7 +98,7 @@ export function parseGpuConfig(gpu: string | undefined): GPUConfig {
 }
 
 /**
- * @description デプロイ済み Modal App を表す
+ * @description Represents a deployed Modal App
  */
 export class App {
 	readonly appId: string;

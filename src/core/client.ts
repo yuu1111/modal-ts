@@ -40,12 +40,12 @@ import { AuthTokenManager } from "./auth_token_manager";
 import { getProfile, type Profile } from "./config";
 
 /**
- * @description AuthTokenGetメソッドのgRPCパス(認証ミドルウェアでの除外判定用)
+ * @description gRPC path for AuthTokenGet, used to exclude it from auth middleware
  */
 const AUTH_TOKEN_GET_PATH = `/${ModalClientDefinition.fullName}/${ModalClientDefinition.methods.authTokenGet.name}`;
 
 /**
- * @description gRPCチャネルの共通設定
+ * @description Shared gRPC channel settings
  */
 export const GRPC_CHANNEL_OPTIONS = {
 	"grpc.max_receive_message_length": 100 * 1024 * 1024,
@@ -57,17 +57,17 @@ export const GRPC_CHANNEL_OPTIONS = {
 } as const;
 
 /**
- * @description ModalClientの初期化パラメータ
- * @property tokenId - Modal APIトークンID @optional
- * @property tokenSecret - Modal APIトークンシークレット @optional
- * @property environment - 使用する環境名 @optional
- * @property imageBuilderVersion - 使用するイメージビルダーのバージョン @optional
- * @property endpoint - gRPCエンドポイントURL @optional
- * @property timeoutMs - デフォルトのリクエストタイムアウト(ミリ秒) @optional
- * @property maxRetries - 最大リトライ回数 @optional
- * @property logger - カスタムロガー @optional
- * @property logLevel - ログレベル @optional
- * @property grpcMiddleware - カスタムgRPCミドルウェア(認証・リトライの後に適用) @optional
+ * @description Initialization parameters for ModalClient
+ * @property tokenId - Modal API token ID @optional
+ * @property tokenSecret - Modal API token secret @optional
+ * @property environment - Environment name to use @optional
+ * @property imageBuilderVersion - Image builder version to use @optional
+ * @property endpoint - gRPC endpoint URL @optional
+ * @property timeoutMs - Default request timeout in milliseconds @optional
+ * @property maxRetries - Maximum retry count @optional
+ * @property logger - Custom logger @optional
+ * @property logLevel - Log level @optional
+ * @property grpcMiddleware - Custom gRPC middleware applied after auth and retry middleware @optional
  */
 export interface ModalClientParams {
 	tokenId?: string;
@@ -80,11 +80,11 @@ export interface ModalClientParams {
 	logger?: Logger;
 	logLevel?: LogLevel;
 	/**
-	 * @description 全API呼び出しに適用されるカスタムgRPCミドルウェア
+	 * @description Custom gRPC middleware applied to all API calls
 	 *
-	 * Modal組み込みミドルウェア(認証、リトライ、タイムアウト)の後に追加される。
-	 * テレメトリやトレーシング等のオブザーバビリティ用途を想定。
-	 * Modal gRPC APIは公開APIではなく、予告なく変更される可能性がある。
+	 * Added after Modal built-in middleware for auth, retries, and timeouts.
+	 * Intended for observability use cases such as telemetry and tracing.
+	 * The Modal gRPC API is not public and may change without notice.
 	 */
 	grpcMiddleware?: ClientMiddleware[];
 	/**
@@ -94,7 +94,7 @@ export interface ModalClientParams {
 }
 
 /**
- * @description Modal gRPCクライアントの型エイリアス
+ * @description Type alias for the Modal gRPC client
  */
 export type ModalGrpcClient = Client<
 	typeof ModalClientDefinition,
@@ -102,9 +102,9 @@ export type ModalGrpcClient = Client<
 >;
 
 /**
- * @description Modalクラウドインフラと対話するためのメインクライアント
+ * @description Main client for interacting with Modal cloud infrastructure
  *
- * サービスプロパティを通じて全Modalサービスにアクセスする。
+ * Access all Modal services through service properties.
  * @example
  * ```typescript
  * import { ModalClient } from "modal";
@@ -217,28 +217,28 @@ export class ModalClient {
 	}
 
 	/**
-	 * @description 有効な環境名を返す
-	 * @param environment - 明示的な環境名(省略時はプロファイルの値)
-	 * @returns 環境名
+	 * @description Returns the effective environment name
+	 * @param environment - Explicit environment name; uses the profile value when omitted
+	 * @returns Environment name
 	 */
 	environmentName(environment?: string): string {
 		return environment || this.profile.environment || "";
 	}
 
 	/**
-	 * @description イメージビルダーのバージョンを返す
-	 * @param version - 明示的なバージョン(省略時はプロファイルの値)
-	 * @returns バージョン文字列 @defaultValue "2024.10"
+	 * @description Returns the image builder version
+	 * @param version - Explicit version; uses the profile value when omitted
+	 * @returns Version string @defaultValue "2024.10"
 	 */
 	imageBuilderVersion(version?: string): string {
 		return version || this.profile.imageBuilderVersion || "2024.10";
 	}
 
 	/**
-	 * @description サーバーから Environment の image builder version を取得する。
-	 * profile に明示された値がある場合はそれを優先する。
-	 * @param environmentName - 取得対象の環境名。省略時は profile の環境を使う
-	 * @returns イメージビルダーのバージョン
+	 * @description Gets the Environment image builder version from the server.
+	 * Prefers an explicit profile value when present.
+	 * @param environmentName - Environment name to fetch; uses the profile environment when omitted
+	 * @returns Image builder version
 	 */
 	async getImageBuilderVersion(environmentName?: string): Promise<string> {
 		if (
@@ -270,7 +270,7 @@ export class ModalClient {
 	}
 
 	/**
-	 * @description クライアントを閉じて認証トークンのリフレッシュを停止する
+	 * @description Closes the client and stops auth token refresh
 	 */
 	close(): void {
 		this.logger.debug("Closing Modal client");
@@ -289,15 +289,15 @@ export class ModalClient {
 	}
 
 	/**
-	 * @description SDKバージョン文字列を返す
-	 * @returns バージョン文字列
+	 * @description Returns the SDK version string
+	 * @returns Version string
 	 */
 	version(): string {
 		return SDK_VERSION;
 	}
 
 	private createClient(profile: Profile): ModalGrpcClient {
-		// チャネルはリクエスト送信まで実際の接続を行わない
+		// The channel does not establish an actual connection until a request is sent.
 		// Ref: https://github.com/modal-labs/modal-client/blob/main/modal/_utils/grpc_utils.py
 		const channel = createChannel(
 			profile.serverUrl,
@@ -317,7 +317,7 @@ export class ModalClient {
 	}
 
 	/**
-	 * @description トランジェントエラーとタイムアウトに対するユナリーリクエスト用リトライミドルウェア
+	 * @description Retry middleware for unary requests on transient errors and timeouts
 	 */
 	private retryMiddleware(): ClientMiddleware<RetryOptions> {
 		const logger = this.logger;
@@ -419,7 +419,7 @@ export class ModalClient {
 	}
 
 	/**
-	 * @description AuthTokenManagerの遅延初期化
+	 * @description Lazy initialization of AuthTokenManager
 	 */
 	private getOrCreateAuthTokenManager(): AuthTokenManager {
 		if (!this.authTokenManager) {
@@ -447,13 +447,13 @@ export class ModalClient {
 				"x-modal-client-type",
 				String(ClientType.CLIENT_TYPE_LIBMODAL_JS),
 			);
-			// Python SDK互換のクライアントバージョン
+			// Client version compatible with the Python SDK.
 			options.metadata.set("x-modal-client-version", "1.0.0");
 			options.metadata.set("x-modal-ts-version", `modal-js/${SDK_VERSION}`);
 			options.metadata.set("x-modal-token-id", tokenId);
 			options.metadata.set("x-modal-token-secret", tokenSecret);
 
-			// AuthTokenGet自体にauth tokenを付与すると循環するため除外
+			// Exclude AuthTokenGet itself to avoid a cycle when adding auth tokens.
 			if (call.method.path !== AUTH_TOKEN_GET_PATH) {
 				const tokenManager = self.getOrCreateAuthTokenManager();
 				const token = await tokenManager.getToken();
@@ -468,13 +468,13 @@ export class ModalClient {
 }
 
 /**
- * @description デフォルトクライアント(遅延初期化)
+ * @description Default client with lazy initialization
  */
 let defaultClient: ModalClient | undefined;
 
 /**
- * @description デフォルトのModalClientインスタンスを取得(なければ作成)
- * @returns ModalClientインスタンス
+ * @description Gets the default ModalClient instance, creating it if needed
+ * @returns ModalClient instance
  */
 export function getDefaultClient(): ModalClient {
 	if (!defaultClient) {

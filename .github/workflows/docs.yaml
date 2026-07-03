@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   docs:
-    name: TypeDoc
+    name: API Reference
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -24,7 +24,7 @@ jobs:
 
       - run: bun ci
 
-      - run: bun run docs
+      - run: bun run docs:api
 
       - name: Upload docs artifact
         if: ${{ github.ref == 'refs/heads/main' }}

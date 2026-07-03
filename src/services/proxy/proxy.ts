@@ -5,7 +5,7 @@ import type { ProxyGetResponse } from "@/generated/modal_proto/api";
 import { environmentParam } from "@/utils/param_aliases";
 
 /**
- * @description {@link Proxy} を管理するサービス
+ * @description Service for managing {@link Proxy}
  */
 export class ProxyService {
 	readonly #client: ModalClient;
@@ -14,11 +14,11 @@ export class ProxyService {
 	}
 
 	/**
-	 * @description 名前で {@link Proxy} を参照する
-	 * @param name - Proxy の名前
-	 * @param params - オプションパラメータ
-	 * @returns Proxy インスタンス
-	 * @throws NotFoundError 指定された Proxy が存在しない場合
+	 * @description Looks up a {@link Proxy} by name
+	 * @param name - Proxy name
+	 * @param params - Optional parameters
+	 * @returns Proxy instance
+	 * @throws NotFoundError when the specified Proxy does not exist
 	 */
 	async fromName(name: string, params?: ProxyFromNameParams): Promise<Proxy> {
 		let resp: ProxyGetResponse;
@@ -42,8 +42,8 @@ export class ProxyService {
 }
 
 /**
- * @description {@link ProxyService#fromName client.proxies.fromName()} のオプションパラメータ
- * @property environment - Modal環境名 @optional
+ * @description Optional parameters for {@link ProxyService#fromName client.proxies.fromName()}
+ * @property environment - Modal environment name @optional
  */
 export type ProxyFromNameParams = {
 	environment?: string;
@@ -52,7 +52,7 @@ export type ProxyFromNameParams = {
 };
 
 /**
- * @description Modal コンテナに静的なアウトバウンド IP アドレスを提供するプロキシ
+ * @description Proxy that provides a static outbound IP address for Modal containers
  */
 export class Proxy {
 	readonly proxyId: string;

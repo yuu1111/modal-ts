@@ -4,12 +4,12 @@ import {
 } from "@/generated/modal_proto/api";
 
 /**
- * @description SchedulerPlacement の作成パラメータ
- * @property region - 実行を希望するリージョンまたはリージョン配列 @optional
- * @property zone - 実行を希望するゾーン @optional
- * @property spot - true なら spot、false なら on-demand を希望 @optional
- * @property instanceType - 実行を希望するインスタンスタイプまたは配列 @optional
- * @property nonpreemptible - Function でプリエンプト不可実行を要求する @optional
+ * @description Parameters for creating SchedulerPlacement
+ * @property region - Preferred region or regions for execution @optional
+ * @property zone - Preferred zone for execution @optional
+ * @property spot - true prefers spot, false prefers on-demand @optional
+ * @property instanceType - Preferred instance type or types for execution @optional
+ * @property nonpreemptible - Requests non-preemptible execution for a Function @optional
  */
 export type SchedulerPlacementParams = {
 	region?: string | string[];
@@ -20,13 +20,13 @@ export type SchedulerPlacementParams = {
 };
 
 /**
- * @description Function や Sandbox のスケジューリング制約
+ * @description Scheduling constraints for Functions and Sandboxes
  */
 export class SchedulerPlacement {
 	readonly #proto: SchedulerPlacementProtoMessage;
 
 	/**
-	 * @param params - スケジューリング制約
+	 * @param params - Scheduling constraints
 	 */
 	constructor(params: SchedulerPlacementParams = {}) {
 		const regions =
@@ -54,7 +54,7 @@ export class SchedulerPlacement {
 	}
 
 	/**
-	 * @description gRPC に渡す proto 表現を返す
+	 * @description Returns the proto representation passed to gRPC
 	 */
 	toProto(): SchedulerPlacementProtoMessage {
 		return this.#proto;

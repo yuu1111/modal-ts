@@ -1,7 +1,7 @@
 import { getDefaultClient, type ModalClient } from "@/core/client";
 
 /**
- * @description SandboxSnapshot.fromId() のオプションパラメータ
+ * @description Optional parameters for SandboxSnapshot.fromId()
  */
 export type SandboxSnapshotFromIdParams = {
 	client?: ModalClient;
@@ -23,7 +23,7 @@ export class SandboxSnapshot {
 	}
 
 	/**
-	 * @description 既存 snapshot ID から handle を作る
+	 * @description Creates a handle from an existing snapshot ID
 	 */
 	static fromId(
 		snapshotId: string,
@@ -40,7 +40,7 @@ export class SandboxSnapshot {
 	}
 
 	/**
-	 * @description snapshot ID をサーバーへ問い合わせて検証する
+	 * @description Queries the server to validate the snapshot ID
 	 */
 	async hydrate(): Promise<SandboxSnapshot> {
 		const client = this.#client ?? getDefaultClient();

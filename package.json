@@ -55,7 +55,8 @@
     "audit:parity": "bun scripts/audit-python-parity.ts",
     "prepublishOnly": "bun run build",
     "version": "bun run typecheck",
-    "docs": "typedoc --entryPoints src/index.ts --out .typedoc",
+    "docs": "bun run docs:api",
+    "docs:api": "typedoc --entryPoints src/index.ts --out .typedoc --readme docs/en/README.md",
     "proto": "bun scripts/gen-proto.ts"
   },
   "dependencies": {

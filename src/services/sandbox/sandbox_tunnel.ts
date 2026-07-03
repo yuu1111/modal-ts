@@ -1,17 +1,17 @@
 import { InvalidError } from "@/core/errors";
 
 /**
- * @description Sandbox.createConnectToken()のオプションパラメータ
- * @property userMetadata - プロキシが Sandbox へリクエスト転送時にヘッダーに追加するメタデータ @optional
+ * @description Optional parameters for Sandbox.createConnectToken()
+ * @property userMetadata - Metadata the proxy adds to headers when forwarding requests to the Sandbox @optional
  */
 export type SandboxCreateConnectTokenParams = {
 	userMetadata?: string;
 };
 
 /**
- * @description Sandbox.createConnectToken()が返す接続情報
- * @property url - 接続先 URL
- * @property token - 認証トークン
+ * @description Connection information returned by Sandbox.createConnectToken()
+ * @property url - Destination URL
+ * @property token - Auth token
  */
 export type SandboxCreateConnectCredentials = {
 	url: string;
@@ -19,7 +19,7 @@ export type SandboxCreateConnectCredentials = {
 };
 
 /**
- * @description 実行中の {@link Sandbox} からフォワードされたポート
+ * @description Port forwarded from a running {@link Sandbox}
  */
 export class Tunnel {
 	/** @internal */
@@ -39,7 +39,7 @@ export class Tunnel {
 	}
 
 	/**
-	 * @description フォワードされたポートの公開 HTTPS URL を取得する
+	 * @description Gets the public HTTPS URL for the forwarded port
 	 */
 	get url(): string {
 		let value = `https://${this.host}`;
@@ -50,21 +50,21 @@ export class Tunnel {
 	}
 
 	/**
-	 * @description 公開 TLS ソケットを [host, port] タプルで取得する
+	 * @description Gets the public TLS socket as a [host, port] tuple
 	 */
 	get tlsSocket(): [string, number] {
 		return [this.host, this.port];
 	}
 
 	/**
-	 * @description {@link Tunnel#tlsSocket} の Python 互換 alias
+	 * @description Python-compatible alias for {@link Tunnel#tlsSocket}
 	 */
 	get tls_socket(): [string, number] {
 		return this.tlsSocket;
 	}
 
 	/**
-	 * @description 公開 TCP ソケットを [host, port] タプルで取得する
+	 * @description Gets the public TCP socket as a [host, port] tuple
 	 */
 	get tcpSocket(): [string, number] {
 		if (!this.unencryptedHost || this.unencryptedPort === undefined) {
@@ -76,7 +76,7 @@ export class Tunnel {
 	}
 
 	/**
-	 * @description {@link Tunnel#tcpSocket} の Python 互換 alias
+	 * @description Python-compatible alias for {@link Tunnel#tcpSocket}
 	 */
 	get tcp_socket(): [string, number] {
 		return this.tcpSocket;
