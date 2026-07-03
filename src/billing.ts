@@ -2,7 +2,7 @@ import { getDefaultClient, type ModalClient } from "@/core/client";
 import type { WorkspaceBillingReportItem as WorkspaceBillingReportItemProto } from "@/generated/modal_proto/api";
 
 /**
- * @description Parameters for a workspace billing report
+ * Parameters for a workspace billing report
  */
 export type WorkspaceBillingReportParams = {
 	start: Date;
@@ -13,7 +13,7 @@ export type WorkspaceBillingReportParams = {
 };
 
 /**
- * @description A billing report row
+ * A billing report row
  */
 export type BillingReportItem = {
 	objectId: string;
@@ -26,7 +26,7 @@ export type BillingReportItem = {
 };
 
 /**
- * @description Row compatible with Python's modal.billing.workspace_billing_report
+ * Row compatible with Python's modal.billing.workspace_billing_report
  */
 export type WorkspaceBillingReportItem = {
 	object_id: string;
@@ -38,7 +38,7 @@ export type WorkspaceBillingReportItem = {
 };
 
 /**
- * @description Returns a billing report for workspace usage
+ * Returns a billing report for workspace usage
  */
 export async function workspaceBillingReport(
 	params: WorkspaceBillingReportParams,

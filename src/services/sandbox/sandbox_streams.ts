@@ -11,11 +11,11 @@ const SB_LOGS_MAX_RETRIES = 10;
 
 // Equivalent to the Python SDK _StreamReader (object_type == "sandbox").
 /**
- * @description Streams reads from Sandbox stdout/stderr
+ * Streams reads from Sandbox stdout/stderr
  * @param cpClient - gRPC client
  * @param sandboxId - Sandbox ID
  * @param fileDescriptor - File descriptor to read
- * @param signal - Cancellation signal @optional
+ * @param signal - Cancellation signal
  */
 export async function* outputStreamSb(
 	cpClient: ModalGrpcClient,
@@ -77,7 +77,7 @@ export async function* outputStreamSb(
 }
 
 /**
- * @description Returns a WritableStream for writing to Sandbox stdin
+ * Returns a WritableStream for writing to Sandbox stdin
  * @param cpClient - gRPC client
  * @param sandboxId - Sandbox ID
  */
@@ -106,12 +106,12 @@ export function inputStreamSb(
 }
 
 /**
- * @description Streams reads from ContainerProcess stdout/stderr
+ * Streams reads from ContainerProcess stdout/stderr
  * @param commandRouterClient - TaskCommandRouter client
  * @param taskId - Task ID
  * @param execId - Exec ID
  * @param fileDescriptor - File descriptor to read
- * @param deadline - Deadline in epoch milliseconds @optional
+ * @param deadline - Deadline in epoch milliseconds
  */
 export async function* outputStreamCp(
 	commandRouterClient: TaskCommandRouterClientImpl,
@@ -131,7 +131,7 @@ export async function* outputStreamCp(
 }
 
 /**
- * @description Returns a WritableStream for writing to ContainerProcess stdin
+ * Returns a WritableStream for writing to ContainerProcess stdin
  * @param commandRouterClient - TaskCommandRouter client
  * @param taskId - Task ID
  * @param execId - Exec ID

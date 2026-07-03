@@ -4,7 +4,7 @@ import { checkForRenamedParams } from "@/utils/validation";
 import { ControlPlaneInvocation } from "./invocation";
 
 /**
- * @description Service for managing {@link FunctionCall}
+ * Service for managing {@link FunctionCall}
  *
  * Usually accessed only through the client:
  * ```typescript
@@ -19,7 +19,7 @@ export class FunctionCallService {
 	}
 
 	/**
-	 * @description Gets a FunctionCall by ID
+	 * Gets a FunctionCall by ID
 	 * @param functionCallId - FunctionCall ID
 	 * @returns FunctionCall instance
 	 */
@@ -28,7 +28,7 @@ export class FunctionCallService {
 	}
 
 	/**
-	 * @description Python-compatible alias for {@link FunctionCallService#fromId}
+	 * Python-compatible alias for {@link FunctionCallService#fromId}
 	 */
 	async from_id(functionCallId: string): Promise<FunctionCall> {
 		return await this.fromId(functionCallId);
@@ -36,8 +36,8 @@ export class FunctionCallService {
 }
 
 /**
- * @description Optional parameters for FunctionCall.get()
- * @property timeoutMs - Timeout in milliseconds for waiting on the result @optional
+ * Optional parameters for FunctionCall.get()
+ * @property timeoutMs - Timeout in milliseconds for waiting on the result
  */
 export type FunctionCallGetParams = {
 	timeoutMs?: number;
@@ -45,8 +45,8 @@ export type FunctionCallGetParams = {
 };
 
 /**
- * @description Optional parameters for FunctionCall.cancel()
- * @property terminateContainers - Whether to terminate containers too @optional
+ * Optional parameters for FunctionCall.cancel()
+ * @property terminateContainers - Whether to terminate containers too
  */
 export type FunctionCallCancelParams = {
 	terminateContainers?: boolean;
@@ -54,7 +54,7 @@ export type FunctionCallCancelParams = {
 };
 
 /**
- * @description Represents a Modal FunctionCall, a {@link Function_} invocation for a given input,
+ * Represents a Modal FunctionCall, a {@link Function_} invocation for a given input,
  * whose result can be retrieved asynchronously with {@link FunctionCall#get} or cancelled with {@link FunctionCall#cancel}
  */
 export class FunctionCall {
@@ -71,7 +71,7 @@ export class FunctionCall {
 	}
 
 	/**
-	 * @description Python-compatible static helper that creates a handle from a FunctionCall ID
+	 * Python-compatible static helper that creates a handle from a FunctionCall ID
 	 */
 	static from_id(functionCallId: string): FunctionCall {
 		return new FunctionCall(getDefaultClient(), functionCallId);
@@ -82,7 +82,7 @@ export class FunctionCall {
 	}
 
 	/**
-	 * @description Gets the FunctionCall result, optionally waiting with a timeout
+	 * Gets the FunctionCall result, optionally waiting with a timeout
 	 * @param params - Optional parameters
 	 * @returns Function execution result
 	 */
@@ -97,7 +97,7 @@ export class FunctionCall {
 	}
 
 	/**
-	 * @description Returns the number of inputs included in the FunctionCall
+	 * Returns the number of inputs included in the FunctionCall
 	 */
 	async numInputs(): Promise<number> {
 		if (this.#numInputs !== undefined) return this.#numInputs;
@@ -110,14 +110,14 @@ export class FunctionCall {
 	}
 
 	/**
-	 * @description Python-compatible alias for {@link FunctionCall#numInputs}
+	 * Python-compatible alias for {@link FunctionCall#numInputs}
 	 */
 	async num_inputs(): Promise<number> {
 		return await this.numInputs();
 	}
 
 	/**
-	 * @description Returns the function call graph
+	 * Returns the function call graph
 	 */
 	async getCallGraph(): Promise<unknown> {
 		const cpClient = this.#client?.cpClient || getDefaultClient().cpClient;
@@ -127,14 +127,14 @@ export class FunctionCall {
 	}
 
 	/**
-	 * @description Python-compatible alias for {@link FunctionCall#getCallGraph}
+	 * Python-compatible alias for {@link FunctionCall#getCallGraph}
 	 */
 	async get_call_graph(): Promise<unknown> {
 		return await this.getCallGraph();
 	}
 
 	/**
-	 * @description Iterates results for multiple inputs in index order
+	 * Iterates results for multiple inputs in index order
 	 * @param params - start/end index
 	 */
 	async *iter(
@@ -159,7 +159,7 @@ export class FunctionCall {
 	}
 
 	/**
-	 * @description Waits for multiple FunctionCall results while preserving order
+	 * Waits for multiple FunctionCall results while preserving order
 	 * @param functionCalls - Array of FunctionCalls
 	 */
 	static async gather(...functionCalls: FunctionCall[]): Promise<unknown[]>;
@@ -174,7 +174,7 @@ export class FunctionCall {
 	}
 
 	/**
-	 * @description Cancels a running FunctionCall
+	 * Cancels a running FunctionCall
 	 * @param params - Optional parameters
 	 */
 	async cancel(params: FunctionCallCancelParams = {}) {

@@ -1,14 +1,14 @@
 import { getDefaultClient, type ModalClient } from "@/core/client";
 
 /**
- * @description Optional parameters for SandboxSnapshot.fromId()
+ * Optional parameters for SandboxSnapshot.fromId()
  */
 export type SandboxSnapshotFromIdParams = {
 	client?: ModalClient;
 };
 
 /**
- * @description Modal Sandbox snapshot
+ * Modal Sandbox snapshot
  */
 export class SandboxSnapshot {
 	readonly snapshotId: string;
@@ -23,7 +23,7 @@ export class SandboxSnapshot {
 	}
 
 	/**
-	 * @description Creates a handle from an existing snapshot ID
+	 * Creates a handle from an existing snapshot ID
 	 */
 	static fromId(
 		snapshotId: string,
@@ -40,7 +40,7 @@ export class SandboxSnapshot {
 	}
 
 	/**
-	 * @description Queries the server to validate the snapshot ID
+	 * Queries the server to validate the snapshot ID
 	 */
 	async hydrate(): Promise<SandboxSnapshot> {
 		const client = this.#client ?? getDefaultClient();

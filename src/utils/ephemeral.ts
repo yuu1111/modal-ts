@@ -1,15 +1,15 @@
 /**
- * @description Heartbeat interval in milliseconds
+ * Heartbeat interval in milliseconds
  */
 export const ephemeralObjectHeartbeatSleep = 300000;
 
 /**
- * @description Type for heartbeat sender functions
+ * Type for heartbeat sender functions
  */
 export type HeartbeatFunction = () => Promise<unknown>;
 
 /**
- * @description Manager that periodically sends heartbeats for ephemeral objects
+ * Manager that periodically sends heartbeats for ephemeral objects
  * @property heartbeatFn - Heartbeat sender function
  * @property abortController - Stop controller for the heartbeat loop
  */
@@ -18,7 +18,7 @@ export class EphemeralHeartbeatManager {
 	private readonly abortController: AbortController;
 
 	/**
-	 * @description Starts the heartbeat loop when the instance is created
+	 * Starts the heartbeat loop when the instance is created
 	 * @param heartbeatFn - Heartbeat sender function
 	 */
 	constructor(heartbeatFn: HeartbeatFunction) {
@@ -29,7 +29,7 @@ export class EphemeralHeartbeatManager {
 	}
 
 	/**
-	 * @description Starts the heartbeat loop asynchronously
+	 * Starts the heartbeat loop asynchronously
 	 */
 	private start(): void {
 		const signal = this.abortController.signal;
@@ -59,7 +59,7 @@ export class EphemeralHeartbeatManager {
 	}
 
 	/**
-	 * @description Stops the heartbeat loop
+	 * Stops the heartbeat loop
 	 */
 	stop(): void {
 		this.abortController.abort();

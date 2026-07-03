@@ -1,7 +1,7 @@
 import { InvalidError } from "@/core/errors";
 
 /**
- * @description Retry policy settings for Modal Function and Cls
+ * Retry policy settings for Modal Function and Cls
  * @property maxRetries - Maximum number of retries (0-10)
  * @property backoffCoefficient - Backoff coefficient @defaultValue 2.0
  * @property initialDelayMs - Initial retry delay @defaultValue 1000
@@ -14,7 +14,7 @@ export class Retries {
 	readonly maxDelayMs: number;
 
 	/**
-	 * @description Constructs a retry policy
+	 * Constructs a retry policy
 	 * @param params - Retry settings
 	 */
 	constructor(params: {
@@ -62,7 +62,7 @@ export class Retries {
 }
 
 /**
- * @description Normalizes retry settings, converting numbers into Retries instances
+ * Normalizes retry settings, converting numbers into Retries instances
  * @param retries - Retry count or Retries instance
  * @returns Normalized Retries, or undefined if omitted
  */

@@ -2,7 +2,7 @@ import { ClientError, Status } from "nice-grpc";
 import { AlreadyExistsError, InvalidError, NotFoundError } from "@/core/errors";
 
 /**
- * @description Shared options for rethrow functions
+ * Shared options for rethrow functions
  * @property message - Error message. Uses err.details || err.message when omitted
  * @property preconditionPatterns - Conditions for converting FAILED_PRECONDITION too. An empty array means unconditional; a string array converts only when details include a pattern
  */
@@ -12,7 +12,7 @@ export interface RethrowOptions {
 }
 
 /**
- * @description Converts a gRPC status code to a domain error and rethrows it.
+ * Converts a gRPC status code to a domain error and rethrows it.
  * Rethrows the original error unchanged when it does not match.
  * @param err - Caught error
  * @param ErrorClass - Error class to throw
@@ -40,7 +40,7 @@ function rethrowGrpc(
 }
 
 /**
- * @description Normalizes a string or options object into RethrowOptions
+ * Normalizes a string or options object into RethrowOptions
  * @param messageOrOptions - Message string or options object
  */
 function resolveOptions(
@@ -52,7 +52,7 @@ function resolveOptions(
 }
 
 /**
- * @description Converts gRPC NOT_FOUND to NotFoundError and rethrows it.
+ * Converts gRPC NOT_FOUND to NotFoundError and rethrows it.
  * Rethrows the original error unchanged when it does not match.
  * @param err - Caught error
  * @param messageOrOptions - Message string or options object
@@ -70,7 +70,7 @@ export function rethrowNotFound(
 }
 
 /**
- * @description Converts gRPC INVALID_ARGUMENT to InvalidError and rethrows it.
+ * Converts gRPC INVALID_ARGUMENT to InvalidError and rethrows it.
  * Rethrows the original error unchanged when it does not match.
  * @param err - Caught error
  * @param messageOrOptions - Message string or options object
@@ -88,7 +88,7 @@ export function rethrowInvalid(
 }
 
 /**
- * @description Converts gRPC ALREADY_EXISTS to AlreadyExistsError and rethrows it.
+ * Converts gRPC ALREADY_EXISTS to AlreadyExistsError and rethrows it.
  * Rethrows the original error unchanged when it does not match.
  * @param err - Caught error
  * @param messageOrOptions - Message string or options object
@@ -106,7 +106,7 @@ export function rethrowAlreadyExists(
 }
 
 /**
- * @description Suppresses NOT_FOUND when allowMissing is true. Otherwise rethrows
+ * Suppresses NOT_FOUND when allowMissing is true. Otherwise rethrows
  * @param err - Caught error
  * @param allowMissing - When true, ignores NOT_FOUND
  */

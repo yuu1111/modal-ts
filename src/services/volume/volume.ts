@@ -21,7 +21,7 @@ import {
 const VOLUME_BLOCK_SIZE = 8 * 1024 * 1024;
 
 /**
- * @description Optional parameters for {@link VolumeService#fromName client.volumes.fromName()}
+ * Optional parameters for {@link VolumeService#fromName client.volumes.fromName()}
  * @property environment - Environment name to use
  * @property createIfMissing - Whether to create automatically when missing
  */
@@ -52,7 +52,7 @@ export type VolumeListParams = {
 };
 
 /**
- * @description Optional parameters for {@link VolumeService#ephemeral client.volumes.ephemeral()}
+ * Optional parameters for {@link VolumeService#ephemeral client.volumes.ephemeral()}
  * @property environment - Environment name to use
  */
 export type VolumeEphemeralParams = {
@@ -62,7 +62,7 @@ export type VolumeEphemeralParams = {
 };
 
 /**
- * @description Optional parameters for {@link VolumeService#delete client.volumes.delete()}
+ * Optional parameters for {@link VolumeService#delete client.volumes.delete()}
  * @property environment - Environment name to use
  * @property allowMissing - Whether to suppress errors when the Volume does not exist
  */
@@ -75,7 +75,7 @@ export type VolumeDeleteParams = {
 };
 
 /**
- * @description Optional parameters for {@link VolumeService#rename client.volumes.rename()}
+ * Optional parameters for {@link VolumeService#rename client.volumes.rename()}
  * @property environment - Environment name to use
  */
 export type VolumeRenameParams = {
@@ -85,7 +85,7 @@ export type VolumeRenameParams = {
 };
 
 /**
- * @description Options for mounting a Volume
+ * Options for mounting a Volume
  * @property readOnly - Whether to make it read-only inside the container
  * @property subPath - Path for mounting only part of the Volume
  */
@@ -122,7 +122,7 @@ export class VolumeService {
 	}
 
 	/**
-	 * @description Looks up a {@link Volume} by name
+	 * Looks up a {@link Volume} by name
 	 * @param name - Volume name
 	 * @param params - Optional parameters
 	 * @returns Volume instance
@@ -243,7 +243,7 @@ export class VolumeService {
 	}
 
 	/**
-	 * @description Creates an unnamed ephemeral {@link Volume}. It lasts until closeEphemeral() is called or the process exits
+	 * Creates an unnamed ephemeral {@link Volume}. It lasts until closeEphemeral() is called or the process exits
 	 * @param params - Optional parameters
 	 * @returns Ephemeral Volume instance
 	 */
@@ -273,7 +273,7 @@ export class VolumeService {
 	}
 
 	/**
-	 * @description Deletes a named {@link Volume}. Deletion is irreversible and affects any App currently using it
+	 * Deletes a named {@link Volume}. Deletion is irreversible and affects any App currently using it
 	 * @param name - Name of the Volume to delete
 	 * @param params - Optional parameters
 	 */
@@ -303,7 +303,7 @@ export class VolumeService {
 	}
 
 	/**
-	 * @description Renames a named {@link Volume}
+	 * Renames a named {@link Volume}
 	 * @param oldName - Previous Volume name
 	 * @param newName - New Volume name
 	 * @param params - Optional parameters
@@ -326,7 +326,7 @@ export class VolumeService {
 }
 
 /**
- * @description Volume providing persistent storage that can be mounted on a Modal {@link Function_ Function}
+ * Volume providing persistent storage that can be mounted on a Modal {@link Function_ Function}
  */
 export class Volume {
 	readonly #client?: ModalClient;
@@ -433,7 +433,7 @@ export class Volume {
 	}
 
 	/**
-	 * @description Configures the Volume to mount as read-only
+	 * Configures the Volume to mount as read-only
 	 * @returns New Volume instance configured as read-only
 	 */
 	readOnly(): Volume {
@@ -445,7 +445,7 @@ export class Volume {
 	}
 
 	/**
-	 * @description Sets mount options for the Volume
+	 * Sets mount options for the Volume
 	 * @param params - Mount options. Omitted fields keep the existing settings
 	 * @returns New Volume instance with mount options applied
 	 */
@@ -482,7 +482,7 @@ export class Volume {
 	}
 
 	/**
-	 * @description Deletes an ephemeral Volume. Only available for ephemeral Volumes
+	 * Deletes an ephemeral Volume. Only available for ephemeral Volumes
 	 */
 	closeEphemeral(): void {
 		if (this.#ephemeralHbManager) {
@@ -700,7 +700,7 @@ export class Volume {
 }
 
 /**
- * @description Volume batch upload helper
+ * Volume batch upload helper
  */
 export class VolumeBatchUpload {
 	readonly #volume: Volume;
@@ -804,7 +804,7 @@ export type VolumeFileEntry = {
 };
 
 /**
- * @description Builds a gRPC VolumeMount from Volume mount settings
+ * Builds a gRPC VolumeMount from Volume mount settings
  * @internal
  */
 export function volumeToMountProto(

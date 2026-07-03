@@ -18,17 +18,17 @@ import { loads as pickleDecode, dumps as pickleEncode } from "@/utils/pickle";
 import { encodeIfString } from "@/utils/streams";
 
 /**
- * @description Initial backoff time for put operations in milliseconds
+ * Initial backoff time for put operations in milliseconds
  */
 const queueInitialPutBackoffMs = 100;
 
 /**
- * @description Default partition TTL in milliseconds, 24 hours
+ * Default partition TTL in milliseconds, 24 hours
  */
 const queueDefaultPartitionTtlMs = 24 * 3600 * 1000;
 
 /**
- * @description Optional parameters for {@link QueueService#fromName client.queues.fromName()}
+ * Optional parameters for {@link QueueService#fromName client.queues.fromName()}
  * @property environment - Environment name to use
  * @property createIfMissing - Whether to create automatically when missing
  */
@@ -41,7 +41,7 @@ export type QueueFromNameParams = {
 };
 
 /**
- * @description Optional parameters for {@link QueueService#create client.queues.create()}
+ * Optional parameters for {@link QueueService#create client.queues.create()}
  * @property environment - Environment name to use
  * @property allowExisting - Whether to treat an existing Queue as success
  */
@@ -54,7 +54,7 @@ export type QueueCreateParams = {
 };
 
 /**
- * @description Optional parameters for {@link QueueService#list client.queues.list()}
+ * Optional parameters for {@link QueueService#list client.queues.list()}
  * @property environment - Environment name to use
  * @property maxObjects - Maximum number of objects to fetch
  * @property createdBefore - Return only Queues created before this Unix timestamp
@@ -70,7 +70,7 @@ export type QueueListParams = {
 };
 
 /**
- * @description Optional parameters for {@link QueueService#delete client.queues.delete()}
+ * Optional parameters for {@link QueueService#delete client.queues.delete()}
  * @property environment - Environment name to use
  * @property allowMissing - Whether to suppress errors when the Queue does not exist
  */
@@ -83,7 +83,7 @@ export type QueueDeleteParams = {
 };
 
 /**
- * @description Optional parameters for {@link QueueService#ephemeral client.queues.ephemeral()}
+ * Optional parameters for {@link QueueService#ephemeral client.queues.ephemeral()}
  * @property environment - Environment name to use
  */
 export type QueueEphemeralParams = {
@@ -93,7 +93,7 @@ export type QueueEphemeralParams = {
 };
 
 /**
- * @description Service for managing {@link Queue}
+ * Service for managing {@link Queue}
  *
  * Usually accessed only through the client:
  * ```typescript
@@ -108,7 +108,7 @@ export class QueueService {
 	}
 
 	/**
-	 * @description Creates an unnamed ephemeral {@link Queue}. Call {@link Queue#closeEphemeral Queue.closeEphemeral()} to delete it
+	 * Creates an unnamed ephemeral {@link Queue}. Call {@link Queue#closeEphemeral Queue.closeEphemeral()} to delete it
 	 * @param params - Optional parameters
 	 * @returns Ephemeral Queue instance
 	 */
@@ -132,7 +132,7 @@ export class QueueService {
 	}
 
 	/**
-	 * @description Creates a named Queue
+	 * Creates a named Queue
 	 * @param name - Queue name
 	 * @param params - Optional parameters
 	 */
@@ -151,7 +151,7 @@ export class QueueService {
 	}
 
 	/**
-	 * @description Looks up a {@link Queue} by ID
+	 * Looks up a {@link Queue} by ID
 	 * @param queueId - Queue ID
 	 */
 	async fromId(queueId: string): Promise<Queue> {
@@ -174,7 +174,7 @@ export class QueueService {
 	}
 
 	/**
-	 * @description Looks up a {@link Queue} by name
+	 * Looks up a {@link Queue} by name
 	 * @param name - Queue name
 	 * @param params - Optional parameters
 	 * @returns Queue instance
@@ -213,7 +213,7 @@ export class QueueService {
 	}
 
 	/**
-	 * @description Lists named Queues
+	 * Lists named Queues
 	 * @param params - Optional parameters
 	 */
 	async list(params: QueueListParams = {}): Promise<Queue[]> {
@@ -259,7 +259,7 @@ export class QueueService {
 	}
 
 	/**
-	 * @description Deletes a named {@link Queue}. Deletion is irreversible and affects any App currently using it
+	 * Deletes a named {@link Queue}. Deletion is irreversible and affects any App currently using it
 	 * @param name - Name of the Queue to delete
 	 * @param params - Optional parameters
 	 */
@@ -288,75 +288,75 @@ export class QueueService {
 }
 
 /**
- * @description Optional parameters for {@link Queue#clear Queue.clear()}
+ * Optional parameters for {@link Queue#clear Queue.clear()}
  * @property partition - Partition to clear; uses the default partition when omitted
  * @property all - Whether to clear all partitions
  */
 export type QueueClearParams = {
 	/**
-	 * @description Partition to clear; uses the default partition when omitted
+	 * Partition to clear; uses the default partition when omitted
 	 */
 	partition?: string;
 
 	/**
-	 * @description Clears all partitions
+	 * Clears all partitions
 	 */
 	all?: boolean;
 };
 
 /**
- * @description Optional parameters for {@link Queue#get Queue.get()}
+ * Optional parameters for {@link Queue#get Queue.get()}
  * @property timeoutMs - Wait time in milliseconds when the Queue is empty; defaults to unlimited
  * @property partition - Partition to get values from; uses the default partition when omitted
  */
 export type QueueGetParams = {
 	/**
-	 * @description When false, returns null immediately if empty
+	 * When false, returns null immediately if empty
 	 */
 	block?: boolean;
 
 	/**
-	 * @description Wait time in milliseconds when the Queue is empty; defaults to unlimited
+	 * Wait time in milliseconds when the Queue is empty; defaults to unlimited
 	 */
 	timeoutMs?: number;
 	timeout?: number;
 
 	/**
-	 * @description Partition to get values from; uses the default partition when omitted
+	 * Partition to get values from; uses the default partition when omitted
 	 */
 	partition?: string;
 };
 
 /**
- * @description Optional parameters for {@link Queue#getMany Queue.getMany()}
+ * Optional parameters for {@link Queue#getMany Queue.getMany()}
  */
 export type QueueGetManyParams = QueueGetParams;
 
 /**
- * @description Optional parameters for {@link Queue#put Queue.put()}
+ * Optional parameters for {@link Queue#put Queue.put()}
  * @property timeoutMs - Wait time in milliseconds when the Queue is full; defaults to unlimited
  * @property partition - Partition to add the item to; uses the default partition when omitted
  * @property partitionTtlMs - Partition TTL in milliseconds @defaultValue 86400000
  */
 export type QueuePutParams = {
 	/**
-	 * @description When false, throws QueueFullError immediately if full
+	 * When false, throws QueueFullError immediately if full
 	 */
 	block?: boolean;
 
 	/**
-	 * @description Wait time in milliseconds when the Queue is full; defaults to unlimited
+	 * Wait time in milliseconds when the Queue is full; defaults to unlimited
 	 */
 	timeoutMs?: number;
 	timeout?: number;
 
 	/**
-	 * @description Partition to add the item to; uses the default partition when omitted
+	 * Partition to add the item to; uses the default partition when omitted
 	 */
 	partition?: string;
 
 	/**
-	 * @description Partition TTL in milliseconds @defaultValue 86400000
+	 * Partition TTL in milliseconds @defaultValue 86400000
 	 */
 	partitionTtlMs?: number;
 	partitionTtl?: number;
@@ -364,48 +364,48 @@ export type QueuePutParams = {
 };
 
 /**
- * @description Optional parameters for {@link Queue#putMany Queue.putMany()}
+ * Optional parameters for {@link Queue#putMany Queue.putMany()}
  */
 export type QueuePutManyParams = QueuePutParams;
 
 /**
- * @description Optional parameters for {@link Queue#len Queue.len()}
+ * Optional parameters for {@link Queue#len Queue.len()}
  * @property partition - Partition whose length is calculated; uses the default partition when omitted
  * @property total - Whether to return the total length across all partitions
  */
 export type QueueLenParams = {
 	/**
-	 * @description Partition whose length is calculated; uses the default partition when omitted
+	 * Partition whose length is calculated; uses the default partition when omitted
 	 */
 	partition?: string;
 
 	/**
-	 * @description Returns the total length across all partitions
+	 * Returns the total length across all partitions
 	 */
 	total?: boolean;
 };
 
 /**
- * @description Optional parameters for {@link Queue#iterate Queue.iterate()}
+ * Optional parameters for {@link Queue#iterate Queue.iterate()}
  * @property itemPollTimeoutMs - Wait time in milliseconds for the next item; iteration ends when exceeded @defaultValue 0
  * @property partition - Partition to iterate; uses the default partition when omitted
  */
 export type QueueIterateParams = {
 	/**
-	 * @description Wait time in milliseconds for the next item; iteration ends when exceeded @defaultValue 0
+	 * Wait time in milliseconds for the next item; iteration ends when exceeded @defaultValue 0
 	 */
 	itemPollTimeoutMs?: number;
 	itemPollTimeout?: number;
 	item_poll_timeout?: number;
 
 	/**
-	 * @description Partition to iterate; uses the default partition when omitted
+	 * Partition to iterate; uses the default partition when omitted
 	 */
 	partition?: string;
 };
 
 /**
- * @description Metadata for a Queue object
+ * Metadata for a Queue object
  */
 export type QueueInfo = {
 	name?: string;
@@ -414,7 +414,7 @@ export type QueueInfo = {
 };
 
 /**
- * @description Distributed FIFO queue for data flow inside a Modal {@link App}
+ * Distributed FIFO queue for data flow inside a Modal {@link App}
  */
 export class Queue {
 	readonly #client: ModalClient;
@@ -511,7 +511,7 @@ export class Queue {
 	}
 
 	/**
-	 * @description Deletes an ephemeral Queue. Only available for ephemeral Queues
+	 * Deletes an ephemeral Queue. Only available for ephemeral Queues
 	 */
 	closeEphemeral(): void {
 		if (this.#ephemeralHbManager) {
@@ -522,14 +522,14 @@ export class Queue {
 	}
 
 	/**
-	 * @description Returns Queue metadata
+	 * Returns Queue metadata
 	 */
 	info(): QueueInfo {
 		return this.#info ?? queueInfoFromMetadata(undefined, this.name);
 	}
 
 	/**
-	 * @description Removes all objects from a Queue partition
+	 * Removes all objects from a Queue partition
 	 * @param params - Optional parameters
 	 */
 	async clear(params: QueueClearParams = {}): Promise<void> {
@@ -590,7 +590,7 @@ export class Queue {
 	}
 
 	/**
-	 * @description Gets and returns the next object from the Queue. By default, waits until an item exists
+	 * Gets and returns the next object from the Queue. By default, waits until an item exists
 	 * @param params - Optional parameters
 	 * @returns Object taken from the Queue
 	 * @throws QueueEmptyError when timeoutMs is set and no item is available before the timeout
@@ -609,7 +609,7 @@ export class Queue {
 	}
 
 	/**
-	 * @description Gets and returns up to n objects from the Queue. By default, waits until items exist
+	 * Gets and returns up to n objects from the Queue. By default, waits until items exist
 	 * @param n - Maximum number of items to get
 	 * @param params - Optional parameters
 	 * @returns Objects taken from the Queue
@@ -679,7 +679,7 @@ export class Queue {
 	}
 
 	/**
-	 * @description Adds an item to the end of the Queue, retrying with exponential backoff when full
+	 * Adds an item to the end of the Queue, retrying with exponential backoff when full
 	 * @param v - Item to add
 	 * @param params - Optional parameters
 	 * @throws {@link QueueFullError} if the Queue is still full after the timeout
@@ -710,7 +710,7 @@ export class Queue {
 	}
 
 	/**
-	 * @description Adds multiple items to the end of the Queue, retrying with exponential backoff when full
+	 * Adds multiple items to the end of the Queue, retrying with exponential backoff when full
 	 * @param values - Items to add
 	 * @param params - Optional parameters
 	 * @throws {@link QueueFullError} if the Queue is still full after the timeout
@@ -751,7 +751,7 @@ export class Queue {
 	}
 
 	/**
-	 * @description Returns the number of objects in the Queue
+	 * Returns the number of objects in the Queue
 	 * @param params - Optional parameters
 	 * @returns Object count
 	 */
@@ -770,7 +770,7 @@ export class Queue {
 	}
 
 	/**
-	 * @description Iterates items in the Queue without modifying them
+	 * Iterates items in the Queue without modifying them
 	 * @param params - Optional parameters
 	 */
 	async *iterate(

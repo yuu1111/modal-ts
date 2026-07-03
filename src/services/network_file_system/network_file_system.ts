@@ -11,7 +11,7 @@ import { EphemeralHeartbeatManager } from "@/utils/ephemeral";
 import { aliasedBoolean, environmentParam } from "@/utils/param_aliases";
 
 /**
- * @description Optional parameters for {@link NetworkFileSystemService#fromName client.networkFileSystems.fromName()}
+ * Optional parameters for {@link NetworkFileSystemService#fromName client.networkFileSystems.fromName()}
  * @property environment - Environment name to use
  * @property createIfMissing - Whether to create automatically when missing
  */
@@ -24,7 +24,7 @@ export type NetworkFileSystemFromNameParams = {
 };
 
 /**
- * @description Optional parameters for {@link NetworkFileSystemService#create client.networkFileSystems.create()}
+ * Optional parameters for {@link NetworkFileSystemService#create client.networkFileSystems.create()}
  * @property environment - Environment name to use
  * @property allowExisting - Whether to treat an existing NetworkFileSystem as success
  */
@@ -37,7 +37,7 @@ export type NetworkFileSystemCreateParams = {
 };
 
 /**
- * @description Optional parameters for {@link NetworkFileSystemService#list client.networkFileSystems.list()}
+ * Optional parameters for {@link NetworkFileSystemService#list client.networkFileSystems.list()}
  * @property environment - Environment name to use
  */
 export type NetworkFileSystemListParams = {
@@ -47,7 +47,7 @@ export type NetworkFileSystemListParams = {
 };
 
 /**
- * @description Optional parameters for {@link NetworkFileSystemService#delete client.networkFileSystems.delete()}
+ * Optional parameters for {@link NetworkFileSystemService#delete client.networkFileSystems.delete()}
  * @property environment - Environment name to use
  * @property allowMissing - Whether to suppress errors when the NetworkFileSystem does not exist
  */
@@ -60,7 +60,7 @@ export type NetworkFileSystemDeleteParams = {
 };
 
 /**
- * @description Optional parameters for {@link NetworkFileSystemService#ephemeral client.networkFileSystems.ephemeral()}
+ * Optional parameters for {@link NetworkFileSystemService#ephemeral client.networkFileSystems.ephemeral()}
  * @property environment - Environment name to use
  */
 export type NetworkFileSystemEphemeralParams = {
@@ -70,7 +70,7 @@ export type NetworkFileSystemEphemeralParams = {
 };
 
 /**
- * @description File entry for NetworkFileSystem
+ * File entry for NetworkFileSystem
  */
 export type NetworkFileSystemFileEntry = {
 	path: string;
@@ -80,7 +80,7 @@ export type NetworkFileSystemFileEntry = {
 };
 
 /**
- * @description Service for managing deprecated NetworkFileSystem objects
+ * Service for managing deprecated NetworkFileSystem objects
  */
 export class NetworkFileSystemService {
 	readonly #client: ModalClient;
@@ -90,7 +90,7 @@ export class NetworkFileSystemService {
 	}
 
 	/**
-	 * @description Creates a named NetworkFileSystem
+	 * Creates a named NetworkFileSystem
 	 */
 	async create(
 		name: string,
@@ -110,7 +110,7 @@ export class NetworkFileSystemService {
 	}
 
 	/**
-	 * @description Creates an unnamed ephemeral NetworkFileSystem
+	 * Creates an unnamed ephemeral NetworkFileSystem
 	 */
 	async ephemeral(
 		params: NetworkFileSystemEphemeralParams = {},
@@ -133,7 +133,7 @@ export class NetworkFileSystemService {
 	}
 
 	/**
-	 * @description Looks up a NetworkFileSystem by name
+	 * Looks up a NetworkFileSystem by name
 	 */
 	async fromName(
 		name: string,
@@ -177,7 +177,7 @@ export class NetworkFileSystemService {
 	}
 
 	/**
-	 * @description Lists named NetworkFileSystems
+	 * Lists named NetworkFileSystems
 	 */
 	async list(
 		params: NetworkFileSystemListParams = {},
@@ -196,7 +196,7 @@ export class NetworkFileSystemService {
 	}
 
 	/**
-	 * @description Deletes a named NetworkFileSystem
+	 * Deletes a named NetworkFileSystem
 	 */
 	async delete(
 		name: string,
@@ -220,7 +220,7 @@ export class NetworkFileSystemService {
 }
 
 /**
- * @description deprecated shared writable filesystem
+ * deprecated shared writable filesystem
  */
 export class NetworkFileSystem {
 	readonly #client: ModalClient;
@@ -287,7 +287,7 @@ export class NetworkFileSystem {
 	}
 
 	/**
-	 * @description Stops the heartbeat for an ephemeral NetworkFileSystem
+	 * Stops the heartbeat for an ephemeral NetworkFileSystem
 	 */
 	closeEphemeral(): void {
 		if (this.#ephemeralHbManager) {
@@ -298,7 +298,7 @@ export class NetworkFileSystem {
 	}
 
 	/**
-	 * @description Writes a file
+	 * Writes a file
 	 */
 	async writeFile(remotePath: string, data: Uint8Array): Promise<number> {
 		const resp = await this.#client.cpClient.sharedVolumePutFile({
@@ -321,7 +321,7 @@ export class NetworkFileSystem {
 	}
 
 	/**
-	 * @description Adds a local file to the NetworkFileSystem
+	 * Adds a local file to the NetworkFileSystem
 	 */
 	async addLocalFile(localPath: string, remotePath?: string): Promise<number> {
 		const data = await readFile(localPath);
@@ -336,7 +336,7 @@ export class NetworkFileSystem {
 	}
 
 	/**
-	 * @description Recursively adds a local directory to the NetworkFileSystem
+	 * Recursively adds a local directory to the NetworkFileSystem
 	 */
 	async addLocalDir(localPath: string, remotePath?: string): Promise<number> {
 		const rootRemotePath = remotePath ?? `/${basename(localPath)}`;
@@ -358,7 +358,7 @@ export class NetworkFileSystem {
 	}
 
 	/**
-	 * @description Reads a file
+	 * Reads a file
 	 */
 	async readFile(path: string): Promise<Uint8Array> {
 		const resp = await this.#client.cpClient.sharedVolumeGetFile({
@@ -386,7 +386,7 @@ export class NetworkFileSystem {
 	}
 
 	/**
-	 * @description Iterates file entries under a path
+	 * Iterates file entries under a path
 	 */
 	async *iterdir(
 		path: string,
@@ -404,7 +404,7 @@ export class NetworkFileSystem {
 	}
 
 	/**
-	 * @description Returns the list of file entries under a path
+	 * Returns the list of file entries under a path
 	 */
 	async listdir(path: string): Promise<NetworkFileSystemFileEntry[]> {
 		const entries: NetworkFileSystemFileEntry[] = [];
@@ -413,7 +413,7 @@ export class NetworkFileSystem {
 	}
 
 	/**
-	 * @description Removes a file
+	 * Removes a file
 	 */
 	async removeFile(
 		path: string,

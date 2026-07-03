@@ -4,10 +4,10 @@ import { TunnelType } from "@/generated/modal_proto/api";
 import { Tunnel } from "@/services/sandbox/sandbox_tunnel";
 
 /**
- * @description Parameters for forward()
- * @property unencrypted - Also expose an unencrypted TCP port @optional
- * @property h2Enabled - Enable HTTP/2 on the TLS tunnel @optional
- * @property client - ModalClient to use @optional
+ * Parameters for forward()
+ * @property unencrypted - Also expose an unencrypted TCP port
+ * @property h2Enabled - Enable HTTP/2 on the TLS tunnel
+ * @property client - ModalClient to use
  */
 export type ForwardParams = {
 	unencrypted?: boolean;
@@ -16,7 +16,7 @@ export type ForwardParams = {
 };
 
 /**
- * @description Forwards a port inside a Modal container as a public tunnel
+ * Forwards a port inside a Modal container as a public tunnel
  */
 export async function forward<T>(
 	port: number,

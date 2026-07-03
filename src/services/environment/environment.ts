@@ -9,27 +9,27 @@ import {
 } from "@/generated/modal_proto/api";
 
 /**
- * @description Optional parameters for Environment.fromName()
- * @property createIfMissing - Create when missing @optional
+ * Optional parameters for Environment.fromName()
+ * @property createIfMissing - Create when missing
  */
 export type EnvironmentFromNameParams = {
 	createIfMissing?: boolean;
 };
 
 /**
- * @description Environment creation parameters
- * @property restricted - Create as an RBAC-restricted Environment @optional
+ * Environment creation parameters
+ * @property restricted - Create as an RBAC-restricted Environment
  */
 export type EnvironmentCreateParams = {
 	restricted?: boolean;
 };
 
 /**
- * @description Environment update parameters
- * @property name - New Environment name @optional
- * @property webSuffix - New webhook suffix @optional
- * @property maxConcurrentTasks - Maximum concurrent task count @optional
- * @property maxConcurrentGpus - Maximum concurrent GPU count @optional
+ * Environment update parameters
+ * @property name - New Environment name
+ * @property webSuffix - New webhook suffix
+ * @property maxConcurrentTasks - Maximum concurrent task count
+ * @property maxConcurrentGpus - Maximum concurrent GPU count
  */
 export type EnvironmentUpdateParams = {
 	name?: string;
@@ -39,7 +39,7 @@ export type EnvironmentUpdateParams = {
 };
 
 /**
- * @description Environment information
+ * Environment information
  */
 export type EnvironmentInfo = {
 	name: string;
@@ -48,7 +48,7 @@ export type EnvironmentInfo = {
 };
 
 /**
- * @description Entry in the Environment list
+ * Entry in the Environment list
  */
 export type EnvironmentListEntry = {
 	name: string;
@@ -68,12 +68,12 @@ export type EnvironmentListEntry = {
 };
 
 /**
- * @description Environment member role
+ * Environment member role
  */
 export type EnvironmentMemberRole = "viewer" | "contributor";
 
 /**
- * @description Members of a restricted Environment
+ * Members of a restricted Environment
  */
 export type EnvironmentMembers = {
 	users: Record<string, EnvironmentMemberRole>;
@@ -82,7 +82,7 @@ export type EnvironmentMembers = {
 };
 
 /**
- * @description Billing report row
+ * Billing report row
  */
 export type EnvironmentBillingReportItem = {
 	objectId: string;
@@ -95,7 +95,7 @@ export type EnvironmentBillingReportItem = {
 };
 
 /**
- * @description Service for managing Environments
+ * Service for managing Environments
  */
 export class EnvironmentService {
 	readonly #client: ModalClient;
@@ -105,7 +105,7 @@ export class EnvironmentService {
 	}
 
 	/**
-	 * @description Gets the Environment for the current profile/context
+	 * Gets the Environment for the current profile/context
 	 */
 	async fromContext(): Promise<Environment> {
 		return await this.fromName(this.#client.environmentName());
@@ -116,7 +116,7 @@ export class EnvironmentService {
 	}
 
 	/**
-	 * @description Gets an Environment by name
+	 * Gets an Environment by name
 	 */
 	async fromName(
 		name: string,
@@ -144,7 +144,7 @@ export class EnvironmentService {
 	}
 
 	/**
-	 * @description Creates an Environment
+	 * Creates an Environment
 	 */
 	async create(
 		name: string,
@@ -158,7 +158,7 @@ export class EnvironmentService {
 	}
 
 	/**
-	 * @description Returns the list of Environments
+	 * Returns the list of Environments
 	 */
 	async list(): Promise<EnvironmentListEntry[]> {
 		const resp = await this.#client.cpClient.environmentList({});
@@ -166,7 +166,7 @@ export class EnvironmentService {
 	}
 
 	/**
-	 * @description Deletes an Environment
+	 * Deletes an Environment
 	 */
 	async delete(name: string): Promise<void> {
 		checkEnvironmentName(name);
@@ -175,7 +175,7 @@ export class EnvironmentService {
 }
 
 /**
- * @description Modal Environment
+ * Modal Environment
  */
 export class Environment {
 	readonly environmentId: string;
@@ -253,7 +253,7 @@ export class Environment {
 	}
 
 	/**
-	 * @description Returns Environment information
+	 * Returns Environment information
 	 */
 	info(): EnvironmentInfo {
 		return {
@@ -268,7 +268,7 @@ export class Environment {
 	}
 
 	/**
-	 * @description Updates an Environment
+	 * Updates an Environment
 	 */
 	async update(params: EnvironmentUpdateParams): Promise<EnvironmentListEntry> {
 		if (params.name !== undefined) {
@@ -286,7 +286,7 @@ export class Environment {
 }
 
 /**
- * @description Environment billing manager
+ * Environment billing manager
  */
 export class EnvironmentBillingManager {
 	readonly #client: ModalClient;
@@ -298,7 +298,7 @@ export class EnvironmentBillingManager {
 	}
 
 	/**
-	 * @description Returns a billing report for Environment usage
+	 * Returns a billing report for Environment usage
 	 */
 	async report(params: {
 		start: Date;
@@ -323,7 +323,7 @@ export class EnvironmentBillingManager {
 }
 
 /**
- * @description Members manager for a restricted Environment
+ * Members manager for a restricted Environment
  */
 export class EnvironmentMembersManager {
 	readonly #client: ModalClient;
@@ -335,7 +335,7 @@ export class EnvironmentMembersManager {
 	}
 
 	/**
-	 * @description Returns members of a restricted Environment
+	 * Returns members of a restricted Environment
 	 */
 	async list(): Promise<EnvironmentMembers> {
 		const resp = await this.#client.cpClient.environmentGetManaged({
@@ -355,7 +355,7 @@ export class EnvironmentMembersManager {
 	}
 
 	/**
-	 * @description Adds or updates members of a restricted Environment
+	 * Adds or updates members of a restricted Environment
 	 */
 	async update(params: {
 		users?: Record<string, EnvironmentMemberRole>;
@@ -409,7 +409,7 @@ export class EnvironmentMembersManager {
 	}
 
 	/**
-	 * @description Removes members from a restricted Environment
+	 * Removes members from a restricted Environment
 	 */
 	async remove(params: {
 		users?: string[];

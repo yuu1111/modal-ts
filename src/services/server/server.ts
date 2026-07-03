@@ -3,8 +3,8 @@ import type { Function_ } from "@/services/function/function";
 import { aliasedNumber, environmentParam } from "@/utils/param_aliases";
 
 /**
- * @description Optional parameters for Server.fromName()
- * @property environment - Environment name @optional
+ * Optional parameters for Server.fromName()
+ * @property environment - Environment name
  */
 export type ServerFromNameParams = {
 	environment?: string;
@@ -14,7 +14,7 @@ export type ServerFromNameParams = {
 };
 
 /**
- * @description Parameters for updating a Server autoscaler
+ * Parameters for updating a Server autoscaler
  */
 export type ServerUpdateAutoscalerParams = {
 	targetConcurrency?: number;
@@ -34,7 +34,7 @@ export type ServerUpdateAutoscalerParams = {
 };
 
 /**
- * @description Modal Server
+ * Modal Server
  */
 export class Server {
 	readonly #function: Function_;
@@ -47,7 +47,7 @@ export class Server {
 	}
 
 	/**
-	 * @description Looks up a Server inside an App by name
+	 * Looks up a Server inside an App by name
 	 */
 	static async fromName(
 		appName: string,
@@ -71,7 +71,7 @@ export class Server {
 	}
 
 	/**
-	 * @description Internal object ID for the Server
+	 * Internal object ID for the Server
 	 */
 	get objectId(): string {
 		return this.#function.functionId;
@@ -82,7 +82,7 @@ export class Server {
 	}
 
 	/**
-	 * @description Gets the Server URL
+	 * Gets the Server URL
 	 */
 	async getUrl(): Promise<string | undefined> {
 		return await this.#function.getWebUrl();
@@ -93,7 +93,7 @@ export class Server {
 	}
 
 	/**
-	 * @description Updates the Server autoscaler
+	 * Updates the Server autoscaler
 	 */
 	async updateAutoscaler(params: ServerUpdateAutoscalerParams): Promise<void> {
 		const minContainers = aliasedNumber(
@@ -152,7 +152,7 @@ export class Server {
 }
 
 /**
- * @description Service for managing Servers
+ * Service for managing Servers
  */
 export class ServerService {
 	readonly #client: ModalClient;
@@ -162,7 +162,7 @@ export class ServerService {
 	}
 
 	/**
-	 * @description Looks up a Server inside an App by name
+	 * Looks up a Server inside an App by name
 	 */
 	async fromName(
 		appName: string,

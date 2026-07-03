@@ -37,49 +37,49 @@ import { checkForRenamedParams } from "@/utils/validation";
 import type { Probe } from "./sandbox_probe";
 
 /**
- * @description stdin always exists, but stdout/stderr can be ignored when not needed.
+ * stdin always exists, but stdout/stderr can be ignored when not needed.
  * The default is "pipe", matching Node.js behavior.
  * When set to "ignore", output streams are empty.
  */
 export type StdioBehavior = "pipe" | "ignore";
 
 /**
- * @description Specifies the kind of data read from a Sandbox or container process.
+ * Specifies the kind of data read from a Sandbox or container process.
  * "text" reads UTF-8 text, and "binary" reads raw bytes as Uint8Array.
  */
 export type StreamMode = "text" | "binary";
 
 /**
- * @description Parameters for creating a Sandbox
- * @property cpu - Reserved physical CPU cores, fractional values allowed @optional
- * @property cpuLimit - Hard limit for physical CPU cores, fractional values allowed @optional
- * @property memoryMiB - Reserved memory in MiB @optional
- * @property memoryLimitMiB - Hard memory limit in MiB @optional
- * @property gpu - GPU reservation, for example "A100", "T4:2", or "A100-80GB:4" @optional
- * @property timeoutMs - Maximum Sandbox lifetime in milliseconds @optional @defaultValue 300000
- * @property idleTimeoutMs - Time in milliseconds before idle termination @optional
- * @property workdir - Working directory @optional
- * @property command - Main process command arguments. Sleeps forever when omitted @optional
- * @property env - Environment variables @optional
- * @property secrets - Secrets to inject as environment variables @optional
- * @property volumes - Volume mount points @optional
- * @property cloudBucketMounts - CloudBucketMount mount points @optional
- * @property pty - Enable PTY @optional
- * @property encryptedPorts - Tunnel ports encrypted with TLS @optional
- * @property h2Ports - Tunnel ports encrypted with HTTP/2 @optional
- * @property unencryptedPorts - Unencrypted tunnel ports @optional
- * @property blockNetwork - Block all network access @optional
- * @property cidrAllowlist - CIDR allowlist. Cannot be used with blockNetwork @optional
- * @property cloud - Cloud provider to use @optional
- * @property regions - Regions to run in @optional
- * @property schedulerPlacement - Scheduling constraints @optional
- * @property verbose - Enable verbose logs @optional
- * @property proxy - Proxy placed in front of the Sandbox @optional
- * @property name - Sandbox name, unique within the App @optional
- * @property experimentalOptions - Experimental options @optional
- * @property customDomain - Custom domain, Enterprise only @optional
- * @property readinessProbe - Probe that determines whether the Sandbox can accept connections @optional
- * @property includeOidcIdentityToken - Include an OIDC ID token @optional
+ * Parameters for creating a Sandbox
+ * @property cpu - Reserved physical CPU cores, fractional values allowed
+ * @property cpuLimit - Hard limit for physical CPU cores, fractional values allowed
+ * @property memoryMiB - Reserved memory in MiB
+ * @property memoryLimitMiB - Hard memory limit in MiB
+ * @property gpu - GPU reservation, for example "A100", "T4:2", or "A100-80GB:4"
+ * @property timeoutMs - Maximum Sandbox lifetime in milliseconds @defaultValue 300000
+ * @property idleTimeoutMs - Time in milliseconds before idle termination
+ * @property workdir - Working directory
+ * @property command - Main process command arguments. Sleeps forever when omitted
+ * @property env - Environment variables
+ * @property secrets - Secrets to inject as environment variables
+ * @property volumes - Volume mount points
+ * @property cloudBucketMounts - CloudBucketMount mount points
+ * @property pty - Enable PTY
+ * @property encryptedPorts - Tunnel ports encrypted with TLS
+ * @property h2Ports - Tunnel ports encrypted with HTTP/2
+ * @property unencryptedPorts - Unencrypted tunnel ports
+ * @property blockNetwork - Block all network access
+ * @property cidrAllowlist - CIDR allowlist. Cannot be used with blockNetwork
+ * @property cloud - Cloud provider to use
+ * @property regions - Regions to run in
+ * @property schedulerPlacement - Scheduling constraints
+ * @property verbose - Enable verbose logs
+ * @property proxy - Proxy placed in front of the Sandbox
+ * @property name - Sandbox name, unique within the App
+ * @property experimentalOptions - Experimental options
+ * @property customDomain - Custom domain, Enterprise only
+ * @property readinessProbe - Probe that determines whether the Sandbox can accept connections
+ * @property includeOidcIdentityToken - Include an OIDC ID token
  */
 export type SandboxCreateParams = {
 	cpu?: number;
@@ -136,10 +136,10 @@ export type SandboxCreateParams = {
 };
 
 /**
- * @description Optional parameters for client.sandboxes.list()
- * @property appId - Filter by a specific App @optional
- * @property tags - Return only Sandboxes containing all specified tags @optional
- * @property environment - Environment name. Uses the current profile when omitted @optional
+ * Optional parameters for client.sandboxes.list()
+ * @property appId - Filter by a specific App
+ * @property tags - Return only Sandboxes containing all specified tags
+ * @property environment - Environment name. Uses the current profile when omitted
  */
 export type SandboxListParams = {
 	appId?: string;
@@ -152,23 +152,23 @@ export type SandboxExperimentalListParams = {
 };
 
 /**
- * @description Optional parameters for client.sandboxes.fromName()
- * @property environment - Environment name @optional
+ * Optional parameters for client.sandboxes.fromName()
+ * @property environment - Environment name
  */
 export type SandboxFromNameParams = {
 	environment?: string;
 };
 
 /**
- * @description Optional parameters for Sandbox.exec()
- * @property mode - Text or binary encoding for input/output streams @optional
- * @property stdout - Pipe or ignore stdout @optional
- * @property stderr - Pipe or ignore stderr @optional
- * @property workdir - Working directory for command execution @optional
- * @property timeoutMs - Process timeout in milliseconds @optional @defaultValue 0
- * @property env - Environment variables for command execution @optional
- * @property secrets - Secrets to inject as environment variables @optional
- * @property pty - Enable PTY @optional
+ * Optional parameters for Sandbox.exec()
+ * @property mode - Text or binary encoding for input/output streams
+ * @property stdout - Pipe or ignore stdout
+ * @property stderr - Pipe or ignore stderr
+ * @property workdir - Working directory for command execution
+ * @property timeoutMs - Process timeout in milliseconds @defaultValue 0
+ * @property env - Environment variables for command execution
+ * @property secrets - Secrets to inject as environment variables
+ * @property pty - Enable PTY
  */
 export type SandboxExecParams = {
 	mode?: StreamMode;
@@ -183,8 +183,8 @@ export type SandboxExecParams = {
 };
 
 /**
- * @description Optional parameters for Sandbox.terminate()
- * @property wait - When true, waits for Sandbox termination and returns the exit code @optional
+ * Optional parameters for Sandbox.terminate()
+ * @property wait - When true, waits for Sandbox termination and returns the exit code
  */
 export type SandboxTerminateParams = {
 	wait?: boolean;
@@ -212,7 +212,7 @@ export type SandboxUpdateNetworkPolicyParams = {
 };
 
 /**
- * @description Returns the default PTY settings
+ * Returns the default PTY settings
  * @returns PTYInfo proto message
  */
 export function defaultSandboxPTYInfo(): PTYInfo {
@@ -234,7 +234,7 @@ export function defaultSandboxPTYInfo(): PTYInfo {
 // Production validation shows a limit of 131072 bytes (2**17).
 // Use 2**16 to account for command-line overhead outside the arguments, such as 'runsc exec ...'.
 /**
- * @description Validates that exec arguments do not exceed the Linux ARG_MAX limit
+ * Validates that exec arguments do not exceed the Linux ARG_MAX limit
  * @param args - Command arguments
  * @throws InvalidError when the total argument length exceeds ARG_MAX
  */
@@ -266,7 +266,7 @@ function secondsAliasToMs(
 }
 
 /**
- * @description Builds a gRPC request from SandboxCreateParams
+ * Builds a gRPC request from SandboxCreateParams
  * @param appId - App ID
  * @param imageId - Container image ID
  * @param params - Sandbox creation parameters
@@ -577,7 +577,7 @@ export async function buildSandboxCreateRequestProto(
 }
 
 /**
- * @description Builds a V2 Sandbox creation request from SandboxCreateParams
+ * Builds a V2 Sandbox creation request from SandboxCreateParams
  * @param appId - App ID
  * @param imageId - Container image ID
  * @param params - Sandbox creation parameters
@@ -606,7 +606,7 @@ export async function buildSandboxCreateV2RequestProto(
 }
 
 /**
- * @description Builds a TaskExecStartRequest from SandboxExecParams
+ * Builds a TaskExecStartRequest from SandboxExecParams
  * @param taskId - Task ID
  * @param execId - Exec ID
  * @param command - Command and arguments to run

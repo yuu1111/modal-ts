@@ -29,9 +29,9 @@ import { parseRetries, type Retries } from "@/utils/retries";
 import { checkForRenamedParams } from "@/utils/validation";
 
 /**
- * @description Optional parameters for {@link ClsService#fromName client.cls.fromName()}
- * @property environment - Modal environment name @optional
- * @property createIfMissing - Whether to create when missing @optional
+ * Optional parameters for {@link ClsService#fromName client.cls.fromName()}
+ * @property environment - Modal environment name
+ * @property createIfMissing - Whether to create when missing
  */
 export type ClsFromNameParams = {
 	environment?: string;
@@ -120,21 +120,21 @@ export class ClsService {
 }
 
 /**
- * @description Parameters for overriding Cls runtime options
- * @property cpu - CPU core count @optional
- * @property cpuLimit - Upper limit for CPU cores @optional
- * @property memoryMiB - Memory in MiB @optional
- * @property memoryLimitMiB - Memory limit in MiB @optional
- * @property gpu - GPU settings string @optional
- * @property env - Environment variables @optional
- * @property secrets - Secrets @optional
- * @property volumes - Volume mounts @optional
- * @property retries - Retry policy @optional
- * @property maxContainers - Maximum container count @optional
- * @property bufferContainers - Buffer container count @optional
- * @property scaledownWindowMs - Scale-down wait time in milliseconds @optional
- * @property timeoutMs - Timeout in milliseconds @optional
- * @property schedulerPlacement - Scheduling constraints @optional
+ * Parameters for overriding Cls runtime options
+ * @property cpu - CPU core count
+ * @property cpuLimit - Upper limit for CPU cores
+ * @property memoryMiB - Memory in MiB
+ * @property memoryLimitMiB - Memory limit in MiB
+ * @property gpu - GPU settings string
+ * @property env - Environment variables
+ * @property secrets - Secrets
+ * @property volumes - Volume mounts
+ * @property retries - Retry policy
+ * @property maxContainers - Maximum container count
+ * @property bufferContainers - Buffer container count
+ * @property scaledownWindowMs - Scale-down wait time in milliseconds
+ * @property timeoutMs - Timeout in milliseconds
+ * @property schedulerPlacement - Scheduling constraints
  */
 export type ClsWithOptionsParams = {
 	cpu?: number;
@@ -158,9 +158,9 @@ export type ClsWithOptionsParams = {
 };
 
 /**
- * @description Concurrency settings for Cls
+ * Concurrency settings for Cls
  * @property maxInputs - Maximum concurrent input count
- * @property targetInputs - Target concurrent input count @optional
+ * @property targetInputs - Target concurrent input count
  */
 export type ClsWithConcurrencyParams = {
 	maxInputs?: number;
@@ -170,7 +170,7 @@ export type ClsWithConcurrencyParams = {
 };
 
 /**
- * @description Dynamic batching settings for Cls
+ * Dynamic batching settings for Cls
  * @property maxBatchSize - Maximum batch size
  * @property waitMs - Batch wait time in milliseconds
  */
@@ -182,7 +182,7 @@ export type ClsWithBatchingParams = {
 };
 
 /**
- * @description Internal Cls service options, combining public parameters and internal fields
+ * Internal Cls service options, combining public parameters and internal fields
  */
 type ServiceOptions = ClsWithOptionsParams & {
 	maxConcurrentInputs?: number;
@@ -196,7 +196,7 @@ type ServiceOptions = ClsWithOptionsParams & {
 };
 
 /**
- * @description Represents a deployed Modal Cls
+ * Represents a deployed Modal Cls
  */
 export class Cls {
 	#client: ModalClient;
@@ -280,7 +280,7 @@ export class Cls {
 	}
 
 	/**
-	 * @description Creates a Cls instance with parameters and runtime options applied
+	 * Creates a Cls instance with parameters and runtime options applied
 	 * @param parameters - Parameters passed to the Cls constructor
 	 * @returns Cls instance
 	 */
@@ -307,7 +307,7 @@ export class Cls {
 	}
 
 	/**
-	 * @description Overrides static Function settings at runtime
+	 * Overrides static Function settings at runtime
 	 * @param options - Override options
 	 * @returns Cls with the new options applied
 	 */
@@ -326,7 +326,7 @@ export class Cls {
 	}
 
 	/**
-	 * @description Returns a Cls with concurrency settings enabled or overridden
+	 * Returns a Cls with concurrency settings enabled or overridden
 	 * @param params - Concurrency parameters
 	 * @returns Cls with concurrency settings applied
 	 */
@@ -350,7 +350,7 @@ export class Cls {
 	}
 
 	/**
-	 * @description Returns a Cls with dynamic batching enabled or overridden
+	 * Returns a Cls with dynamic batching enabled or overridden
 	 * @param params - Batching parameters
 	 * @returns Cls with batching settings applied
 	 */
@@ -378,7 +378,7 @@ export class Cls {
 	}
 
 	/**
-	 * @description Binds parameters to the Cls function
+	 * Binds parameters to the Cls function
 	 * @param parameters - Parameters to bind
 	 * @returns Bound function ID
 	 */
@@ -405,7 +405,7 @@ export class Cls {
 }
 
 /**
- * @description Encodes a parameter set based on the Cls parameter schema
+ * Encodes a parameter set based on the Cls parameter schema
  * @param schema - Parameter schema
  * @param params - Parameters to encode
  * @returns Serialized bytes
@@ -425,7 +425,7 @@ export function encodeParameterSet(
 }
 
 /**
- * @description Merges a diff into base options
+ * Merges a diff into base options
  * @param base - Base options
  * @param diff - Diff to merge
  * @returns Merged result, or undefined when empty
@@ -502,7 +502,7 @@ function normalizeServiceOptions(options: ServiceOptions): ServiceOptions {
 }
 
 /**
- * @description Builds a gRPC FunctionOptions protobuf from ServiceOptions
+ * Builds a gRPC FunctionOptions protobuf from ServiceOptions
  * @param options - Service options
  * @returns FunctionOptions proto message, or undefined when options are empty
  */
@@ -632,7 +632,7 @@ async function buildFunctionOptionsProto(
 }
 
 /**
- * @description Encodes a single parameter based on its parameter spec
+ * Encodes a single parameter based on its parameter spec
  * @param paramSpec - Parameter schema definition
  * @param value - Value to encode
  * @returns Encoded parameter value
@@ -694,7 +694,7 @@ function encodeParameter(
 }
 
 /**
- * @description Instance of a deployed Modal {@link Cls} with parameters applied
+ * Instance of a deployed Modal {@link Cls} with parameters applied
  */
 export class ClsInstance {
 	#methods: Map<string, Function_>;
@@ -704,7 +704,7 @@ export class ClsInstance {
 	}
 
 	/**
-	 * @description Gets a method by name
+	 * Gets a method by name
 	 * @param name - Method name
 	 * @returns Function corresponding to the method
 	 * @throws {@link NotFoundError} when the method is not found

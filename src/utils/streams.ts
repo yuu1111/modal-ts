@@ -1,5 +1,5 @@
 /**
- * @description Wrapper interface that adds convenience methods to `ReadableStream`
+ * Wrapper interface that adds convenience methods to `ReadableStream`
  *
  * `.readText()` reads the entire stream as a string,
  * and `.readBytes()` reads it as binary data.
@@ -8,18 +8,18 @@
  */
 export interface ModalReadStream<R = unknown> extends ReadableStream<R> {
 	/**
-	 * @description Reads the entire stream as a string
+	 * Reads the entire stream as a string
 	 */
 	readText(): Promise<string>;
 
 	/**
-	 * @description Reads the entire stream as bytes
+	 * Reads the entire stream as bytes
 	 */
 	readBytes(): Promise<Uint8Array>;
 }
 
 /**
- * @description Wrapper interface that adds convenience methods to `WritableStream`
+ * Wrapper interface that adds convenience methods to `WritableStream`
  *
  * `.writeText()` writes a string,
  * and `.writeBytes()` writes binary data.
@@ -28,20 +28,20 @@ export interface ModalReadStream<R = unknown> extends ReadableStream<R> {
  */
 export interface ModalWriteStream<R = unknown> extends WritableStream<R> {
 	/**
-	 * @description Writes a string to a text stream
+	 * Writes a string to a text stream
 	 * @param text - String to write
 	 */
 	writeText(text: string): Promise<void>;
 
 	/**
-	 * @description Writes bytes to a byte stream
+	 * Writes bytes to a byte stream
 	 * @param bytes - Bytes to write
 	 */
 	writeBytes(bytes: Uint8Array): Promise<void>;
 }
 
 /**
- * @description Converts a ReadableStream into a ModalReadStream
+ * Converts a ReadableStream into a ModalReadStream
  * @param stream - Source ReadableStream
  * @returns ModalReadStream with convenience methods
  */
@@ -52,7 +52,7 @@ export function toModalReadStream<
 }
 
 /**
- * @description Converts a WritableStream into a ModalWriteStream
+ * Converts a WritableStream into a ModalWriteStream
  * @param stream - Source WritableStream
  * @returns ModalWriteStream with convenience methods
  */
@@ -63,7 +63,7 @@ export function toModalWriteStream<
 }
 
 /**
- * @description Converts strings to UTF-8 bytes and returns Uint8Array values unchanged
+ * Converts strings to UTF-8 bytes and returns Uint8Array values unchanged
  * @param chunk - Value to convert
  * @returns Bytes
  */
@@ -72,12 +72,12 @@ export function encodeIfString(chunk: Uint8Array | string): Uint8Array {
 }
 
 /**
- * @description Module-shared TextEncoder instance
+ * Module-shared TextEncoder instance
  */
 const encoder = new TextEncoder();
 
 /**
- * @description Read methods added to ModalReadStream
+ * Read methods added to ModalReadStream
  */
 const readMixin = {
 	async readText<R extends string | Uint8Array>(
@@ -134,7 +134,7 @@ const readMixin = {
 };
 
 /**
- * @description One-shot write helper that acquires and releases a writer lock per call
+ * One-shot write helper that acquires and releases a writer lock per call
  * @param stream - Destination WritableStream
  * @param chunk - Data to write
  */
@@ -151,7 +151,7 @@ async function writeChunk<R>(
 }
 
 /**
- * @description Write methods added to ModalWriteStream
+ * Write methods added to ModalWriteStream
  */
 const writeMixin = {
 	async writeText<R extends string | Uint8Array>(
@@ -170,7 +170,7 @@ const writeMixin = {
 };
 
 /**
- * @description Builds a ReadableStream from an AsyncIterable
+ * Builds a ReadableStream from an AsyncIterable
  *
  * When the stream is cancelled, calls the iterator's return() method
  * so the source can clean up immediately.

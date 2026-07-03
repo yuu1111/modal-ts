@@ -2,7 +2,7 @@ import { InvalidError } from "@/core/errors";
 import { aliasedNumber } from "@/utils/param_aliases";
 
 /**
- * @description Parameters for creating a Probe
+ * Parameters for creating a Probe
  * @property intervalMs - Health check interval in milliseconds @defaultValue 100
  */
 export type ProbeParams = {
@@ -11,7 +11,7 @@ export type ProbeParams = {
 };
 
 /**
- * @description Probe used to determine Sandbox readiness
+ * Probe used to determine Sandbox readiness
  */
 export class Probe {
 	readonly #tcpPort?: number;
@@ -35,7 +35,7 @@ export class Probe {
 	}
 
 	/**
-	 * @description Creates a Probe that determines readiness by connecting to a TCP port
+	 * Creates a Probe that determines readiness by connecting to a TCP port
 	 * @param port - Port number to check (1-65535)
 	 * @param params - Probe parameters
 	 */
@@ -58,7 +58,7 @@ export class Probe {
 	}
 
 	/**
-	 * @description Creates a Probe that determines readiness by running a command
+	 * Creates a Probe that determines readiness by running a command
 	 * @param argv - Command and arguments to run
 	 * @param params - Probe parameters
 	 */

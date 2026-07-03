@@ -60,12 +60,12 @@ import {
 } from "./utils";
 
 /**
- * @description gRPC client type for the TaskCommandRouter service
+ * gRPC client type for the TaskCommandRouter service
  */
 type TaskCommandRouterClient = Client<typeof TaskCommandRouterDefinition>;
 
 /**
- * @description Conversion map from FileDescriptor to TaskExecStdioFileDescriptor
+ * Conversion map from FileDescriptor to TaskExecStdioFileDescriptor
  */
 const FD_MAP: Partial<Record<FileDescriptor, TaskExecStdioFileDescriptor>> = {
 	[FileDescriptor.FILE_DESCRIPTOR_STDOUT]:
@@ -75,12 +75,12 @@ const FD_MAP: Partial<Record<FileDescriptor, TaskExecStdioFileDescriptor>> = {
 };
 
 /**
- * @description Settings for transient error retries
- * @property baseDelayMs - Initial retry wait time @optional @defaultValue 10
- * @property delayFactor - Backoff multiplier @optional @defaultValue 2
- * @property maxRetries - Maximum retries; null means unlimited @optional @defaultValue 10
- * @property deadlineMs - Overall deadline in epoch milliseconds @optional
- * @property isClosed - Function that checks whether the client is closed @optional
+ * Settings for transient error retries
+ * @property baseDelayMs - Initial retry wait time @defaultValue 10
+ * @property delayFactor - Backoff multiplier @defaultValue 2
+ * @property maxRetries - Maximum retries; null means unlimited @defaultValue 10
+ * @property deadlineMs - Overall deadline in epoch milliseconds
+ * @property isClosed - Function that checks whether the client is closed
  */
 export interface TransientRetryOptions {
 	baseDelayMs?: number;
@@ -91,7 +91,7 @@ export interface TransientRetryOptions {
 }
 
 /**
- * @description Retries with exponential backoff on transient errors
+ * Retries with exponential backoff on transient errors
  * @param func - Async function to retry
  * @param options - Retry settings
  */
@@ -158,7 +158,7 @@ export class TaskCommandRouterClientImpl {
 	private closed: boolean = false;
 
 	/**
-	 * @description Closed-state callback passed to callWithRetriesOnTransientErrors
+	 * Closed-state callback passed to callWithRetriesOnTransientErrors
 	 */
 	private readonly retryOptions: Pick<TransientRetryOptions, "isClosed"> = {
 		isClosed: () => this.closed,
@@ -535,7 +535,7 @@ export class TaskCommandRouterClientImpl {
 	}
 
 	/**
-	 * @description Refreshes the JWT on UNAUTHENTICATED errors and retries once
+	 * Refreshes the JWT on UNAUTHENTICATED errors and retries once
 	 */
 	private async callWithAuthRetry<T>(func: () => Promise<T>): Promise<T> {
 		try {
@@ -550,11 +550,11 @@ export class TaskCommandRouterClientImpl {
 	}
 
 	/**
-	 * @description Runs retries with a deadline and throws a unified message on deadline expiry
+	 * Runs retries with a deadline and throws a unified message on deadline expiry
 	 * @param func - Async function to retry
 	 * @param operationLabel - Operation name used in error messages, for example "polling for exec abc"
-	 * @param deadline - Deadline in epoch milliseconds; null means unlimited @optional
-	 * @param extraOptions - Additional retry settings @optional
+	 * @param deadline - Deadline in epoch milliseconds; null means unlimited
+	 * @param extraOptions - Additional retry settings
 	 */
 	private async callWithDeadline<T>(
 		func: () => Promise<T>,

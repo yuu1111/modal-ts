@@ -1,10 +1,10 @@
 /**
- * @description Log severity level
+ * Log severity level
  */
 export type LogLevel = "debug" | "info" | "warn" | "error";
 
 /**
- * @description Numeric mapping for log levels
+ * Numeric mapping for log levels
  */
 const LOG_LEVELS: Record<LogLevel, number> = {
 	debug: 0,
@@ -14,7 +14,7 @@ const LOG_LEVELS: Record<LogLevel, number> = {
 };
 
 /**
- * @description Logger interface
+ * Logger interface
  */
 export interface Logger {
 	debug(message: string, ...args: unknown[]): void;
@@ -24,7 +24,7 @@ export interface Logger {
 }
 
 /**
- * @description Parses and normalizes a log level string
+ * Parses and normalizes a log level string
  * @param level - Log level string; an empty string maps to "warn"
  * @returns Normalized log level
  * @throws When the log level value is invalid
@@ -51,7 +51,7 @@ export function parseLogLevel(level: string): LogLevel {
 }
 
 /**
- * @description Default logger implementation that filters by level
+ * Default logger implementation that filters by level
  */
 export class DefaultLogger implements Logger {
 	private levelValue: number;
@@ -114,7 +114,7 @@ export class DefaultLogger implements Logger {
 }
 
 /**
- * @description Wrapper that adds level filtering to an existing logger
+ * Wrapper that adds level filtering to an existing logger
  */
 class FilteredLogger implements Logger {
 	private levelValue: number;
@@ -152,9 +152,9 @@ class FilteredLogger implements Logger {
 }
 
 /**
- * @description Creates a logger, wrapping an existing logger with filtering or using the default
- * @param logger - Logger to wrap @optional
- * @param logLevel - Log level string @optional @default ""
+ * Creates a logger, wrapping an existing logger with filtering or using the default
+ * @param logger - Logger to wrap
+ * @param logLevel - Log level string @default ""
  * @returns Configured logger
  */
 export function createLogger(logger?: Logger, logLevel: string = ""): Logger {
@@ -168,8 +168,8 @@ export function createLogger(logger?: Logger, logLevel: string = ""): Logger {
 }
 
 /**
- * @description Creates a new default logger
- * @param logLevel - Log level string @optional @default ""
+ * Creates a new default logger
+ * @param logLevel - Log level string @default ""
  * @returns Default logger
  */
 export function newLogger(logLevel: string = ""): Logger {

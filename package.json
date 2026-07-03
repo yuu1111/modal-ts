@@ -56,7 +56,7 @@
     "prepublishOnly": "bun run build",
     "version": "bun run typecheck",
     "docs": "bun run docs:api",
-    "docs:api": "typedoc --entryPoints src/index.ts --out .typedoc --readme docs/en/README.md",
+    "docs:api": "typedoc --entryPoints src/index.ts --out .typedoc --readme docs/en/README.md --validation.notExported false",
     "proto": "bun scripts/gen-proto.ts"
   },
   "dependencies": {

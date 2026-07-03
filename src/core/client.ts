@@ -40,12 +40,12 @@ import { AuthTokenManager } from "./auth_token_manager";
 import { getProfile, type Profile } from "./config";
 
 /**
- * @description gRPC path for AuthTokenGet, used to exclude it from auth middleware
+ * gRPC path for AuthTokenGet, used to exclude it from auth middleware
  */
 const AUTH_TOKEN_GET_PATH = `/${ModalClientDefinition.fullName}/${ModalClientDefinition.methods.authTokenGet.name}`;
 
 /**
- * @description Shared gRPC channel settings
+ * Shared gRPC channel settings
  */
 export const GRPC_CHANNEL_OPTIONS = {
 	"grpc.max_receive_message_length": 100 * 1024 * 1024,
@@ -57,17 +57,17 @@ export const GRPC_CHANNEL_OPTIONS = {
 } as const;
 
 /**
- * @description Initialization parameters for ModalClient
- * @property tokenId - Modal API token ID @optional
- * @property tokenSecret - Modal API token secret @optional
- * @property environment - Environment name to use @optional
- * @property imageBuilderVersion - Image builder version to use @optional
- * @property endpoint - gRPC endpoint URL @optional
- * @property timeoutMs - Default request timeout in milliseconds @optional
- * @property maxRetries - Maximum retry count @optional
- * @property logger - Custom logger @optional
- * @property logLevel - Log level @optional
- * @property grpcMiddleware - Custom gRPC middleware applied after auth and retry middleware @optional
+ * Initialization parameters for ModalClient
+ * @property tokenId - Modal API token ID
+ * @property tokenSecret - Modal API token secret
+ * @property environment - Environment name to use
+ * @property imageBuilderVersion - Image builder version to use
+ * @property endpoint - gRPC endpoint URL
+ * @property timeoutMs - Default request timeout in milliseconds
+ * @property maxRetries - Maximum retry count
+ * @property logger - Custom logger
+ * @property logLevel - Log level
+ * @property grpcMiddleware - Custom gRPC middleware applied after auth and retry middleware
  */
 export interface ModalClientParams {
 	tokenId?: string;
@@ -80,7 +80,7 @@ export interface ModalClientParams {
 	logger?: Logger;
 	logLevel?: LogLevel;
 	/**
-	 * @description Custom gRPC middleware applied to all API calls
+	 * Custom gRPC middleware applied to all API calls
 	 *
 	 * Added after Modal built-in middleware for auth, retries, and timeouts.
 	 * Intended for observability use cases such as telemetry and tracing.
@@ -94,7 +94,7 @@ export interface ModalClientParams {
 }
 
 /**
- * @description Type alias for the Modal gRPC client
+ * Type alias for the Modal gRPC client
  */
 export type ModalGrpcClient = Client<
 	typeof ModalClientDefinition,
@@ -102,7 +102,7 @@ export type ModalGrpcClient = Client<
 >;
 
 /**
- * @description Main client for interacting with Modal cloud infrastructure
+ * Main client for interacting with Modal cloud infrastructure
  *
  * Access all Modal services through service properties.
  * @example
@@ -217,7 +217,7 @@ export class ModalClient {
 	}
 
 	/**
-	 * @description Returns the effective environment name
+	 * Returns the effective environment name
 	 * @param environment - Explicit environment name; uses the profile value when omitted
 	 * @returns Environment name
 	 */
@@ -226,7 +226,7 @@ export class ModalClient {
 	}
 
 	/**
-	 * @description Returns the image builder version
+	 * Returns the image builder version
 	 * @param version - Explicit version; uses the profile value when omitted
 	 * @returns Version string @defaultValue "2024.10"
 	 */
@@ -235,7 +235,7 @@ export class ModalClient {
 	}
 
 	/**
-	 * @description Gets the Environment image builder version from the server.
+	 * Gets the Environment image builder version from the server.
 	 * Prefers an explicit profile value when present.
 	 * @param environmentName - Environment name to fetch; uses the profile environment when omitted
 	 * @returns Image builder version
@@ -270,7 +270,7 @@ export class ModalClient {
 	}
 
 	/**
-	 * @description Closes the client and stops auth token refresh
+	 * Closes the client and stops auth token refresh
 	 */
 	close(): void {
 		this.logger.debug("Closing Modal client");
@@ -289,7 +289,7 @@ export class ModalClient {
 	}
 
 	/**
-	 * @description Returns the SDK version string
+	 * Returns the SDK version string
 	 * @returns Version string
 	 */
 	version(): string {
@@ -317,7 +317,7 @@ export class ModalClient {
 	}
 
 	/**
-	 * @description Retry middleware for unary requests on transient errors and timeouts
+	 * Retry middleware for unary requests on transient errors and timeouts
 	 */
 	private retryMiddleware(): ClientMiddleware<RetryOptions> {
 		const logger = this.logger;
@@ -419,7 +419,7 @@ export class ModalClient {
 	}
 
 	/**
-	 * @description Lazy initialization of AuthTokenManager
+	 * Lazy initialization of AuthTokenManager
 	 */
 	private getOrCreateAuthTokenManager(): AuthTokenManager {
 		if (!this.authTokenManager) {
@@ -468,12 +468,12 @@ export class ModalClient {
 }
 
 /**
- * @description Default client with lazy initialization
+ * Default client with lazy initialization
  */
 let defaultClient: ModalClient | undefined;
 
 /**
- * @description Gets the default ModalClient instance, creating it if needed
+ * Gets the default ModalClient instance, creating it if needed
  * @returns ModalClient instance
  */
 export function getDefaultClient(): ModalClient {

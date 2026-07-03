@@ -18,11 +18,11 @@ import { mergeEnvIntoSecrets, type Secret } from "@/services/secret/secret";
 const textEncoder = new TextEncoder();
 
 /**
- * @description App deployment settings
+ * App deployment settings
  * @property name - App name to deploy
- * @property environment - Target environment name @optional
- * @property functions - Function definitions to deploy @optional
- * @property classes - Class definitions to deploy @optional
+ * @property environment - Target environment name
+ * @property functions - Function definitions to deploy
+ * @property classes - Class definitions to deploy
  */
 export interface DeployAppParams {
 	name: string;
@@ -32,20 +32,20 @@ export interface DeployAppParams {
 }
 
 /**
- * @description Deployment settings for a single Function
+ * Deployment settings for a single Function
  * @property functionName - Function name
  * @property moduleName - Python module path
- * @property imageId - Container image ID to use @optional
- * @property image - Container image to use @optional
- * @property mountIds - Mount IDs to attach @optional
- * @property secrets - Secrets to attach @optional
- * @property env - Values to inject as environment variables @optional
- * @property secretIds - Secret IDs to attach @optional
- * @property minContainers - Minimum number of containers in the warm pool @optional @default 0
- * @property schedule - Periodic execution schedule @optional
- * @property schedulerPlacement - Scheduling constraints @optional
- * @property experimentalOptions - Experimental options @optional
- * @property webhookConfig - Webhook endpoint settings @optional
+ * @property imageId - Container image ID to use
+ * @property image - Container image to use
+ * @property mountIds - Mount IDs to attach
+ * @property secrets - Secrets to attach
+ * @property env - Values to inject as environment variables
+ * @property secretIds - Secret IDs to attach
+ * @property minContainers - Minimum number of containers in the warm pool @default 0
+ * @property schedule - Periodic execution schedule
+ * @property schedulerPlacement - Scheduling constraints
+ * @property experimentalOptions - Experimental options
+ * @property webhookConfig - Webhook endpoint settings
  */
 export interface DeployFunctionParams {
 	functionName: string;
@@ -66,19 +66,19 @@ export interface DeployFunctionParams {
 }
 
 /**
- * @description Class deployment settings
+ * Class deployment settings
  * @property className - Class name
  * @property moduleName - Python module path
  * @property methods - Names of methods to expose
- * @property imageId - Container image ID to use @optional
- * @property image - Container image to use @optional
- * @property mountIds - Mount IDs to attach @optional
- * @property secrets - Secrets to attach @optional
- * @property env - Values to inject as environment variables @optional
- * @property secretIds - Secret IDs to attach @optional
- * @property minContainers - Minimum number of containers in the warm pool @optional @default 0
- * @property schedulerPlacement - Scheduling constraints @optional
- * @property experimentalOptions - Experimental options @optional
+ * @property imageId - Container image ID to use
+ * @property image - Container image to use
+ * @property mountIds - Mount IDs to attach
+ * @property secrets - Secrets to attach
+ * @property env - Values to inject as environment variables
+ * @property secretIds - Secret IDs to attach
+ * @property minContainers - Minimum number of containers in the warm pool @default 0
+ * @property schedulerPlacement - Scheduling constraints
+ * @property experimentalOptions - Experimental options
  */
 export interface DeployClassParams {
 	className: string;
@@ -98,7 +98,7 @@ export interface DeployClassParams {
 }
 
 /**
- * @description File entry to upload to a Mount
+ * File entry to upload to a Mount
  * @property remotePath - File path inside the container
  * @property content - File content as text or binary data
  */
@@ -108,7 +108,7 @@ export interface MountFileEntry {
 }
 
 /**
- * @description Deployment result
+ * Deployment result
  * @property appId - ID of the deployed app
  * @property functionIds - Mapping from Function names to IDs
  * @property classIds - Mapping from Class names to IDs
@@ -120,7 +120,7 @@ export interface DeployResult {
 }
 
 /**
- * @description Returns a SHA-256 hash as a hexadecimal string
+ * Returns a SHA-256 hash as a hexadecimal string
  * @param data - Binary data to hash
  * @returns Hexadecimal hash string
  */
@@ -129,7 +129,7 @@ function sha256(data: Uint8Array): string {
 }
 
 /**
- * @description Creates a Mount from files and returns its ID
+ * Creates a Mount from files and returns its ID
  * @param cpClient - gRPC client
  * @param appId - App ID to associate with the Mount
  * @param files - File entries to upload
@@ -172,7 +172,7 @@ export async function createMount(
 }
 
 /**
- * @description Gets or creates an Image
+ * Gets or creates an Image
  * @param cpClient - gRPC client
  * @param appId - App ID
  * @param dockerfileCommands - Additional Dockerfile commands to run after FROM
@@ -196,7 +196,7 @@ export async function getOrCreateImage(
 }
 
 /**
- * @description Creates a Secret from environment variables and returns its ID
+ * Creates a Secret from environment variables and returns its ID
  * @param client - ModalClient instance
  * @param name - Secret name
  * @param envDict - Key-value mapping of environment variables
@@ -221,7 +221,7 @@ export async function createSecret(
 }
 
 /**
- * @description Default serialization formats for gRPC payloads
+ * Default serialization formats for gRPC payloads
  */
 const DEFAULT_DATA_FORMATS = [
 	DataFormat.DATA_FORMAT_PICKLE,
@@ -229,7 +229,7 @@ const DEFAULT_DATA_FORMATS = [
 ];
 
 /**
- * @description Internal function that creates a single Function through gRPC
+ * Internal function that creates a single Function through gRPC
  * @param cpClient - gRPC client
  * @param appId - App ID
  * @param fn - Function definition parameters
@@ -290,10 +290,10 @@ async function createFunctionInternal(
 }
 
 /**
- * @description Gets or creates an App and returns its appId
+ * Gets or creates an App and returns its appId
  * @param client - ModalClient instance
  * @param name - App name
- * @param environment - Environment name @optional
+ * @param environment - Environment name
  * @returns App ID
  */
 export async function getOrCreateApp(
@@ -314,7 +314,7 @@ export async function getOrCreateApp(
 }
 
 /**
- * @description Deploys an app to Modal
+ * Deploys an app to Modal
  * @param client - ModalClient instance
  * @param params - Deployment settings
  * @returns Deployment result with appId, functionIds, and classIds
@@ -531,7 +531,7 @@ export async function deployApp(
 }
 
 /**
- * @description Fills a partial WebhookConfig with default values
+ * Fills a partial WebhookConfig with default values
  * @param partial - Partial WebhookConfig
  * @returns Complete WebhookConfig
  */

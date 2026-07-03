@@ -1,5 +1,5 @@
 /**
- * @description Lightweight metadata corresponding to Python SDK decorators
+ * Lightweight metadata corresponding to Python SDK decorators
  */
 export type PartialFunctionMetadata = {
 	kind:

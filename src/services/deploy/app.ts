@@ -4,7 +4,7 @@ import { GPUConfig, ObjectCreationType } from "@/generated/modal_proto/api";
 import { aliasedBoolean, environmentParam } from "@/utils/param_aliases";
 
 /**
- * @description Service for managing {@link App}
+ * Service for managing {@link App}
  *
  * Usually accessed only through the client:
  * ```typescript
@@ -19,7 +19,7 @@ export class AppService {
 	}
 
 	/**
-	 * @description Looks up a deployed {@link App} by name and can create it when missing
+	 * Looks up a deployed {@link App} by name and can create it when missing
 	 * @param name - App name
 	 * @param params - Optional parameters
 	 * @returns App instance
@@ -57,7 +57,7 @@ export class AppService {
 }
 
 /**
- * @description Optional parameters for {@link AppService#fromName client.apps.fromName()}
+ * Optional parameters for {@link AppService#fromName client.apps.fromName()}
  */
 export type AppFromNameParams = {
 	environment?: string;
@@ -68,7 +68,7 @@ export type AppFromNameParams = {
 };
 
 /**
- * @description Parses a GPU settings string into a GPUConfig object
+ * Parses a GPU settings string into a GPUConfig object
  * @param gpu - GPU string in "type" or "type:count" format, for example "T4" or "A100:2"
  * @returns GPUConfig object, or an empty config when no GPU is specified
  */
@@ -98,7 +98,7 @@ export function parseGpuConfig(gpu: string | undefined): GPUConfig {
 }
 
 /**
- * @description Represents a deployed Modal App
+ * Represents a deployed Modal App
  */
 export class App {
 	readonly appId: string;

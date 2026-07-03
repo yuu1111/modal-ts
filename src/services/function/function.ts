@@ -41,19 +41,19 @@ import {
 } from "./invocation";
 
 /**
- * @description Threshold for blob uploads
+ * Threshold for blob uploads
  */
 const maxObjectSizeBytes = 2 * 1024 * 1024; // 2 MiB
 
 /**
- * @description Maximum retry count for InternalFailure
+ * Maximum retry count for InternalFailure
  */
 const maxSystemRetries = 8;
 
 /**
- * @description Optional parameters for `client.functions.fromName()`
- * @property environment - Environment name @optional
- * @property createIfMissing - Whether to create when missing @optional
+ * Optional parameters for `client.functions.fromName()`
+ * @property environment - Environment name
+ * @property createIfMissing - Whether to create when missing
  */
 export type FunctionFromNameParams = {
 	environment?: string;
@@ -64,7 +64,7 @@ export type FunctionFromNameParams = {
 };
 
 /**
- * @description Service for managing {@link Function_}
+ * Service for managing {@link Function_}
  *
  * Usually accessed only through the client:
  * ```typescript
@@ -79,7 +79,7 @@ export class FunctionService {
 	}
 
 	/**
-	 * @description Gets a Function in an App by name
+	 * Gets a Function in an App by name
 	 * @param appName - App name
 	 * @param name - Function name
 	 * @param params - Optional parameters
@@ -125,7 +125,7 @@ export class FunctionService {
 }
 
 /**
- * @description Runtime statistics for a Function
+ * Runtime statistics for a Function
  * @property backlog - Number of pending inputs
  * @property numTotalRunners - Total number of runners
  */
@@ -135,13 +135,13 @@ export interface FunctionStats {
 }
 
 /**
- * @description Parameters for updating the autoscaler
- * @property minContainers - Minimum container count @optional
- * @property maxContainers - Maximum container count @optional
- * @property bufferContainers - Buffer container count @optional
- * @property targetConcurrency - Target concurrent request count @optional
- * @property scaleupWindowMs - Scale-up grace period in milliseconds @optional
- * @property scaledownWindowMs - Scale-down grace period in milliseconds @optional
+ * Parameters for updating the autoscaler
+ * @property minContainers - Minimum container count
+ * @property maxContainers - Maximum container count
+ * @property bufferContainers - Buffer container count
+ * @property targetConcurrency - Target concurrent request count
+ * @property scaleupWindowMs - Scale-up grace period in milliseconds
+ * @property scaledownWindowMs - Scale-down grace period in milliseconds
  */
 export interface FunctionUpdateAutoscalerParams {
 	minContainers?: number;
@@ -161,21 +161,21 @@ export interface FunctionUpdateAutoscalerParams {
 }
 
 /**
- * @description Parameters for overriding Function runtime options
- * @property cpu - CPU core count @optional
- * @property cpuLimit - Upper limit for CPU cores @optional
- * @property memoryMiB - Memory in MiB @optional
- * @property memoryLimitMiB - Memory limit in MiB @optional
- * @property gpu - GPU settings string @optional
- * @property env - Environment variables @optional
- * @property secrets - Secrets @optional
- * @property volumes - Volume mounts @optional
- * @property retries - Retry policy @optional
- * @property maxContainers - Maximum container count @optional
- * @property bufferContainers - Buffer container count @optional
- * @property scaledownWindowMs - Scale-down wait time in milliseconds @optional
- * @property timeoutMs - Timeout in milliseconds @optional
- * @property schedulerPlacement - Scheduling constraints @optional
+ * Parameters for overriding Function runtime options
+ * @property cpu - CPU core count
+ * @property cpuLimit - Upper limit for CPU cores
+ * @property memoryMiB - Memory in MiB
+ * @property memoryLimitMiB - Memory limit in MiB
+ * @property gpu - GPU settings string
+ * @property env - Environment variables
+ * @property secrets - Secrets
+ * @property volumes - Volume mounts
+ * @property retries - Retry policy
+ * @property maxContainers - Maximum container count
+ * @property bufferContainers - Buffer container count
+ * @property scaledownWindowMs - Scale-down wait time in milliseconds
+ * @property timeoutMs - Timeout in milliseconds
+ * @property schedulerPlacement - Scheduling constraints
  */
 export type FunctionWithOptionsParams = {
 	cpu?: number;
@@ -199,9 +199,9 @@ export type FunctionWithOptionsParams = {
 };
 
 /**
- * @description Function concurrency settings
+ * Function concurrency settings
  * @property maxInputs - Maximum concurrent input count
- * @property targetInputs - Target concurrent input count @optional
+ * @property targetInputs - Target concurrent input count
  */
 export type FunctionWithConcurrencyParams = {
 	maxInputs?: number;
@@ -211,7 +211,7 @@ export type FunctionWithConcurrencyParams = {
 };
 
 /**
- * @description Function dynamic batching settings
+ * Function dynamic batching settings
  * @property maxBatchSize - Maximum batch size
  * @property waitMs - Batch wait time in milliseconds
  */
@@ -223,7 +223,7 @@ export type FunctionWithBatchingParams = {
 };
 
 /**
- * @description Internal Function options, combining public parameters and internal fields
+ * Internal Function options, combining public parameters and internal fields
  */
 export type FunctionOptions = FunctionWithOptionsParams & {
 	maxConcurrentInputs?: number;
@@ -237,7 +237,7 @@ export type FunctionOptions = FunctionWithOptionsParams & {
 };
 
 /**
- * @description Merges a diff into base options
+ * Merges a diff into base options
  * @param base - Base options
  * @param diff - Diff to merge
  * @returns Merged result, or undefined when empty
@@ -315,7 +315,7 @@ function normalizeFunctionOptions(options: FunctionOptions): FunctionOptions {
 }
 
 /**
- * @description Builds a gRPC FunctionOptions protobuf from FunctionOptions
+ * Builds a gRPC FunctionOptions protobuf from FunctionOptions
  * @param options - Function options
  * @returns FunctionOptions proto message, or undefined when options are empty
  * @internal
@@ -443,7 +443,7 @@ export async function buildFunctionOptionsProto(
 }
 
 /**
- * @description Encodes a parameter set based on the parameter schema
+ * Encodes a parameter set based on the parameter schema
  * @param schema - Parameter schema
  * @param params - Parameters to encode
  * @returns Serialized bytes
@@ -515,7 +515,7 @@ function encodeParameter(
 }
 
 /**
- * @description Binds parameters and runtime options to a Function
+ * Binds parameters and runtime options to a Function
  * @param client - Modal client
  * @param functionId - Function ID
  * @param options - Runtime options
@@ -551,7 +551,7 @@ export async function bindParameters(
 }
 
 /**
- * @description Represents a deployed Modal Function that can be executed remotely
+ * Represents a deployed Modal Function that can be executed remotely
  */
 export class Function_ {
 	readonly functionId: string;
@@ -580,7 +580,7 @@ export class Function_ {
 	}
 
 	/**
-	 * @description Converts a local JavaScript/TypeScript function into a definition for deployApp
+	 * Converts a local JavaScript/TypeScript function into a definition for deployApp
 	 */
 	static from_local(
 		source: LocalFunctionSource,
@@ -619,7 +619,7 @@ export class Function_ {
 	}
 
 	/**
-	 * @description Python-compatible helper that gets a deployed Function by name
+	 * Python-compatible helper that gets a deployed Function by name
 	 */
 	static async from_name(
 		appName: string,
@@ -638,21 +638,21 @@ export class Function_ {
 	}
 
 	/**
-	 * @description Tag name for the Function
+	 * Tag name for the Function
 	 */
 	get tag(): string | undefined {
 		return this.#handleMetadata?.functionName;
 	}
 
 	/**
-	 * @description Compatibility with Python's old `stub` alias
+	 * Compatibility with Python's old `stub` alias
 	 */
 	get stub(): undefined {
 		return undefined;
 	}
 
 	/**
-	 * @description Returns metadata for the Function handle
+	 * Returns metadata for the Function handle
 	 */
 	info(): Record<string, unknown> {
 		return {
@@ -664,14 +664,14 @@ export class Function_ {
 	}
 
 	/**
-	 * @description Returns lightweight information equivalent to a Function spec
+	 * Returns lightweight information equivalent to a Function spec
 	 */
 	spec(): Record<string, unknown> {
 		return this.info();
 	}
 
 	/**
-	 * @description Returns undefined because TS handles do not keep the build definition
+	 * Returns undefined because TS handles do not keep the build definition
 	 */
 	get_build_def(): undefined {
 		return undefined;
@@ -682,7 +682,7 @@ export class Function_ {
 	}
 
 	/**
-	 * @description Whether this is a generator Function
+	 * Whether this is a generator Function
 	 */
 	is_generator(): boolean {
 		return false;
@@ -693,7 +693,7 @@ export class Function_ {
 	}
 
 	/**
-	 * @description Returns undefined because TS handles do not keep the raw local function
+	 * Returns undefined because TS handles do not keep the raw local function
 	 */
 	get_raw_f(): undefined {
 		return undefined;
@@ -712,7 +712,7 @@ export class Function_ {
 	}
 
 	/**
-	 * @description Overrides static Function settings at runtime
+	 * Overrides static Function settings at runtime
 	 * @param options - Override options
 	 * @returns Function with the new options applied
 	 */
@@ -731,7 +731,7 @@ export class Function_ {
 	}
 
 	/**
-	 * @description Returns a Function with concurrency settings enabled or overridden
+	 * Returns a Function with concurrency settings enabled or overridden
 	 * @param params - Concurrency parameters
 	 * @returns Function with concurrency settings applied
 	 */
@@ -755,7 +755,7 @@ export class Function_ {
 	}
 
 	/**
-	 * @description Returns a Function with dynamic batching enabled or overridden
+	 * Returns a Function with dynamic batching enabled or overridden
 	 * @param params - Batching parameters
 	 * @returns Function with batching settings applied
 	 */
@@ -783,7 +783,7 @@ export class Function_ {
 	}
 
 	/**
-	 * @description Creates a Function instance with withOptions/withConcurrency/withBatching settings applied
+	 * Creates a Function instance with withOptions/withConcurrency/withBatching settings applied
 	 * @returns Function with settings bound
 	 */
 	async instance(): Promise<Function_> {
@@ -806,7 +806,7 @@ export class Function_ {
 	}
 
 	/**
-	 * @description Executes the Function remotely and synchronously, returning the result
+	 * Executes the Function remotely and synchronously, returning the result
 	 * @param args - Positional arguments
 	 * @param kwargs - Keyword argument mapping
 	 * @returns Function execution result
@@ -853,7 +853,7 @@ export class Function_ {
 	}
 
 	/**
-	 * @description Generator API compatibility. Yields each item when the result is iterable
+	 * Generator API compatibility. Yields each item when the result is iterable
 	 */
 	async *remote_gen(
 		args: unknown[] = [],
@@ -875,7 +875,7 @@ export class Function_ {
 	}
 
 	/**
-	 * @description Local execution compatibility. TS handles use the same path as remote
+	 * Local execution compatibility. TS handles use the same path as remote
 	 */
 	async local(
 		args: unknown[] = [],
@@ -903,7 +903,7 @@ export class Function_ {
 	}
 
 	/**
-	 * @description Spawns the Function asynchronously and returns a FunctionCall
+	 * Spawns the Function asynchronously and returns a FunctionCall
 	 * @param args - Positional arguments
 	 * @param kwargs - Keyword argument mapping
 	 * @returns FunctionCall that tracks the asynchronous execution
@@ -936,7 +936,7 @@ export class Function_ {
 	}
 
 	/**
-	 * @description Passes each input to the Function and returns results as an array
+	 * Passes each input to the Function and returns results as an array
 	 * @param inputs - First positional argument for each call
 	 */
 	async map(inputs: Iterable<unknown>): Promise<unknown[]> {
@@ -947,7 +947,7 @@ export class Function_ {
 	}
 
 	/**
-	 * @description Passes each input tuple as Function positional arguments and returns results as an array
+	 * Passes each input tuple as Function positional arguments and returns results as an array
 	 * @param inputs - Positional arguments for each call
 	 */
 	async starmap(inputs: Iterable<readonly unknown[]>): Promise<unknown[]> {
@@ -958,7 +958,7 @@ export class Function_ {
 	}
 
 	/**
-	 * @description Passes each input to the Function and waits for completion, discarding results
+	 * Passes each input to the Function and waits for completion, discarding results
 	 * @param inputs - First positional argument for each call
 	 */
 	async forEach(inputs: Iterable<unknown>): Promise<void> {
@@ -966,14 +966,14 @@ export class Function_ {
 	}
 
 	/**
-	 * @description Python-compatible alias for {@link Function_#forEach}
+	 * Python-compatible alias for {@link Function_#forEach}
 	 */
 	async for_each(inputs: Iterable<unknown>): Promise<void> {
 		await this.forEach(inputs);
 	}
 
 	/**
-	 * @description Gets current statistics for the Function
+	 * Gets current statistics for the Function
 	 * @returns Statistics including backlog and runner count
 	 */
 	async getCurrentStats(): Promise<FunctionStats> {
@@ -992,7 +992,7 @@ export class Function_ {
 	}
 
 	/**
-	 * @description Updates autoscaler settings for the Function
+	 * Updates autoscaler settings for the Function
 	 * @param params - Autoscaler settings
 	 */
 	async updateAutoscaler(
@@ -1044,7 +1044,7 @@ export class Function_ {
 	}
 
 	/**
-	 * @description URL for a Function running as a web endpoint
+	 * URL for a Function running as a web endpoint
 	 * @returns Web endpoint URL, or undefined when this is not a web endpoint
 	 */
 	async getWebUrl(): Promise<string | undefined> {
@@ -1088,7 +1088,7 @@ export class Function_ {
 }
 
 /**
- * @description Uploads a large payload to blob storage
+ * Uploads a large payload to blob storage
  * @param cpClient - gRPC client
  * @param data - Binary data to upload
  * @returns Blob ID

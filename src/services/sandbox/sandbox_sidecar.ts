@@ -52,7 +52,7 @@ type SandboxSidecarAccess = {
 };
 
 /**
- * @description Sidecar creation parameters
+ * Sidecar creation parameters
  */
 export type SidecarCreateParams = {
 	command?: string[];
@@ -63,26 +63,26 @@ export type SidecarCreateParams = {
 };
 
 /**
- * @description Sidecar lookup parameters
+ * Sidecar lookup parameters
  */
 export type SidecarGetParams = {
 	includeTerminated?: boolean;
 };
 
 /**
- * @description Sidecar list parameters
+ * Sidecar list parameters
  */
 export type SidecarListParams = {
 	includeTerminated?: boolean;
 };
 
 /**
- * @description Exec parameters inside a Sidecar
+ * Exec parameters inside a Sidecar
  */
 export type SidecarExecParams = SandboxExecParams;
 
 /**
- * @description Sidecar termination parameters
+ * Sidecar termination parameters
  */
 export type SidecarTerminateParams = {
 	wait?: boolean;
@@ -134,7 +134,7 @@ function sidecarContainerFromProto(
 }
 
 /**
- * @description Service for creating and managing sidecar containers inside a Sandbox
+ * Service for creating and managing sidecar containers inside a Sandbox
  */
 export class SidecarService {
 	readonly #access: SandboxSidecarAccess;
@@ -145,7 +145,7 @@ export class SidecarService {
 	}
 
 	/**
-	 * @description Starts a sidecar container
+	 * Starts a sidecar container
 	 * @param name - Sidecar name unique within the Sandbox
 	 * @param image - Built Image to start
 	 * @param params - Creation parameters
@@ -214,7 +214,7 @@ export class SidecarService {
 	}
 
 	/**
-	 * @description Gets a sidecar container by name
+	 * Gets a sidecar container by name
 	 */
 	async get(
 		name: string,
@@ -247,7 +247,7 @@ export class SidecarService {
 	}
 
 	/**
-	 * @description Returns the list of sidecar containers
+	 * Returns the list of sidecar containers
 	 */
 	async list(params?: SidecarListParams): Promise<SidecarContainer[]> {
 		const [taskId, client] = await this.#access.commandRouter();
@@ -265,7 +265,7 @@ export class SidecarService {
 }
 
 /**
- * @description Handle for a sidecar container running inside a Sandbox
+ * Handle for a sidecar container running inside a Sandbox
  */
 export class SidecarContainer {
 	readonly containerId: string;
@@ -311,7 +311,7 @@ export class SidecarContainer {
 	): Promise<ContainerProcess<Uint8Array>>;
 
 	/**
-	 * @description Executes a command inside the sidecar container
+	 * Executes a command inside the sidecar container
 	 */
 	async exec(
 		command: string[],
@@ -321,7 +321,7 @@ export class SidecarContainer {
 	}
 
 	/**
-	 * @description Filesystem API for the sidecar container
+	 * Filesystem API for the sidecar container
 	 */
 	get filesystem(): SandboxFilesystem {
 		if (!this.#filesystem) {
@@ -333,7 +333,7 @@ export class SidecarContainer {
 	}
 
 	/**
-	 * @description Waits for the sidecar container to exit and returns its exit code
+	 * Waits for the sidecar container to exit and returns its exit code
 	 */
 	async wait(
 		params: {
@@ -388,7 +388,7 @@ export class SidecarContainer {
 	}
 
 	/**
-	 * @description Checks the sidecar container exit status. Returns null while running
+	 * Checks the sidecar container exit status. Returns null while running
 	 */
 	async poll(): Promise<number | null> {
 		if (
@@ -421,7 +421,7 @@ export class SidecarContainer {
 	async terminate(params: { wait: true }): Promise<number>;
 
 	/**
-	 * @description Stops the sidecar container
+	 * Stops the sidecar container
 	 */
 	async terminate(
 		params?: SidecarTerminateParams,

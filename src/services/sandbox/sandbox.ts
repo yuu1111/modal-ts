@@ -74,7 +74,7 @@ import {
 } from "./sandbox_tunnel";
 
 /**
- * @description Service for managing {@link Sandbox}
+ * Service for managing {@link Sandbox}
  *
  * Usually accessed only through the client:
  * ```typescript
@@ -105,7 +105,7 @@ export class SandboxService {
 	}
 
 	/**
-	 * @description Creates a new Sandbox with the specified App and Image
+	 * Creates a new Sandbox with the specified App and Image
 	 * @param app - App instance
 	 * @param image - Container image
 	 * @param params - Sandbox creation parameters
@@ -151,7 +151,7 @@ export class SandboxService {
 	}
 
 	/**
-	 * @description Creates a Sandbox with the experimental V2 backend
+	 * Creates a Sandbox with the experimental V2 backend
 	 * @param app - App instance
 	 * @param image - Container image
 	 * @param params - Sandbox creation parameters
@@ -214,7 +214,7 @@ export class SandboxService {
 	}
 
 	/**
-	 * @description Gets a running Sandbox by ID
+	 * Gets a running Sandbox by ID
 	 * @param sandboxId - Sandbox ID
 	 * @returns Sandbox instance
 	 * @throws NotFoundError when the specified Sandbox does not exist
@@ -241,7 +241,7 @@ export class SandboxService {
 	}
 
 	/**
-	 * @description Gets a named Sandbox in a deployed App
+	 * Gets a named Sandbox in a deployed App
 	 * @param appName - App name
 	 * @param name - Sandbox name
 	 * @param params - Optional parameters
@@ -277,7 +277,7 @@ export class SandboxService {
 	}
 
 	/**
-	 * @description Returns Sandboxes for the current environment or App ID
+	 * Returns Sandboxes for the current environment or App ID
 	 * @param params - Filtering parameters
 	 */
 	async *list(
@@ -315,7 +315,7 @@ export class SandboxService {
 	}
 
 	/**
-	 * @description Returns the list of experimental V2 Sandboxes
+	 * Returns the list of experimental V2 Sandboxes
 	 * @param params - Filtering parameters
 	 */
 	async *experimentalList(
@@ -348,7 +348,7 @@ export class SandboxService {
 }
 
 /**
- * @description Secure, isolated container on Modal that starts in seconds
+ * Secure, isolated container on Modal that starts in seconds
  */
 export class Sandbox {
 	readonly #client: ModalClient;
@@ -435,7 +435,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Standard input stream for the Sandbox
+	 * Standard input stream for the Sandbox
 	 */
 	get stdin(): ModalWriteStream<string> {
 		if (!this.#stdin) {
@@ -447,7 +447,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Standard output stream for the Sandbox
+	 * Standard output stream for the Sandbox
 	 */
 	get stdout(): ModalReadStream<string> {
 		if (!this.#stdout) {
@@ -471,7 +471,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Standard error stream for the Sandbox
+	 * Standard error stream for the Sandbox
 	 */
 	get stderr(): ModalReadStream<string> {
 		if (!this.#stderr) {
@@ -495,7 +495,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Namespace for the Sandbox filesystem API
+	 * Namespace for the Sandbox filesystem API
 	 */
 	get filesystem(): SandboxFilesystem {
 		if (!this.#filesystem) {
@@ -507,7 +507,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Namespace for sidecar container APIs inside the Sandbox
+	 * Namespace for sidecar container APIs inside the Sandbox
 	 */
 	get experimentalSidecars(): SidecarService {
 		if (!this.#experimentalSidecars) {
@@ -528,7 +528,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Sets tags as key/value pairs on the Sandbox
+	 * Sets tags as key/value pairs on the Sandbox
 	 * @param tags - Key/value mapping of tags
 	 */
 	async setTags(tags: Record<string, string>): Promise<void> {
@@ -553,7 +553,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Gets tags set on the Sandbox
+	 * Gets tags set on the Sandbox
 	 * @returns Key/value mapping of tags
 	 */
 	async getTags(): Promise<Record<string, string>> {
@@ -579,7 +579,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Opens a file in the Sandbox filesystem
+	 * Opens a file in the Sandbox filesystem
 	 * @param path - File path to open
 	 * @param mode - File open mode (r, w, a, r+, w+, a+)
 	 * @returns {@link SandboxFile}
@@ -783,7 +783,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Creates a token for HTTP connections to the Sandbox
+	 * Creates a token for HTTP connections to the Sandbox
 	 */
 	async createConnectToken(
 		params?: SandboxCreateConnectTokenParams,
@@ -805,7 +805,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Blocks until the readiness probe succeeds
+	 * Blocks until the readiness probe succeeds
 	 * @param timeoutMs - Maximum wait time in milliseconds @default 300000
 	 */
 	async waitUntilReady(timeoutMs = 300_000): Promise<void> {
@@ -849,8 +849,9 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Terminates the Sandbox
-	 * @param params - Optional parameters; wait returns the exit code
+	 * Terminates the Sandbox
+	 *
+	 * Passing `{ wait: true }` waits for termination and returns the exit code.
 	 * @returns Exit code when wait is true
 	 */
 	async terminate(): Promise<undefined>;
@@ -872,7 +873,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Disconnects from the Sandbox and releases local resources. The Sandbox continues running on Modal
+	 * Disconnects from the Sandbox and releases local resources. The Sandbox continues running on Modal
 	 */
 	detach(): void {
 		this.#commandRouterClient?.close();
@@ -883,7 +884,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Waits for the Sandbox to exit and returns its exit code
+	 * Waits for the Sandbox to exit and returns its exit code
 	 * @returns exit code
 	 */
 	async wait(
@@ -926,7 +927,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Gets Tunnel metadata for the Sandbox
+	 * Gets Tunnel metadata for the Sandbox
 	 * @param timeoutMs - Timeout in milliseconds @default 50000
 	 * @returns Mapping of container ports to Tunnels
 	 * @throws SandboxTimeoutError on timeout
@@ -959,7 +960,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Snapshots the Sandbox filesystem.
+	 * Snapshots the Sandbox filesystem.
 	 * The returned {@link Image} can start a new Sandbox with the same filesystem.
 	 * @param paramsOrTimeoutMs - Snapshot operation parameters, or legacy timeout in milliseconds
 	 * @returns {@link Image}
@@ -1019,7 +1020,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Mounts an {@link Image} at a path in the Sandbox filesystem
+	 * Mounts an {@link Image} at a path in the Sandbox filesystem
 	 * @param path - Destination mount path
 	 * @param image - {@link Image} to mount. Mounts an empty directory when omitted
 	 */
@@ -1059,7 +1060,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Unmounts an Image mounted at a path in the Sandbox filesystem
+	 * Unmounts an Image mounted at a path in the Sandbox filesystem
 	 * @param path - Previously mounted path
 	 */
 	async unmountImage(path: string): Promise<void> {
@@ -1081,7 +1082,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Snapshots a directory inside the running Sandbox and creates a new {@link Image}
+	 * Snapshots a directory inside the running Sandbox and creates a new {@link Image}
 	 * @param path - Directory path to snapshot
 	 * @param params - Snapshot parameters
 	 * @returns {@link Image}
@@ -1120,7 +1121,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Updates the outbound network policy for the Sandbox
+	 * Updates the outbound network policy for the Sandbox
 	 * @param params - Network policy parameters
 	 */
 	async updateNetworkPolicy(
@@ -1151,7 +1152,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Reloads Volumes mounted on the Sandbox to the latest committed state
+	 * Reloads Volumes mounted on the Sandbox to the latest committed state
 	 */
 	async reloadVolumes(): Promise<void> {
 		this.#ensureAttached();
@@ -1204,7 +1205,7 @@ export class Sandbox {
 	}
 
 	/**
-	 * @description Checks whether the Sandbox has exited.
+	 * Checks whether the Sandbox has exited.
 	 * Returns `null` while running, or the exit code after exit.
 	 */
 	async poll(): Promise<number | null> {

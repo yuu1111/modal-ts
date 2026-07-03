@@ -14,7 +14,7 @@ import {
 import { loads as pickleDecode, dumps as pickleEncode } from "@/utils/pickle";
 
 /**
- * @description Optional parameters for {@link DictService#fromName client.dicts.fromName()}
+ * Optional parameters for {@link DictService#fromName client.dicts.fromName()}
  * @property environment - Environment name to use
  * @property createIfMissing - Whether to create automatically when missing
  */
@@ -27,7 +27,7 @@ export type DictFromNameParams = {
 };
 
 /**
- * @description Optional parameters for {@link DictService#create client.dicts.create()}
+ * Optional parameters for {@link DictService#create client.dicts.create()}
  * @property environment - Environment name to use
  * @property allowExisting - Whether to treat an existing Dict as success
  */
@@ -40,7 +40,7 @@ export type DictCreateParams = {
 };
 
 /**
- * @description Optional parameters for {@link DictService#list client.dicts.list()}
+ * Optional parameters for {@link DictService#list client.dicts.list()}
  * @property environment - Environment name to use
  * @property maxObjects - Maximum number of objects to fetch
  * @property createdBefore - Return only Dicts created before this Unix timestamp
@@ -56,7 +56,7 @@ export type DictListParams = {
 };
 
 /**
- * @description Optional parameters for {@link DictService#delete client.dicts.delete()}
+ * Optional parameters for {@link DictService#delete client.dicts.delete()}
  * @property environment - Environment name to use
  * @property allowMissing - Whether to suppress errors when the Dict does not exist
  */
@@ -69,7 +69,7 @@ export type DictDeleteParams = {
 };
 
 /**
- * @description Optional parameters for {@link DictService#ephemeral client.dicts.ephemeral()}
+ * Optional parameters for {@link DictService#ephemeral client.dicts.ephemeral()}
  * @property environment - Environment name to use
  */
 export type DictEphemeralParams = {
@@ -79,7 +79,7 @@ export type DictEphemeralParams = {
 };
 
 /**
- * @description Metadata for a Dict object
+ * Metadata for a Dict object
  */
 export type DictInfo = {
 	name?: string;
@@ -88,7 +88,7 @@ export type DictInfo = {
 };
 
 /**
- * @description Service for managing {@link Dict}
+ * Service for managing {@link Dict}
  */
 export class DictService {
 	readonly #client: ModalClient;
@@ -98,7 +98,7 @@ export class DictService {
 	}
 
 	/**
-	 * @description Creates a named Dict
+	 * Creates a named Dict
 	 * @param name - Dict name
 	 * @param params - Optional parameters
 	 */
@@ -117,7 +117,7 @@ export class DictService {
 	}
 
 	/**
-	 * @description Creates an unnamed ephemeral Dict
+	 * Creates an unnamed ephemeral Dict
 	 * @param params - Optional parameters
 	 */
 	async ephemeral(params: DictEphemeralParams = {}): Promise<Dict> {
@@ -133,7 +133,7 @@ export class DictService {
 	}
 
 	/**
-	 * @description Looks up a Dict by ID
+	 * Looks up a Dict by ID
 	 * @param dictId - Dict ID
 	 */
 	async fromId(dictId: string): Promise<Dict> {
@@ -156,7 +156,7 @@ export class DictService {
 	}
 
 	/**
-	 * @description Looks up a Dict by name
+	 * Looks up a Dict by name
 	 * @param name - Dict name
 	 * @param params - Optional parameters
 	 */
@@ -193,7 +193,7 @@ export class DictService {
 	}
 
 	/**
-	 * @description Lists named Dicts
+	 * Lists named Dicts
 	 * @param params - Optional parameters
 	 */
 	async list(params: DictListParams = {}): Promise<Dict[]> {
@@ -237,7 +237,7 @@ export class DictService {
 	}
 
 	/**
-	 * @description Deletes a named Dict
+	 * Deletes a named Dict
 	 * @param name - Dict name
 	 * @param params - Optional parameters
 	 */
@@ -258,7 +258,7 @@ export class DictService {
 }
 
 /**
- * @description Distributed key-value store
+ * Distributed key-value store
  */
 export class Dict {
 	readonly #client: ModalClient;
@@ -332,14 +332,14 @@ export class Dict {
 	}
 
 	/**
-	 * @description Returns Dict metadata
+	 * Returns Dict metadata
 	 */
 	info(): DictInfo {
 		return this.#info ?? dictInfoFromMetadata(undefined, this.name);
 	}
 
 	/**
-	 * @description Stops the heartbeat for an ephemeral Dict
+	 * Stops the heartbeat for an ephemeral Dict
 	 */
 	closeEphemeral(): void {
 		if (this.#ephemeralHbManager) {
@@ -350,14 +350,14 @@ export class Dict {
 	}
 
 	/**
-	 * @description Removes all values from the Dict
+	 * Removes all values from the Dict
 	 */
 	async clear(): Promise<void> {
 		await this.#client.cpClient.dictClear({ dictId: this.dictId });
 	}
 
 	/**
-	 * @description Returns whether a key exists
+	 * Returns whether a key exists
 	 * @param key - key
 	 */
 	async contains(key: unknown): Promise<boolean> {
@@ -369,7 +369,7 @@ export class Dict {
 	}
 
 	/**
-	 * @description Gets the value for a key
+	 * Gets the value for a key
 	 * @param key - key
 	 * @param defaultValue - Value returned when the key does not exist
 	 */
@@ -387,7 +387,7 @@ export class Dict {
 	}
 
 	/**
-	 * @description Stores a key/value pair
+	 * Stores a key/value pair
 	 * @param key - key
 	 * @param value - value
 	 */
@@ -408,7 +408,7 @@ export class Dict {
 	}
 
 	/**
-	 * @description Stores multiple key/value pairs
+	 * Stores multiple key/value pairs
 	 * @param entries - entries
 	 * @param params - When ifNotExists is set, existing keys are not overwritten
 	 */
@@ -433,7 +433,7 @@ export class Dict {
 	}
 
 	/**
-	 * @description Removes a key and returns its value if present
+	 * Removes a key and returns its value if present
 	 * @param key - key
 	 * @param defaultValue - Value returned when the key does not exist
 	 */
@@ -451,7 +451,7 @@ export class Dict {
 	}
 
 	/**
-	 * @description Returns the number of entries in the Dict
+	 * Returns the number of entries in the Dict
 	 */
 	async len(): Promise<number> {
 		const resp = await this.#client.cpClient.dictLen({ dictId: this.dictId });
@@ -459,7 +459,7 @@ export class Dict {
 	}
 
 	/**
-	 * @description Iterates Dict keys
+	 * Iterates Dict keys
 	 */
 	async *keys(): AsyncGenerator<unknown, void, unknown> {
 		for await (const entry of this.#client.cpClient.dictContents({
@@ -472,7 +472,7 @@ export class Dict {
 	}
 
 	/**
-	 * @description Iterates Dict values
+	 * Iterates Dict values
 	 */
 	async *values(): AsyncGenerator<unknown, void, unknown> {
 		for await (const entry of this.#client.cpClient.dictContents({
@@ -485,7 +485,7 @@ export class Dict {
 	}
 
 	/**
-	 * @description Iterates Dict key/value pairs
+	 * Iterates Dict key/value pairs
 	 */
 	async *items(): AsyncGenerator<[unknown, unknown], void, unknown> {
 		for await (const entry of this.#client.cpClient.dictContents({

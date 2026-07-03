@@ -4,7 +4,7 @@ import path from "node:path";
 import { parse as parseToml } from "smol-toml";
 
 /**
- * @description Raw data for one .modal.toml profile
+ * Raw data for one .modal.toml profile
  */
 interface RawProfile {
 	server_url?: string;
@@ -17,20 +17,20 @@ interface RawProfile {
 }
 
 /**
- * @description Raw representation of a .modal.toml file
+ * Raw representation of a .modal.toml file
  */
 interface Config {
 	[profile: string]: RawProfile;
 }
 
 /**
- * @description Settings resolved from `Config` and environment variables
+ * Settings resolved from `Config` and environment variables
  * @property serverUrl - Modal API server URL
- * @property tokenId - Auth token ID @optional
- * @property tokenSecret - Auth token secret @optional
- * @property environment - Modal environment name @optional
- * @property imageBuilderVersion - Image builder version @optional
- * @property logLevel - Log level @optional
+ * @property tokenId - Auth token ID
+ * @property tokenSecret - Auth token secret
+ * @property environment - Modal environment name
+ * @property imageBuilderVersion - Image builder version
+ * @property logLevel - Log level
  */
 export interface Profile {
 	serverUrl: string;
@@ -42,7 +42,7 @@ export interface Profile {
 }
 
 /**
- * @description Checks whether the profile server URL points to localhost
+ * Checks whether the profile server URL points to localhost
  * @param profile - Profile to check
  * @returns true when the URL points to localhost
  */
@@ -58,7 +58,7 @@ export function isLocalhost(profile: Profile): boolean {
 }
 
 /**
- * @description Returns the Modal config file path (.modal.toml)
+ * Returns the Modal config file path (.modal.toml)
  * @returns Absolute config file path, preferring the MODAL_CONFIG_PATH environment variable
  */
 export function configFilePath(): string {
@@ -70,7 +70,7 @@ export function configFilePath(): string {
 }
 
 /**
- * @description Reads and parses the config file
+ * Reads and parses the config file
  * @returns Parsed config object, or an empty object when the file does not exist
  */
 function readConfigFile(): Config {
@@ -86,7 +86,7 @@ function readConfigFile(): Config {
 }
 
 /**
- * @description Config data synchronously loaded at startup
+ * Config data synchronously loaded at startup
  *
  * Synchronous loading avoids top-level await in the CJS output.
  * .modal.toml is small and read only once, so the performance impact is minor.
@@ -94,7 +94,7 @@ function readConfigFile(): Config {
 const config: Config = readConfigFile();
 
 /**
- * @description Resolves settings from the specified profile name or auto-detection
+ * Resolves settings from the specified profile name or auto-detection
  * @param profileName - Profile name; when omitted, uses the active profile or "default"
  * @returns Profile merged from environment variables and TOML settings
  */

@@ -4,12 +4,12 @@ import {
 } from "@/generated/modal_proto/api";
 
 /**
- * @description Parameters for creating SchedulerPlacement
- * @property region - Preferred region or regions for execution @optional
- * @property zone - Preferred zone for execution @optional
- * @property spot - true prefers spot, false prefers on-demand @optional
- * @property instanceType - Preferred instance type or types for execution @optional
- * @property nonpreemptible - Requests non-preemptible execution for a Function @optional
+ * Parameters for creating SchedulerPlacement
+ * @property region - Preferred region or regions for execution
+ * @property zone - Preferred zone for execution
+ * @property spot - true prefers spot, false prefers on-demand
+ * @property instanceType - Preferred instance type or types for execution
+ * @property nonpreemptible - Requests non-preemptible execution for a Function
  */
 export type SchedulerPlacementParams = {
 	region?: string | string[];
@@ -20,7 +20,7 @@ export type SchedulerPlacementParams = {
 };
 
 /**
- * @description Scheduling constraints for Functions and Sandboxes
+ * Scheduling constraints for Functions and Sandboxes
  */
 export class SchedulerPlacement {
 	readonly #proto: SchedulerPlacementProtoMessage;
@@ -54,7 +54,7 @@ export class SchedulerPlacement {
 	}
 
 	/**
-	 * @description Returns the proto representation passed to gRPC
+	 * Returns the proto representation passed to gRPC
 	 */
 	toProto(): SchedulerPlacementProtoMessage {
 		return this.#proto;

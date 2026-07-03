@@ -1,5 +1,5 @@
 /**
- * @description CBOR serialization for Modal
+ * CBOR serialization for Modal
  *
  * Wraps cbor-x with settings compatible with Python's CBOR implementation.
  */
@@ -7,7 +7,7 @@
 import { Decoder, Encoder, type Options } from "cbor-x";
 
 /**
- * @description Extended interface for options not represented in cbor-x types
+ * Extended interface for options not represented in cbor-x types
  * @property useTag259ForMaps - Whether to use CBOR tag 259 when encoding Maps
  */
 interface ExtendedOptions extends Options {
@@ -15,7 +15,7 @@ interface ExtendedOptions extends Options {
 }
 
 /**
- * @description Shared options for compatibility with Python's CBOR implementation
+ * Shared options for compatibility with Python's CBOR implementation
  */
 const cborOptions: ExtendedOptions = {
 	mapsAsObjects: true,
@@ -25,17 +25,17 @@ const cborOptions: ExtendedOptions = {
 };
 
 /**
- * @description Singleton CBOR encoder instance
+ * Singleton CBOR encoder instance
  */
 const encoder = new Encoder(cborOptions);
 
 /**
- * @description Singleton CBOR decoder instance
+ * Singleton CBOR decoder instance
  */
 const decoder = new Decoder(cborOptions);
 
 /**
- * @description Encodes a JavaScript value into CBOR bytes
+ * Encodes a JavaScript value into CBOR bytes
  * @param value - Value to encode
  * @returns CBOR-encoded bytes
  */
@@ -44,7 +44,7 @@ export function cborEncode(value: unknown): Buffer {
 }
 
 /**
- * @description Decodes CBOR bytes into a JavaScript value
+ * Decodes CBOR bytes into a JavaScript value
  * @param data - Data to decode
  * @returns Decoded value
  */

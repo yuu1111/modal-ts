@@ -17,7 +17,7 @@ import {
 } from "@/utils/param_aliases";
 
 /**
- * @description Optional parameters for {@link SecretService#fromName client.secrets.fromName()}
+ * Optional parameters for {@link SecretService#fromName client.secrets.fromName()}
  * @property environment - Environment name to use
  * @property requiredKeys - Keys required in the Secret
  */
@@ -30,7 +30,7 @@ export type SecretFromNameParams = {
 };
 
 /**
- * @description Optional parameters for {@link SecretService#fromObject client.secrets.fromObject()}
+ * Optional parameters for {@link SecretService#fromObject client.secrets.fromObject()}
  * @property environment - Environment name to use
  */
 export type SecretFromObjectParams = {
@@ -40,7 +40,7 @@ export type SecretFromObjectParams = {
 };
 
 /**
- * @description Optional parameters for {@link SecretService#fromDotenv client.secrets.fromDotenv()}
+ * Optional parameters for {@link SecretService#fromDotenv client.secrets.fromDotenv()}
  * @property environment - Environment name to use
  */
 export type SecretFromDotenvParams = {
@@ -50,7 +50,7 @@ export type SecretFromDotenvParams = {
 };
 
 /**
- * @description Optional parameters for {@link SecretService#fromLocalEnviron client.secrets.fromLocalEnviron()}
+ * Optional parameters for {@link SecretService#fromLocalEnviron client.secrets.fromLocalEnviron()}
  * @property environment - Environment name to use
  */
 export type SecretFromLocalEnvironParams = {
@@ -60,7 +60,7 @@ export type SecretFromLocalEnvironParams = {
 };
 
 /**
- * @description Optional parameters for {@link SecretService#create client.secrets.create()}
+ * Optional parameters for {@link SecretService#create client.secrets.create()}
  * @property environment - Environment name to use
  * @property allowExisting - Whether to treat an existing Secret as success
  */
@@ -73,7 +73,7 @@ export type SecretCreateParams = {
 };
 
 /**
- * @description Optional parameters for {@link SecretService#list client.secrets.list()}
+ * Optional parameters for {@link SecretService#list client.secrets.list()}
  * @property environment - Environment name to use
  * @property maxObjects - Maximum number of objects to fetch
  * @property createdBefore - Return only Secrets created before this Unix timestamp
@@ -89,7 +89,7 @@ export type SecretListParams = {
 };
 
 /**
- * @description Optional parameters for {@link SecretService#update client.secrets.update()}
+ * Optional parameters for {@link SecretService#update client.secrets.update()}
  * @property environment - Environment name to use
  */
 export type SecretUpdateParams = {
@@ -99,7 +99,7 @@ export type SecretUpdateParams = {
 };
 
 /**
- * @description Optional parameters for {@link SecretService#delete client.secrets.delete()}
+ * Optional parameters for {@link SecretService#delete client.secrets.delete()}
  * @property environment - Environment name to use
  * @property allowMissing - Whether to suppress errors when the Secret does not exist
  */
@@ -112,7 +112,7 @@ export type SecretDeleteParams = {
 };
 
 /**
- * @description Service for managing {@link Secret}
+ * Service for managing {@link Secret}
  *
  * Usually accessed only through the client:
  * ```typescript
@@ -127,7 +127,7 @@ export class SecretService {
 	}
 
 	/**
-	 * @description Looks up a {@link Secret} by name
+	 * Looks up a {@link Secret} by name
 	 * @param name - Secret name
 	 * @param params - Optional parameters
 	 * @returns Secret instance
@@ -160,7 +160,7 @@ export class SecretService {
 	}
 
 	/**
-	 * @description Creates a {@link Secret} from key/value pairs
+	 * Creates a {@link Secret} from key/value pairs
 	 * @param entries - Object containing string keys and values
 	 * @param params - Optional parameters
 	 * @returns Secret instance
@@ -203,7 +203,7 @@ export class SecretService {
 	}
 
 	/**
-	 * @description Creates an ephemeral {@link Secret} from a .env file
+	 * Creates an ephemeral {@link Secret} from a .env file
 	 * @param path - Path to the .env file
 	 * @param params - Optional parameters
 	 */
@@ -223,7 +223,7 @@ export class SecretService {
 	}
 
 	/**
-	 * @description Creates an ephemeral {@link Secret} from local environment variables
+	 * Creates an ephemeral {@link Secret} from local environment variables
 	 * @param keys - Environment variable names to include; when omitted, includes all current environment variables
 	 * @param params - Optional parameters
 	 */
@@ -250,7 +250,7 @@ export class SecretService {
 	}
 
 	/**
-	 * @description Creates a named Secret
+	 * Creates a named Secret
 	 * @param name - Secret name
 	 * @param entries - Key/value pairs to store
 	 * @param params - Optional parameters
@@ -276,7 +276,7 @@ export class SecretService {
 	}
 
 	/**
-	 * @description Lists named Secrets
+	 * Lists named Secrets
 	 * @param params - Optional parameters
 	 */
 	async list(params: SecretListParams = {}): Promise<Secret[]> {
@@ -318,7 +318,7 @@ export class SecretService {
 	}
 
 	/**
-	 * @description Updates keys in a named Secret. Keys with null values are deleted
+	 * Updates keys in a named Secret. Keys with null values are deleted
 	 * @param name - Secret name
 	 * @param updates - Updates to apply
 	 * @param params - Optional parameters
@@ -342,7 +342,7 @@ export class SecretService {
 	}
 
 	/**
-	 * @description Deletes a named {@link Secret}. Deletion is irreversible and affects any App currently using it
+	 * Deletes a named {@link Secret}. Deletion is irreversible and affects any App currently using it
 	 * @param name - Name of the Secret to delete
 	 * @param params - Optional parameters
 	 */
@@ -372,7 +372,7 @@ export class SecretService {
 }
 
 /**
- * @description Secret that provides a dictionary of environment variables to an {@link Image}
+ * Secret that provides a dictionary of environment variables to an {@link Image}
  */
 export class Secret {
 	readonly secretId: string;
@@ -482,7 +482,7 @@ export class Secret {
 	}
 
 	/**
-	 * @description Returns Secret metadata
+	 * Returns Secret metadata
 	 */
 	info(): SecretInfo {
 		return this.#info ?? secretInfoFromMetadata(undefined, this.name);
@@ -500,7 +500,7 @@ export class Secret {
 }
 
 /**
- * @description Merges an environment variable object into a Secret array. When env is specified, creates and adds an ephemeral Secret
+ * Merges an environment variable object into a Secret array. When env is specified, creates and adds an ephemeral Secret
  * @param client - Modal client
  * @param env - Environment variables to merge
  * @param secrets - Existing Secret array
@@ -519,7 +519,7 @@ export async function mergeEnvIntoSecrets(
 }
 
 /**
- * @description Metadata for a Secret object
+ * Metadata for a Secret object
  */
 export type SecretInfo = {
 	name?: string;

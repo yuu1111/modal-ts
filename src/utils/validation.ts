@@ -1,5 +1,5 @@
 /**
- * @description Throws when a renamed legacy parameter name is used
+ * Throws when a renamed legacy parameter name is used
  * @param params - Parameter object to check
  * @param renames - Mapping from old names to new names
  * @throws When a legacy parameter name is used

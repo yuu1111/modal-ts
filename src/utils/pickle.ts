@@ -1,5 +1,5 @@
 /**
- * @description Minimal pickle codec supporting protocols 3, 4, and 5
+ * Minimal pickle codec supporting protocols 3, 4, and 5
  *
  * Supports JSON-compatible primitives (null, bool, number, string, arrays,
  * plain objects) and Uint8Array. The encoder can emit protocols 3/4/5
@@ -9,24 +9,24 @@
  */
 
 /**
- * @description UTF-8 conversion singleton for encoding
+ * UTF-8 conversion singleton for encoding
  */
 const textEncoder = new TextEncoder();
 
 /**
- * @description UTF-8 conversion singleton for decoding
+ * UTF-8 conversion singleton for decoding
  */
 const textDecoder = new TextDecoder();
 
 /**
- * @description Reusable buffer for float64BE writes
+ * Reusable buffer for float64BE writes
  */
 const scratchBuf = new ArrayBuffer(8);
 const scratchDv = new DataView(scratchBuf);
 const scratchBytes = new Uint8Array(scratchBuf);
 
 /**
- * @description Error specific to pickle processing
+ * Error specific to pickle processing
  */
 class PickleError extends Error {
 	constructor(message: string) {
@@ -36,7 +36,7 @@ class PickleError extends Error {
 }
 
 /**
- * @description Pickle opcode definitions as single-byte values
+ * Pickle opcode definitions as single-byte values
  */
 enum Op {
 	PROTO = 0x80,
@@ -75,13 +75,13 @@ enum Op {
 }
 
 /**
- * @description Buffer that builds pickle binary output
+ * Buffer that builds pickle binary output
  */
 class Writer {
 	private out: number[] = [];
 
 	/**
-	 * @description Writes one byte
+	 * Writes one byte
 	 * @param b - Value to write; only the low 8 bits are used
 	 */
 	byte(b: number) {
@@ -89,7 +89,7 @@ class Writer {
 	}
 
 	/**
-	 * @description Writes bytes as-is
+	 * Writes bytes as-is
 	 * @param arr - Bytes to write
 	 */
 	bytes(arr: Uint8Array | number[]) {
@@ -97,7 +97,7 @@ class Writer {
 	}
 
 	/**
-	 * @description Writes a 32-bit unsigned integer in little-endian order
+	 * Writes a 32-bit unsigned integer in little-endian order
 	 * @param x - Value to write
 	 */
 	uint32LE(x: number) {
@@ -108,7 +108,7 @@ class Writer {
 	}
 
 	/**
-	 * @description Writes a 64-bit unsigned integer in little-endian order
+	 * Writes a 64-bit unsigned integer in little-endian order
 	 * @param n - Value to write
 	 */
 	uint64LE(n: number | bigint) {
@@ -120,7 +120,7 @@ class Writer {
 	}
 
 	/**
-	 * @description Writes a 64-bit floating-point number in big-endian order
+	 * Writes a 64-bit floating-point number in big-endian order
 	 * @param v - Value to write
 	 */
 	float64BE(v: number) {
@@ -129,7 +129,7 @@ class Writer {
 	}
 
 	/**
-	 * @description Returns the buffer contents as a Uint8Array
+	 * Returns the buffer contents as a Uint8Array
 	 * @returns Accumulated bytes
 	 */
 	toUint8(): Uint8Array {
@@ -138,7 +138,7 @@ class Writer {
 }
 
 /**
- * @description Cursor for sequentially reading pickle binary data
+ * Cursor for sequentially reading pickle binary data
  */
 class Reader {
 	constructor(
@@ -147,7 +147,7 @@ class Reader {
 	) {}
 
 	/**
-	 * @description Checks whether the cursor reached the end of the buffer
+	 * Checks whether the cursor reached the end of the buffer
 	 * @returns true at the end
 	 */
 	eof() {
@@ -155,7 +155,7 @@ class Reader {
 	}
 
 	/**
-	 * @description Reads one byte
+	 * Reads one byte
 	 * @returns Read value
 	 * @throws When reading past the end of data
 	 */
@@ -168,7 +168,7 @@ class Reader {
 	}
 
 	/**
-	 * @description Returns an n-byte subarray without copying
+	 * Returns an n-byte subarray without copying
 	 * @param n - Number of bytes to read
 	 * @returns Partial view into the buffer
 	 */
@@ -179,7 +179,7 @@ class Reader {
 	}
 
 	/**
-	 * @description Reads a 32-bit unsigned integer in little-endian order
+	 * Reads a 32-bit unsigned integer in little-endian order
 	 * @returns Read value
 	 */
 	uint32LE() {
@@ -191,7 +191,7 @@ class Reader {
 	}
 
 	/**
-	 * @description Reads a 64-bit unsigned integer in little-endian order
+	 * Reads a 64-bit unsigned integer in little-endian order
 	 * @returns Read value within number precision
 	 */
 	uint64LE() {
@@ -201,7 +201,7 @@ class Reader {
 	}
 
 	/**
-	 * @description Reads a 32-bit signed integer in little-endian order
+	 * Reads a 32-bit signed integer in little-endian order
 	 * @returns Read value
 	 */
 	int32LE() {
@@ -215,7 +215,7 @@ class Reader {
 	}
 
 	/**
-	 * @description Reads a 64-bit floating-point number in big-endian order
+	 * Reads a 64-bit floating-point number in big-endian order
 	 * @returns Read value
 	 */
 	float64BE() {
@@ -230,12 +230,12 @@ class Reader {
 }
 
 /**
- * @description Pickle protocol version
+ * Pickle protocol version
  */
 export type Protocol = 3 | 4 | 5;
 
 /**
- * @description Recursively encodes a JS value into pickle opcodes
+ * Recursively encodes a JS value into pickle opcodes
  * @param val - Value to encode
  * @param w - Destination Writer
  * @param proto - Protocol version to use
@@ -333,7 +333,7 @@ function encodeValue(val: unknown, w: Writer, proto: Protocol) {
 }
 
 /**
- * @description Emits a MEMOIZE opcode when protocol 4 or newer is used
+ * Emits a MEMOIZE opcode when protocol 4 or newer is used
  * @param w - Destination Writer
  * @param proto - Active protocol version
  */
@@ -344,7 +344,7 @@ function maybeMemoize(w: Writer, proto: Protocol) {
 }
 
 /**
- * @description Serializes a JS value into pickle bytes
+ * Serializes a JS value into pickle bytes
  * @param obj - Value to serialize
  * @param protocol - Pickle protocol version @defaultValue 4
  * @returns Pickle bytes
@@ -368,7 +368,7 @@ export function dumps(obj: unknown, protocol: Protocol = 4): Uint8Array {
 }
 
 /**
- * @description Deserializes pickle bytes into a JS value
+ * Deserializes pickle bytes into a JS value
  * @param buf - Pickle data
  * @returns Deserialized value
  */

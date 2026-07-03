@@ -8,12 +8,12 @@ import type {
 } from "@/generated/modal_proto/api";
 
 /**
- * @description File open modes supported by the filesystem API
+ * File open modes supported by the filesystem API
  */
 export type SandboxFileMode = "r" | "w" | "a" | "r+" | "w+" | "a+";
 
 /**
- * @description Represents an open file in a {@link Sandbox} filesystem
+ * Represents an open file in a {@link Sandbox} filesystem
  *
  * Provides read and write operations similar to Node.js `fsPromises.FileHandle`.
  */
@@ -30,7 +30,7 @@ export class SandboxFile {
 	}
 
 	/**
-	 * @description Reads data from the file
+	 * Reads data from the file
 	 * @returns Read data as bytes
 	 */
 	async read(): Promise<Uint8Array> {
@@ -54,7 +54,7 @@ export class SandboxFile {
 	}
 
 	/**
-	 * @description Writes data to the file
+	 * Writes data to the file
 	 * @param data - Bytes to write
 	 */
 	async write(data: Uint8Array): Promise<void> {
@@ -68,7 +68,7 @@ export class SandboxFile {
 	}
 
 	/**
-	 * @description Flushes buffered data to the file
+	 * Flushes buffered data to the file
 	 */
 	async flush(): Promise<void> {
 		await runFilesystemExec(this.#client.cpClient, {
@@ -80,7 +80,7 @@ export class SandboxFile {
 	}
 
 	/**
-	 * @description Closes the file handle
+	 * Closes the file handle
 	 */
 	async close(): Promise<void> {
 		await runFilesystemExec(this.#client.cpClient, {
@@ -93,7 +93,7 @@ export class SandboxFile {
 }
 
 /**
- * @description Executes a Sandbox filesystem operation and collects the response
+ * Executes a Sandbox filesystem operation and collects the response
  * @param cpClient - gRPC client
  * @param request - Execution request
  * @returns Output chunks and response

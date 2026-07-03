@@ -12,7 +12,7 @@ import type { SandboxExecParams } from "./sandbox_config";
 import { inputStreamCp, outputStreamCp } from "./sandbox_streams";
 
 /**
- * @description Represents a process running inside a Sandbox and provides stdin/stdout/stderr streams
+ * Represents a process running inside a Sandbox and provides stdin/stdout/stderr streams
  */
 export class ContainerProcess<
 	R extends string | Uint8Array = string | Uint8Array,
@@ -92,7 +92,7 @@ export class ContainerProcess<
 	}
 
 	/**
-	 * @description Closes the stdin stream
+	 * Closes the stdin stream
 	 */
 	async closeStdin(): Promise<void> {
 		const writer = this.stdin.getWriter();
@@ -104,7 +104,7 @@ export class ContainerProcess<
 	}
 
 	/**
-	 * @description Waits for the process to exit and returns its exit code
+	 * Waits for the process to exit and returns its exit code
 	 * @returns exit code
 	 */
 	async wait(): Promise<number> {

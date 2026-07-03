@@ -1,21 +1,21 @@
 import type { Logger } from "@/utils/logger";
 
 /**
- * @description Minimal gRPC client interface used by AuthTokenManager
+ * Minimal gRPC client interface used by AuthTokenManager
  */
 export interface AuthClient {
 	authTokenGet(request: Record<string, never>): Promise<{ token?: string }>;
 }
 
 /**
- * @description Returns the current time in Unix seconds
+ * Returns the current time in Unix seconds
  */
 function nowSeconds(): number {
 	return Math.floor(Date.now() / 1000);
 }
 
 /**
- * @description Extracts the exp claim in Unix seconds from a JWT token
+ * Extracts the exp claim in Unix seconds from a JWT token
  * @param token - JWT token string
  * @returns exp claim value, or null when it cannot be read
  */
@@ -41,16 +41,16 @@ export function decodeJwtExp(token: string): number | null {
 }
 
 /**
- * @description Seconds before token expiry when refresh should begin
+ * Seconds before token expiry when refresh should begin
  */
 export const REFRESH_WINDOW = 5 * 60;
 /**
- * @description Default lifetime in seconds when the exp claim is missing
+ * Default lifetime in seconds when the exp claim is missing
  */
 export const DEFAULT_EXPIRY_OFFSET = 20 * 60;
 
 /**
- * @description Lazy refresh manager for auth tokens
+ * Lazy refresh manager for auth tokens
  *
  * getToken takes one of three paths based on token state:
  *  1. Valid with enough lifetime remaining: return immediately.
@@ -71,7 +71,7 @@ export class AuthTokenManager {
 	}
 
 	/**
-	 * @description Returns a valid auth token, refreshing it when needed
+	 * Returns a valid auth token, refreshing it when needed
 	 * @returns Auth token string
 	 */
 	async getToken(): Promise<string> {
@@ -91,7 +91,7 @@ export class AuthTokenManager {
 	}
 
 	/**
-	 * @description Refresh with mutual exclusion so only one token fetch runs at a time
+	 * Refresh with mutual exclusion so only one token fetch runs at a time
 	 *
 	 * Concurrent callers await the same Promise.
 	 * If another caller already refreshed the token, the RPC is skipped.
@@ -115,7 +115,7 @@ export class AuthTokenManager {
 	}
 
 	/**
-	 * @description Fetches and stores a new auth token from the server
+	 * Fetches and stores a new auth token from the server
 	 */
 	private async fetchToken(): Promise<void> {
 		const response = await this.client.authTokenGet({});
@@ -151,7 +151,7 @@ export class AuthTokenManager {
 	}
 
 	/**
-	 * @description Checks whether the token is expired
+	 * Checks whether the token is expired
 	 * @returns true when expired
 	 */
 	isExpired(): boolean {
@@ -159,7 +159,7 @@ export class AuthTokenManager {
 	}
 
 	/**
-	 * @description Checks whether the token should be refreshed within REFRESH_WINDOW
+	 * Checks whether the token should be refreshed within REFRESH_WINDOW
 	 * @returns true when refresh is needed
 	 */
 	private needsRefresh(): boolean {
@@ -167,7 +167,7 @@ export class AuthTokenManager {
 	}
 
 	/**
-	 * @description Returns the currently stored token string
+	 * Returns the currently stored token string
 	 * @returns Auth token, or an empty string when no token has been fetched
 	 */
 	getCurrentToken(): string {
@@ -175,7 +175,7 @@ export class AuthTokenManager {
 	}
 
 	/**
-	 * @description Directly sets the token and expiry
+	 * Directly sets the token and expiry
 	 * @param token - Auth token string
 	 * @param expiry - Expiry in Unix seconds
 	 */

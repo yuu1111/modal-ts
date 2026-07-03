@@ -1,11 +1,11 @@
 /**
- * @description Minimal OutputManager for SDK output display
+ * Minimal OutputManager for SDK output display
  */
 export class OutputManager {
 	static #current: OutputManager | undefined;
 
 	/**
-	 * @description Gets the current OutputManager
+	 * Gets the current OutputManager
 	 */
 	static get(): OutputManager {
 		if (!OutputManager.#current) {
@@ -24,21 +24,21 @@ export class OutputManager {
 	constructor(readonly enabled = true) {}
 
 	/**
-	 * @description Prints a message to stdout
+	 * Prints a message to stdout
 	 */
 	print(message: unknown): void {
 		if (this.enabled) console.log(message);
 	}
 
 	/**
-	 * @description Prints JSON to stdout
+	 * Prints JSON to stdout
 	 */
 	printJson(value: unknown): void {
 		if (this.enabled) console.log(JSON.stringify(value, undefined, 2));
 	}
 
 	/**
-	 * @description Returns a scope for status display
+	 * Returns a scope for status display
 	 */
 	status(message: string): { stop: () => void } {
 		this.print(message);
@@ -47,7 +47,7 @@ export class OutputManager {
 }
 
 /**
- * @description Enables the OutputManager and runs the callback
+ * Enables the OutputManager and runs the callback
  */
 export async function enableOutput<T>(
 	callback?: () => T | Promise<T>,

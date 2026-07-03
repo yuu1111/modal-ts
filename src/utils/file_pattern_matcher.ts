@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 
 /**
- * @description Matcher that checks file paths against Docker-ignore-style glob patterns
+ * Matcher that checks file paths against Docker-ignore-style glob patterns
  */
 export class FilePatternMatcher {
 	readonly #patterns?: string[];
@@ -15,7 +15,7 @@ export class FilePatternMatcher {
 	}
 
 	/**
-	 * @description Creates a matcher that lazily loads patterns from an ignore file
+	 * Creates a matcher that lazily loads patterns from an ignore file
 	 */
 	static fromFile(filePath: string): FilePatternMatcher {
 		const matcher = new FilePatternMatcher();
@@ -28,7 +28,7 @@ export class FilePatternMatcher {
 	}
 
 	/**
-	 * @description Inverts the matcher
+	 * Inverts the matcher
 	 */
 	invert(): FilePatternMatcher {
 		const matcher = new FilePatternMatcher(...(this.#patterns ?? []));
@@ -42,7 +42,7 @@ export class FilePatternMatcher {
 	}
 
 	/**
-	 * @description Returns whether directory traversal can be safely pruned
+	 * Returns whether directory traversal can be safely pruned
 	 */
 	canPruneDirectories(): boolean {
 		return (
@@ -55,7 +55,7 @@ export class FilePatternMatcher {
 	}
 
 	/**
-	 * @description Returns whether filePath matches any pattern
+	 * Returns whether filePath matches any pattern
 	 */
 	matches(filePath: string): boolean {
 		const result = this.#matches(filePath);

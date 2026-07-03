@@ -22,7 +22,7 @@ import { cborDecode } from "@/utils/serialization";
 const outputsTimeoutMs = 55 * 1000;
 
 /**
- * @description Abstracts input submission to the control plane or input plane.
+ * Abstracts input submission to the control plane or input plane.
  * Control plane: uses FunctionMap, FunctionRetryInputs, and FunctionGetOutputs RPCs.
  * Input plane: uses AttemptStart, AttemptRetry, and AttemptAwait RPCs.
  */
@@ -32,7 +32,7 @@ export interface Invocation {
 }
 
 /**
- * @description Invocation implementation through the control plane
+ * Invocation implementation through the control plane
  */
 export class ControlPlaneInvocation implements Invocation {
 	private readonly cpClient: ModalGrpcClient;
@@ -142,7 +142,7 @@ export class ControlPlaneInvocation implements Invocation {
 }
 
 /**
- * @description Invocation implementation through the input plane
+ * Invocation implementation through the input plane
  */
 export class InputPlaneInvocation implements Invocation {
 	private readonly cpClient: ModalGrpcClient;
@@ -224,7 +224,7 @@ function timeNowSeconds() {
 }
 
 /**
- * @description Signature for a function that gets one output with the specified timeout.
+ * Signature for a function that gets one output with the specified timeout.
  * Used by `pollFunctionOutput` when fetching from the control plane or input plane.
  */
 type GetOutput = (
@@ -232,7 +232,7 @@ type GetOutput = (
 ) => Promise<FunctionGetOutputsItem | undefined>;
 
 /**
- * @description Polls output with `getOutput`.
+ * Polls output with `getOutput`.
  * When timeout is omitted or exceeds 55 seconds, repeats in 55-second chunks.
  */
 async function pollFunctionOutput(

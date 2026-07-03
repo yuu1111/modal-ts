@@ -5,7 +5,7 @@ import type { ProxyGetResponse } from "@/generated/modal_proto/api";
 import { environmentParam } from "@/utils/param_aliases";
 
 /**
- * @description Service for managing {@link Proxy}
+ * Service for managing {@link Proxy}
  */
 export class ProxyService {
 	readonly #client: ModalClient;
@@ -14,7 +14,7 @@ export class ProxyService {
 	}
 
 	/**
-	 * @description Looks up a {@link Proxy} by name
+	 * Looks up a {@link Proxy} by name
 	 * @param name - Proxy name
 	 * @param params - Optional parameters
 	 * @returns Proxy instance
@@ -42,8 +42,8 @@ export class ProxyService {
 }
 
 /**
- * @description Optional parameters for {@link ProxyService#fromName client.proxies.fromName()}
- * @property environment - Modal environment name @optional
+ * Optional parameters for {@link ProxyService#fromName client.proxies.fromName()}
+ * @property environment - Modal environment name
  */
 export type ProxyFromNameParams = {
 	environment?: string;
@@ -52,7 +52,7 @@ export type ProxyFromNameParams = {
 };
 
 /**
- * @description Proxy that provides a static outbound IP address for Modal containers
+ * Proxy that provides a static outbound IP address for Modal containers
  */
 export class Proxy {
 	readonly proxyId: string;

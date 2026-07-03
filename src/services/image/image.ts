@@ -203,7 +203,7 @@ async function localMountLayerFiles(
 }
 
 /**
- * @description Service for managing {@link Image}
+ * Service for managing {@link Image}
  *
  * Usually accessed only through the client:
  * ```typescript
@@ -218,7 +218,7 @@ export class ImageService {
 	}
 
 	/**
-	 * @description Creates an {@link Image} from an Image ID
+	 * Creates an {@link Image} from an Image ID
 	 * @param imageId - Image ID
 	 * @returns Image instance
 	 */
@@ -234,14 +234,14 @@ export class ImageService {
 	}
 
 	/**
-	 * @description Python-compatible alias for {@link ImageService#fromId}
+	 * Python-compatible alias for {@link ImageService#fromId}
 	 */
 	async from_id(imageId: string): Promise<Image> {
 		return await this.fromId(imageId);
 	}
 
 	/**
-	 * @description References a published named Image
+	 * References a published named Image
 	 * @param name - Image name. `name:tag` is supported; defaults to `latest` when no tag is specified
 	 * @param params - Optional parameters
 	 * @returns Image instance
@@ -263,7 +263,7 @@ export class ImageService {
 	}
 
 	/**
-	 * @description Python-compatible alias for {@link ImageService#fromName}
+	 * Python-compatible alias for {@link ImageService#fromName}
 	 */
 	async from_name(
 		name: string,
@@ -273,7 +273,7 @@ export class ImageService {
 	}
 
 	/**
-	 * @description Creates an {@link Image} from a registry tag. A {@link Secret} can be provided for authentication
+	 * Creates an {@link Image} from a registry tag. A {@link Secret} can be provided for authentication
 	 * @param tag - Registry tag for the Image
 	 * @param secret - Secret for registry authentication
 	 * @returns Image instance
@@ -287,14 +287,14 @@ export class ImageService {
 	}
 
 	/**
-	 * @description Python-compatible alias for {@link ImageService#fromRegistry}
+	 * Python-compatible alias for {@link ImageService#fromRegistry}
 	 */
 	from_registry(tag: string, secret?: Secret): Image {
 		return this.fromRegistry(tag, secret);
 	}
 
 	/**
-	 * @description Creates an {@link Image} from an AWS ECR registry tag
+	 * Creates an {@link Image} from an AWS ECR registry tag
 	 * @param tag - Registry tag for the Image
 	 * @param secret - Secret for AWS authentication
 	 * @returns Image instance
@@ -308,14 +308,14 @@ export class ImageService {
 	}
 
 	/**
-	 * @description Python-compatible alias for {@link ImageService#fromAwsEcr}
+	 * Python-compatible alias for {@link ImageService#fromAwsEcr}
 	 */
 	from_aws_ecr(tag: string, secret: Secret): Image {
 		return this.fromAwsEcr(tag, secret);
 	}
 
 	/**
-	 * @description Creates an {@link Image} from a GCP Artifact Registry tag
+	 * Creates an {@link Image} from a GCP Artifact Registry tag
 	 * @param tag - Registry tag for the Image
 	 * @param secret - Secret for GCP authentication
 	 * @returns Image instance
@@ -329,14 +329,14 @@ export class ImageService {
 	}
 
 	/**
-	 * @description Python-compatible alias for {@link ImageService#fromGcpArtifactRegistry}
+	 * Python-compatible alias for {@link ImageService#fromGcpArtifactRegistry}
 	 */
 	from_gcp_artifact_registry(tag: string, secret: Secret): Image {
 		return this.fromGcpArtifactRegistry(tag, secret);
 	}
 
 	/**
-	 * @description Creates an empty scratch image
+	 * Creates an empty scratch image
 	 * @param params - Optional parameters
 	 */
 	fromScratch(
@@ -349,14 +349,14 @@ export class ImageService {
 	}
 
 	/**
-	 * @description Python-compatible alias for {@link ImageService#fromScratch}
+	 * Python-compatible alias for {@link ImageService#fromScratch}
 	 */
 	from_scratch(params: { forceBuild?: boolean } = {}): Image {
 		return this.fromScratch(params);
 	}
 
 	/**
-	 * @description Creates an Image based on Python Debian slim
+	 * Creates an Image based on Python Debian slim
 	 * @param params - Python version and build options
 	 */
 	debianSlim(
@@ -388,7 +388,7 @@ export class ImageService {
 	}
 
 	/**
-	 * @description Python-compatible alias for {@link ImageService#debianSlim}
+	 * Python-compatible alias for {@link ImageService#debianSlim}
 	 */
 	debian_slim(
 		params: { pythonVersion?: string; forceBuild?: boolean } = {},
@@ -397,7 +397,7 @@ export class ImageService {
 	}
 
 	/**
-	 * @description Creates an Image from a local Dockerfile
+	 * Creates an Image from a local Dockerfile
 	 */
 	fromDockerfile(
 		dockerfilePath: string,
@@ -440,7 +440,7 @@ export class ImageService {
 	}
 
 	/**
-	 * @description Python-compatible alias for {@link ImageService#fromDockerfile}
+	 * Python-compatible alias for {@link ImageService#fromDockerfile}
 	 */
 	from_dockerfile(
 		dockerfilePath: string,
@@ -450,7 +450,7 @@ export class ImageService {
 	}
 
 	/**
-	 * @description Creates a Micromamba base image
+	 * Creates a Micromamba base image
 	 */
 	micromamba(
 		params: {
@@ -495,7 +495,7 @@ export class ImageService {
 	}
 
 	/**
-	 * @description Deletes an {@link Image} by ID. Deletion is irreversible and prevents use from Functions and Sandboxes. Intermediate layers are not deleted
+	 * Deletes an {@link Image} by ID. Deletion is irreversible and prevents use from Functions and Sandboxes. Intermediate layers are not deleted
 	 * @param imageId - ID of the Image to delete
 	 * @param _ - Parameters reserved for future extension
 	 */
@@ -511,12 +511,12 @@ export class ImageService {
 }
 
 /**
- * @description Optional parameters for {@link ImageService#delete client.images.delete()}
+ * Optional parameters for {@link ImageService#delete client.images.delete()}
  */
 export type ImageDeleteParams = Record<never, never>;
 
 /**
- * @description Optional parameters for {@link ImageService#fromName client.images.fromName()}
+ * Optional parameters for {@link ImageService#fromName client.images.fromName()}
  * @property environment - Modal environment name for resolving the Image
  */
 export type ImageFromNameParams = {
@@ -526,7 +526,7 @@ export type ImageFromNameParams = {
 };
 
 /**
- * @description Optional parameters for {@link Image#publish Image.publish()}
+ * Optional parameters for {@link Image#publish Image.publish()}
  * @property environment - Modal environment name for publishing the Image
  */
 export type ImagePublishParams = {
@@ -536,7 +536,7 @@ export type ImagePublishParams = {
 };
 
 /**
- * @description Optional parameters for {@link Image#dockerfileCommands Image.dockerfileCommands()}
+ * Optional parameters for {@link Image#dockerfileCommands Image.dockerfileCommands()}
  * @property env - Environment variables to set in the build environment
  * @property secrets - {@link Secret} objects made available as environment variables in the build environment
  * @property gpu - GPU reservation for the build environment, for example "A100", "T4:2", or "A100-80GB:4"
@@ -544,41 +544,41 @@ export type ImagePublishParams = {
  */
 export type ImageDockerfileCommandsParams = {
 	/**
-	 * @description Environment variables to set in the build environment
+	 * Environment variables to set in the build environment
 	 */
 	env?: Record<string, string>;
 
 	/**
-	 * @description {@link Secret} objects made available as environment variables in the build environment
+	 * {@link Secret} objects made available as environment variables in the build environment
 	 */
 	secrets?: Secret[];
 
 	/**
-	 * @description GPU reservation for the build environment, for example "A100", "T4:2", or "A100-80GB:4"
+	 * GPU reservation for the build environment, for example "A100", "T4:2", or "A100-80GB:4"
 	 */
 	gpu?: string;
 
 	/**
-	 * @description Builds without using cache, equivalent to 'docker build --no-cache'
+	 * Builds without using cache, equivalent to 'docker build --no-cache'
 	 */
 	forceBuild?: boolean;
 	force_build?: boolean;
 
 	/**
-	 * @description Local file mapping to include in the Docker build context
+	 * Local file mapping to include in the Docker build context
 	 */
 	contextFiles?: Record<string, LocalPathSpec>;
 	context_files?: Record<string, LocalPathSpec>;
 
 	/**
-	 * @description Build arguments passed to Dockerfile ARG
+	 * Build arguments passed to Dockerfile ARG
 	 */
 	buildArgs?: Record<string, string>;
 	build_args?: Record<string, string>;
 };
 
 /**
- * @description Shared options for image builders
+ * Shared options for image builders
  */
 export type ImageBuildStepParams = ImageDockerfileCommandsParams;
 
@@ -636,7 +636,7 @@ function packageInstallArgs(params: PythonPackageOptions): string {
 }
 
 /**
- * @description Represents a single Image layer and its build settings
+ * Represents a single Image layer and its build settings
  * @property commands - Dockerfile commands
  * @property env - Environment variables
  * @property secrets - Secrets used in the build environment
@@ -655,7 +655,7 @@ type Layer = {
 };
 
 /**
- * @description Container image used to start a {@link Sandbox}
+ * Container image used to start a {@link Sandbox}
  */
 export class Image {
 	#client: ModalClient;
@@ -817,7 +817,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Extends the Image with arbitrary Dockerfile commands. Each call creates a new layer built in sequence
+	 * Extends the Image with arbitrary Dockerfile commands. Each call creates a new layer built in sequence
 	 * @param commands - Dockerfile command strings
 	 * @param params - Build settings for this layer
 	 * @returns New Image instance
@@ -865,7 +865,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Python-compatible alias for {@link Image#dockerfileCommands}
+	 * Python-compatible alias for {@link Image#dockerfileCommands}
 	 */
 	dockerfile_commands(
 		commands: string[],
@@ -875,7 +875,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Installs Debian packages with apt
+	 * Installs Debian packages with apt
 	 * @param packages - Package names
 	 * @param params - Build step options
 	 */
@@ -891,14 +891,14 @@ export class Image {
 	}
 
 	/**
-	 * @description Python-compatible alias for {@link Image#aptInstall}
+	 * Python-compatible alias for {@link Image#aptInstall}
 	 */
 	apt_install(packages: string[], params?: ImageBuildStepParams): Image {
 		return this.aptInstall(packages, params);
 	}
 
 	/**
-	 * @description Installs Python packages with pip
+	 * Installs Python packages with pip
 	 * @param packages - Package names
 	 * @param params - Build step options
 	 */
@@ -915,7 +915,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Python-compatible alias for {@link Image#pipInstall}
+	 * Python-compatible alias for {@link Image#pipInstall}
 	 */
 	pip_install(
 		packages: string[],
@@ -925,7 +925,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Installs private git repositories with pip
+	 * Installs private git repositories with pip
 	 */
 	pipInstallPrivateRepos(
 		repositories: string[],
@@ -1023,7 +1023,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Python-compatible alias for {@link Image#pipInstallPrivateRepos}
+	 * Python-compatible alias for {@link Image#pipInstallPrivateRepos}
 	 */
 	pip_install_private_repos(
 		repositories: string[],
@@ -1033,7 +1033,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Adds a local file to an Image layer
+	 * Adds a local file to an Image layer
 	 */
 	addLocalFile(
 		localPath: string,
@@ -1075,7 +1075,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Python-compatible alias for {@link Image#addLocalFile}
+	 * Python-compatible alias for {@link Image#addLocalFile}
 	 */
 	add_local_file(
 		localPath: string,
@@ -1086,7 +1086,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Recursively adds a local directory to an Image layer
+	 * Recursively adds a local directory to an Image layer
 	 */
 	addLocalDir(
 		localPath: string,
@@ -1125,7 +1125,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Python-compatible alias for {@link Image#addLocalDir}
+	 * Python-compatible alias for {@link Image#addLocalDir}
 	 */
 	add_local_dir(
 		localPath: string,
@@ -1136,7 +1136,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Adds a local Python module/package under `/root`
+	 * Adds a local Python module/package under `/root`
 	 */
 	addLocalPythonSource(
 		modules: string[],
@@ -1169,7 +1169,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Python-compatible alias for {@link Image#addLocalPythonSource}
+	 * Python-compatible alias for {@link Image#addLocalPythonSource}
 	 */
 	add_local_python_source(
 		modules: string[],
@@ -1179,7 +1179,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Installs with pip from requirements.txt
+	 * Installs with pip from requirements.txt
 	 */
 	pipInstallFromRequirements(
 		requirementsTxt: string,
@@ -1200,7 +1200,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Python-compatible alias for {@link Image#pipInstallFromRequirements}
+	 * Python-compatible alias for {@link Image#pipInstallFromRequirements}
 	 */
 	pip_install_from_requirements(
 		requirementsTxt: string,
@@ -1210,7 +1210,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Installs project dependencies from pyproject.toml with pip
+	 * Installs project dependencies from pyproject.toml with pip
 	 */
 	pipInstallFromPyproject(
 		pyprojectToml: string,
@@ -1238,7 +1238,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Python-compatible alias for {@link Image#pipInstallFromPyproject}
+	 * Python-compatible alias for {@link Image#pipInstallFromPyproject}
 	 */
 	pip_install_from_pyproject(
 		pyprojectToml: string,
@@ -1253,7 +1253,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Installs packages using uv pip install
+	 * Installs packages using uv pip install
 	 */
 	uvPipInstall(
 		packages: string[] = [],
@@ -1303,7 +1303,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Python-compatible alias for {@link Image#uvPipInstall}
+	 * Python-compatible alias for {@link Image#uvPipInstall}
 	 */
 	uv_pip_install(
 		packages: string[] = [],
@@ -1313,7 +1313,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Installs dependencies from a Poetry pyproject
+	 * Installs dependencies from a Poetry pyproject
 	 */
 	poetryInstallFromFile(
 		pyprojectToml: string,
@@ -1377,7 +1377,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Python-compatible alias for {@link Image#poetryInstallFromFile}
+	 * Python-compatible alias for {@link Image#poetryInstallFromFile}
 	 */
 	poetry_install_from_file(
 		pyprojectToml: string,
@@ -1387,7 +1387,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Installs pyproject/uv.lock dependencies with uv sync
+	 * Installs pyproject/uv.lock dependencies with uv sync
 	 */
 	uvSync(
 		projectDir = ".",
@@ -1430,7 +1430,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Python-compatible alias for {@link Image#uvSync}
+	 * Python-compatible alias for {@link Image#uvSync}
 	 */
 	uv_sync(
 		projectDir = ".",
@@ -1440,7 +1440,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Adds conda packages with micromamba install
+	 * Adds conda packages with micromamba install
 	 */
 	micromambaInstall(
 		packages: string[] = [],
@@ -1472,7 +1472,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Python-compatible alias for {@link Image#micromambaInstall}
+	 * Python-compatible alias for {@link Image#micromambaInstall}
 	 */
 	micromamba_install(
 		packages: string[] = [],
@@ -1482,14 +1482,14 @@ export class Image {
 	}
 
 	/**
-	 * @description Transforms the Image with an arbitrary callback
+	 * Transforms the Image with an arbitrary callback
 	 */
 	pipe(fn: (image: Image) => Image): Image {
 		return fn(this);
 	}
 
 	/**
-	 * @description Runs a command as a build step
+	 * Runs a command as a build step
 	 */
 	runFunction(
 		command: string | string[],
@@ -1499,7 +1499,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Python-compatible alias for {@link Image#runFunction}
+	 * Python-compatible alias for {@link Image#runFunction}
 	 */
 	run_function(
 		command: string | string[],
@@ -1509,14 +1509,14 @@ export class Image {
 	}
 
 	/**
-	 * @description Syntax-compatible helper close to Python's Image.imports()
+	 * Syntax-compatible helper close to Python's Image.imports()
 	 */
 	imports<T>(callback: () => T): T {
 		return callback();
 	}
 
 	/**
-	 * @description Runs shell commands as a RUN layer
+	 * Runs shell commands as a RUN layer
 	 * @param commands - Commands to run
 	 * @param params - Build step options
 	 */
@@ -1529,14 +1529,14 @@ export class Image {
 	}
 
 	/**
-	 * @description Python-compatible alias for {@link Image#runCommands}
+	 * Python-compatible alias for {@link Image#runCommands}
 	 */
 	run_commands(commands: string[], params?: ImageBuildStepParams): Image {
 		return this.runCommands(commands, params);
 	}
 
 	/**
-	 * @description Adds ENV directives to the Image
+	 * Adds ENV directives to the Image
 	 * @param vars - Environment variables
 	 */
 	env(vars: Record<string, string>): Image {
@@ -1553,7 +1553,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Sets the Image WORKDIR
+	 * Sets the Image WORKDIR
 	 * @param path - Path inside the container
 	 */
 	workdir(path: string): Image {
@@ -1561,7 +1561,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Sets the Image CMD in JSON array form
+	 * Sets the Image CMD in JSON array form
 	 * @param command - argv tokens
 	 */
 	cmd(command: string[]): Image {
@@ -1572,7 +1572,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Sets the Image ENTRYPOINT in JSON array form
+	 * Sets the Image ENTRYPOINT in JSON array form
 	 * @param command - argv tokens
 	 */
 	entrypoint(command: string[]): Image {
@@ -1583,7 +1583,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Sets the Image SHELL in JSON array form
+	 * Sets the Image SHELL in JSON array form
 	 * @param command - argv tokens
 	 */
 	shell(command: string[]): Image {
@@ -1594,7 +1594,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Builds the Image immediately on Modal
+	 * Builds the Image immediately on Modal
 	 * @param app - App to use for the build
 	 * @returns Built Image instance
 	 */
@@ -1721,7 +1721,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Python-compatible helper that returns an already referenced Image handle
+	 * Python-compatible helper that returns an already referenced Image handle
 	 */
 	async hydrate(): Promise<Image> {
 		if (this.#imageId === "") {
@@ -1733,7 +1733,7 @@ export class Image {
 	}
 
 	/**
-	 * @description Publishes a built Image with a stable name and tag
+	 * Publishes a built Image with a stable name and tag
 	 * @param name - Image name to publish. `name:tag` is supported; defaults to `latest` when no tag is specified
 	 * @param params - Optional parameters
 	 */
