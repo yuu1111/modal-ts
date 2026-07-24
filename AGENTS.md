@@ -49,3 +49,8 @@ Tests: max 10 concurrent, 20s timeout.
 - **Duration params** use `Ms` suffix (e.g., `timeoutMs`)
 - **Memory params** use `MiB` suffix (e.g., `memoryMiB`)
 - **gRPC**: nice-grpc + protobufjs (promises-based)
+
+# Release
+
+- `package.json` の version と一致する `vX.Y.Z` の GitHub Release を公開する
+- npm publish はローカルで実行せず、`.github/workflows/release.yml` の Trusted Publisher に任せる

@@ -5,6 +5,9 @@ This changelog tracks `modal-ts` releases from the fork point. Older upstream
 
 ## Unreleased
 
+- Restore npm publishing through GitHub Releases with npm Trusted Publisher
+  provenance.
+
 ## 1.0.0 - 2026-07-02
 
 - Add broad Python SDK parity helpers across client, app, function, class,
