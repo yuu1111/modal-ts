@@ -37,3 +37,42 @@ test("ModalClient with custom middleware", async () => {
 	mc2.close();
 	expect(mc2).toBeDefined();
 });
+
+test("resolveImageBuilderVersion falls back to default without an environment", async () => {
+	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
+	// No environment configured, so no RPC should be made.
+	expect(await mc.resolveImageBuilderVersion()).toBe("2024.10");
+	mock.assertExhausted();
+});
+
+test("resolveImageBuilderVersion uses the environment's actual version", async () => {
+	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
+	(mc as { profile: { environment: string } }).profile.environment = "main";
+
+	mock.handleUnary("/EnvironmentGetOrCreate", (req) => {
+		expect(req).toMatchObject({ deploymentName: "main" });
+		return {
+			environmentId: "env-main",
+			metadata: { name: "main", settings: { imageBuilderVersion: "2025.06" } },
+		};
+	});
+
+	expect(await mc.resolveImageBuilderVersion()).toBe("2025.06");
+	// Second call is served from cache, no extra RPC.
+	expect(await mc.resolveImageBuilderVersion()).toBe("2025.06");
+	mock.assertExhausted();
+});
+
+test("resolveImageBuilderVersion prefers the configured profile value", async () => {
+	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
+	mc.profile.environment = "main";
+	mc.profile.imageBuilderVersion = "2025.06";
+
+	mock.handleUnary("/EnvironmentGetOrCreate", () => ({
+		environmentId: "env-main",
+		metadata: { name: "main", settings: { imageBuilderVersion: "2026.01" } },
+	}));
+
+	expect(await mc.resolveImageBuilderVersion()).toBe("2025.06");
+	mock.assertExhausted();
+});

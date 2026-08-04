@@ -400,7 +400,7 @@ export class Image {
 					contextFiles: [],
 					baseImages,
 				}),
-				builderVersion: this.#client.imageBuilderVersion(),
+				builderVersion: await this.#client.resolveImageBuilderVersion(),
 				forceBuild: layer.forceBuild || false,
 			});
 

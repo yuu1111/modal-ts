@@ -4,8 +4,8 @@ import {
 	GenericResult_GenericStatus,
 	Image,
 	ModalClientDefinition,
-	Timestamp,
 	type ModalGrpcClient,
+	Timestamp,
 } from "../src/internal";
 
 test("internal exposes generated proto classes with factory helpers", () => {

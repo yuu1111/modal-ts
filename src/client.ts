@@ -17,7 +17,11 @@ import { ClsService } from "./cls";
 import { getProfile, type Profile } from "./config";
 import { FunctionService } from "./function";
 import { FunctionCallService } from "./function_call";
-import { ClientType, ModalClientDefinition } from "./generated/modal_proto/api";
+import {
+	ClientType,
+	ModalClientDefinition,
+	ObjectCreationType,
+} from "./generated/modal_proto/api";
 import { ImageService } from "./image";
 import { createLogger, type Logger, type LogLevel } from "./logger";
 import { ProxyService } from "./proxy";
@@ -110,6 +114,7 @@ export class ModalClient {
 	private ipClients: Map<string, ModalGrpcClient>;
 	private authTokenManager: AuthTokenManager | null = null;
 	private customMiddleware: ClientMiddleware[];
+	private imageBuilderVersionCache: Map<string, string> = new Map();
 
 	constructor(params?: ModalClientParams) {
 		checkForRenamedParams(params, { timeout: "timeoutMs" });
@@ -167,6 +172,65 @@ export class ModalClient {
 	 */
 	imageBuilderVersion(version?: string): string {
 		return version || this.profile.imageBuilderVersion || "2024.10";
+	}
+
+	/**
+	 * @description イメージビルダーのバージョンを解決する。優先順位は「明示指定 > プロファイル/環境変数の設定値 > 環境の実値 > 既定値」。
+	 *
+	 * 環境の実値は {@link ModalClient#environmentName 有効な環境} ごとにキャッシュされる。
+	 * 設定値と環境の実値がズレている場合は警告ログを出す。
+	 * @param version - 明示的なバージョン @internal
+	 * @returns 解決されたビルダーバージョン
+	 */
+	async resolveImageBuilderVersion(version?: string): Promise<string> {
+		if (version) return version;
+
+		const envName = this.environmentName();
+		const actual = await this.environmentImageBuilderVersion(envName);
+
+		if (this.profile.imageBuilderVersion) {
+			if (this.profile.imageBuilderVersion !== actual) {
+				this.logger.warn(
+					`Configured image builder version ${this.profile.imageBuilderVersion} does not match the environment's actual version "${actual}".`,
+					"environment",
+					envName || "default",
+				);
+			}
+			return this.profile.imageBuilderVersion;
+		}
+
+		return actual || "2024.10";
+	}
+
+	/**
+	 * @description 環境が実際に使っているイメージビルダーを返す（環境未設定のときは空文字）
+	 * @param envName - 環境名
+	 * @returns ビルダーバージョン（取得不能・未設定なら空文字）
+	 */
+	private async environmentImageBuilderVersion(
+		envName: string,
+	): Promise<string> {
+		if (!envName) return "";
+		const cached = this.imageBuilderVersionCache.get(envName);
+		if (cached !== undefined) {
+			return cached;
+		}
+		let resolved = "";
+		try {
+			const resp = await this.cpClient.environmentGetOrCreate({
+				deploymentName: envName,
+				objectCreationType: ObjectCreationType.OBJECT_CREATION_TYPE_EPHEMERAL,
+			});
+			resolved = resp.metadata?.settings?.imageBuilderVersion ?? "";
+		} catch (err) {
+			this.logger.warn(
+				`Could not resolve the image builder version for environment "${envName}"; falling back to the default.`,
+				"error",
+				String(err),
+			);
+		}
+		this.imageBuilderVersionCache.set(envName, resolved);
+		return resolved;
 	}
 
 	/** @internal */

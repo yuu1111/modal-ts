@@ -53,6 +53,8 @@ if (result.status === 2 /* GENERIC_STATUS_FAILURE */) {
 
 ## 2. ビルダー版のデフォルトと環境の不整合
 
+> **対応済み** ✅ `ModalClient.resolveImageBuilderVersion()`（`Image.build()` 内で自動使用）が「明示指定 > プロファイル/環境変数 > **環境の実値** > 既定値」の順で解決する。環境の実値は `EnvironmentGetOrCreate` で取得し、環境ごとにキャッシュ。設定値（既定 `2024.10`）と環境の実値（例 `2025.06`）がズレていれば警告ログを出す。
+
 ### 事象
 
 - 既定 `client.imageBuilderVersion()` が **`2024.10`** を返す
@@ -75,6 +77,8 @@ env.imageBuilderVersion // => "2025.06"
 
 ## 3. exports map が `.` のみで内部モジュールに触れない
 
+> **対応済み** ✅ `package.json` の `exports` に `"./internal"` を追加し、`src/internal.ts` から generated / proto を公開（`Image` の `MessageFns` や生 RPC へのアクセスが可能に）。
+
 ### 事象
 
 - `package.json` の `exports` は `"."` だけ
@@ -89,7 +93,7 @@ env.imageBuilderVersion // => "2025.06"
 
 ## 4. 生成コードが読めず、裏 RPC の公式化がない
 
-> **一部対応済み** ✅ `imageJoinStreaming` の「ビルド実行 + ログ取得」は `Image.build(app, { onLog })` として API 化。raw RPC の完全公開（`@internal` exports）と最小 gRPC インターフェースのドキュメント化は未対応。
+> **対応済み** ✅ `imageJoinStreaming` の「ビルド実行 + ログ取得」は `Image.build(app, { onLog })` として API 化。raw の生成 proto（`ModalClientDefinition` 等）は `modal-ts/internal` サブパスで公開。最小 gRPC インターフェースのドキュメント化のみ未対応。
 
 ### 事象
 
@@ -129,6 +133,6 @@ env.imageBuilderVersion // => "2025.06"
 
 1. ~~**Image ビルド失敗時のログ/エラー詳細の伝播**（空例外の解消）~~ → **対応済み**（`ImageBuildError` + 末尾ログ）
 2. ~~**`imageJoinStreaming` の API 化**（ビルドログ取得）~~ → **対応済み**（`Image.build(app, { onLog })`）
-3. ビルダー版のデフォルトと環境の同期
-4. `@internal` サブパス exports の公開
+3. ~~ビルダー版のデフォルトと環境の同期~~ → **対応済み**（`resolveImageBuilderVersion()` で環境の実値へ自動フォールバック + 不整合警告）
+4. ~~`@internal` サブパス exports の公開~~ → **対応済み**（`modal-ts/internal`、`src/internal.ts` で公開）
 5. `runCommands` の配列挙動のドキュメント化
