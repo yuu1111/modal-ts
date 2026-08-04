@@ -52,7 +52,8 @@ export MODAL_TOKEN_SECRET=as-...
 ## Development
 
 ```bash
-bun install           # Install deps + generate proto
+bun install           # Install dependencies
+bun run proto         # generate proto code in src/generated
 bun run typecheck     # Type check
 bun run lint          # Biome lint
 bun run format        # Biome format

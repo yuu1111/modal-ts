@@ -52,7 +52,8 @@ export MODAL_TOKEN_SECRET=as-...
 ## 開発
 
 ```bash
-bun install           # 依存インストール + proto生成
+bun install           # 依存インストール
+bun run proto         # src/generated のprotoコードを生成
 bun run typecheck     # 型チェック
 bun run lint          # Biome lint
 bun run format        # Biome format
