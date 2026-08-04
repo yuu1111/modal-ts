@@ -83,6 +83,6 @@ jobs:
         shell: bash
         run: |
           shopt -s nullglob
-          packages=(package/*.tgz)
+          packages=(./package/*.tgz)
           test "${#packages[@]}" -eq 1
           npm publish "${packages[0]}" --provenance --access public --ignore-scripts
