@@ -911,13 +911,16 @@ test.each([
 	[0, "timeoutMs must be positive"],
 	[-1000, "timeoutMs must be positive"],
 	[1500, "timeoutMs must be a multiple of 1000ms"],
-])("buildTaskExecStartRequestProto invalid timeoutMs %d", (timeoutMs, expectedError) => {
-	expect(() =>
-		buildTaskExecStartRequestProto("task-123", "exec-456", ["bash"], {
-			timeoutMs,
-		}),
-	).toThrow(expectedError);
-});
+])(
+	"buildTaskExecStartRequestProto invalid timeoutMs %d",
+	(timeoutMs, expectedError) => {
+		expect(() =>
+			buildTaskExecStartRequestProto("task-123", "exec-456", ["bash"], {
+				timeoutMs,
+			}),
+		).toThrow(expectedError);
+	},
+);
 
 test("SandboxExecStdinStdout", async () => {
 	const app = await tc.apps.fromName("libmodal-test", {

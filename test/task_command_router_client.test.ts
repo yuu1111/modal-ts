@@ -66,15 +66,18 @@ test.each([
 	[Status.CANCELLED, "cancelled"],
 	[Status.INTERNAL, "internal error"],
 	[Status.UNKNOWN, "unknown error"],
-])("callWithRetriesOnTransientErrors retries on %s", async (status, message) => {
-	const func = vi
-		.fn()
-		.mockRejectedValueOnce(new ClientError("/test", status, message))
-		.mockResolvedValue("success");
-	const result = await callWithRetriesOnTransientErrors(func, 10);
-	expect(result).toBe("success");
-	expect(func).toHaveBeenCalledTimes(2);
-});
+])(
+	"callWithRetriesOnTransientErrors retries on %s",
+	async (status, message) => {
+		const func = vi
+			.fn()
+			.mockRejectedValueOnce(new ClientError("/test", status, message))
+			.mockResolvedValue("success");
+		const result = await callWithRetriesOnTransientErrors(func, 10);
+		expect(result).toBe("success");
+		expect(func).toHaveBeenCalledTimes(2);
+	},
+);
 
 test("callWithRetriesOnTransientErrors non-retryable error", async () => {
 	const error = new ClientError("/test", Status.INVALID_ARGUMENT, "invalid");
