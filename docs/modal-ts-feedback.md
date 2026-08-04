@@ -6,7 +6,7 @@
 
 ---
 
-> 更新: 2026-08 — 項目 1・2 は対応済み（実装・テスト・Release 反映）。
+> 更新: 2026-08 — 項目 1〜5 は対応済み（実装・テスト・Release 反映）。
 
 ---
 
@@ -109,6 +109,8 @@ env.imageBuilderVersion // => "2025.06"
 
 ## 5. 参考: `runCommands` の配列セマンティクス（バグではない）
 
+> **対応済み** ✅ `Image.runCommands(commands)` を追加し、各要素が独立した `RUN <コマンド>` になることを明示。docstring で「引数を複数要素に分割しない（`["bash", "-c", "cmd"]` は避けて `["bash -lc cmd"]` のように渡す）」と注意書き。`dockerfileCommands` 側も配列要素が生の Dockerfile 行である旨を明記。
+
 `runCommands(["bash", "-c", "cmd"])` は**配列要素ごとに独立した RUN 行**になる
 （`RUN bash` / `RUN -c` と分解され `-c requires an argument` で失敗）。
 
@@ -135,4 +137,4 @@ env.imageBuilderVersion // => "2025.06"
 2. ~~**`imageJoinStreaming` の API 化**（ビルドログ取得）~~ → **対応済み**（`Image.build(app, { onLog })`）
 3. ~~ビルダー版のデフォルトと環境の同期~~ → **対応済み**（`resolveImageBuilderVersion()` で環境の実値へ自動フォールバック + 不整合警告）
 4. ~~`@internal` サブパス exports の公開~~ → **対応済み**（`modal-ts/internal`、`src/internal.ts` で公開）
-5. `runCommands` の配列挙動のドキュメント化
+5. ~~`runCommands` の配列挙動のドキュメント化~~ → **対応済み**（`Image.runCommands()` 追加 + docstring 明記）

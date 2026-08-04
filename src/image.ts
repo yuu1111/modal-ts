@@ -314,7 +314,10 @@ export class Image {
 
 	/**
 	 * @description 任意の Dockerfile コマンドで Image を拡張する。各呼び出しは順次ビルドされる新しいレイヤーを作成する
-	 * @param commands - Dockerfile コマンドの文字列配列
+	 *
+	 * **注意**: `commands` の各要素は**生の Dockerfile 行**としてそのまま使われる（`RUN` プレフィックスは付かない）。
+	 * 単一のコマンドを配列要素に分割して渡さないこと。シェルコマンドを実行したい場合は {@link Image#runCommands Image.runCommands()} を使う。
+	 * @param commands - 生の Dockerfile コマンド行の配列
 	 * @param params - このレイヤーのビルド設定
 	 * @returns 新しい Image インスタンス
 	 */
@@ -325,7 +328,32 @@ export class Image {
 		if (commands.length === 0) {
 			return this;
 		}
+		return this.#addLayer(commands, params);
+	}
 
+	/**
+	 * @description シェルコマンドで Image を拡張する。各要素が独立した `RUN <コマンド>` レイヤーになる。各呼び出しは順次ビルドされる
+	 *
+	 * **注意**: 各要素は**単一の完全なシェルコマンド文字列**にすること。
+	 * 引数を複数要素に分割して渡さない（例: `["bash", "-c", "cmd"]` は避ける。正しくは `["bash -lc cmd"]` のような1要素）。
+	 * @param commands - シェルコマンド文字列の配列（各要素が1本の `RUN` になる）
+	 * @param params - このレイヤーのビルド設定
+	 * @returns 新しい Image インスタンス
+	 */
+	runCommands(
+		commands: string[],
+		params?: ImageDockerfileCommandsParams,
+	): Image {
+		if (commands.length === 0) {
+			return this;
+		}
+		return this.#addLayer(
+			commands.map((command) => `RUN ${command}`),
+			params,
+		);
+	}
+
+	#addLayer(commands: string[], params?: ImageDockerfileCommandsParams): Image {
 		Image.validateDockerfileCommands(commands);
 
 		const newLayer: Layer = {

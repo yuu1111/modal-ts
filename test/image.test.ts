@@ -305,3 +305,46 @@ test("ImageBuildError carries collected logs", () => {
 	expect(err.logs).toEqual(["a", "b"]);
 	expect(err.message).toBe("boom");
 });
+
+test("runCommands wraps each command in a RUN layer", async () => {
+	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
+
+	mock.handleUnary("/ImageGetOrCreate", (req) => {
+		expect(req).toMatchObject({
+			appId: "ap-test",
+			image: {
+				dockerfileCommands: ["FROM alpine:3.21"],
+				secretIds: [],
+				baseImages: [],
+				gpuConfig: undefined,
+			},
+			forceBuild: false,
+		});
+		return { imageId: "im-base", result: { status: 1 } };
+	});
+
+	mock.handleUnary("/ImageGetOrCreate", (req) => {
+		expect(req).toMatchObject({
+			appId: "ap-test",
+			image: {
+				dockerfileCommands: [
+					"FROM base",
+					"RUN bash -lc pip install requests",
+					"RUN echo done",
+				],
+				secretIds: [],
+				baseImages: [{ dockerTag: "base", imageId: "im-base" }],
+				gpuConfig: undefined,
+			},
+			forceBuild: false,
+		});
+		return { imageId: "im-layer1", result: { status: 1 } };
+	});
+
+	const built = await mc.images
+		.fromRegistry("alpine:3.21")
+		.runCommands(["bash -lc pip install requests", "echo done"])
+		.build(new App("ap-test", "libmodal-test"));
+	expect(built.imageId).toBe("im-layer1");
+	mock.assertExhausted();
+});
