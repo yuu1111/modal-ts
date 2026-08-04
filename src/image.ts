@@ -111,6 +111,11 @@ export class ImageService {
 
 	/**
 	 * @description レジストリタグから {@link Image} を作成する。認証用に {@link Secret} を指定可能
+	 *
+	 * **遅延参照**: この呼び出し自体はビルドを発生させず、参照だけを返す。
+	 * 実際のビルドは `Image.build(app)` または `Sandbox.create()` 等でイメージを**使用**したときに走る。
+	 * タグがキャッシュ済みなら素通りするが、**未キャッシュのタグはその時点で取り込み / ビルドが走り**、
+	 * 重い処理になったり失敗したりする（失敗は {@link ImageBuildError} として伝播し、`build()` の `onLog` でログ取得可）。
 	 * @param tag - Image のレジストリタグ
 	 * @param secret - レジストリ認証用の Secret
 	 * @returns Image インスタンス
@@ -379,7 +384,9 @@ export class Image {
 	}
 
 	/**
-	 * @description Modal 上で Image を即座にビルドする
+	 * @description Modal 上で Image を即座にビルドする。
+	 * レジストリ / コンテナタグが未キャッシュの場合、ここで**取り込み・ビルドが走る**。
+	 * 失敗時は {@link ImageBuildError} が投げられ、末尾ログ（既定80行）を添える。進行中のログは `options.onLog` で受け取れる
 	 * @param app - ビルドに使用する App
 	 * @param options - ビルドオプション（省略可）
 	 * @returns ビルドされた Image インスタンス
@@ -415,6 +422,13 @@ export class Image {
 			if (i === 0) {
 				dockerfileCommands = [`FROM ${this.#tag}`, ...layer.commands];
 				baseImages = [];
+				this.#client.logger.debug(
+					"Building or pulling uncached base image",
+					"tag",
+					this.#tag,
+					"force_build",
+					layer.forceBuild || false,
+				);
 			} else {
 				dockerfileCommands = ["FROM base", ...layer.commands];
 				if (!baseImageId)
