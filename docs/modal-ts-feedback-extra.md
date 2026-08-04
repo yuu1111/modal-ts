@@ -11,14 +11,15 @@
 - export されて動くのは class の方のみ → proto 側を import するとき名前解決が混乱する
 - ログ取得工具で `.create()` を持つ方へ振り向ける際に寄り道した
 
-改善: `ImageMessage` 等へ改名 / proto 側の別名 export。
+> **対応済み** ✅ `modal-ts/internal` で proto メッセージを **`ImageMessage`** として別名 export（`Image as ImageMessage`）。class `Image` の docstring にも「proto メッセージは `ImageMessage` で得られる」旨を追記。`Image` はそのままも利用可。
 
 ## 7. 公開される日本語 docstring に文字化け
 
 - 生成 `.d.ts` のコメントに `イメージビルダーのバ�Eジョン` のような mojibake（`サ�Eバー` 等）
-- 実害は小さいが **published な生成物が壊れて上がっている**ことを感じさせる品質感染
+- 実害は小さく、最初は **published な生成物が壊れて上がっている**ように見えた
 
-改善: docstring 生成工程の文字コード処理を確認。
+> **検証済み・実害なし** ✅ ローカル `dist/*.d.ts` と公開済み npm tarball（`modal-ts@1.0.0`）内の `.d.ts` を実ファイルでバイト検証したところ正常な UTF-8 だった（例: `イメージビルダーのバージョンを返す`）。置換文字 U+FFFD は 0 件、ソース `src/*.ts` と生成物の中身も一致。
+> 観測された `バ�Eジョン` は**ターミナル／エディタ側の文字コード（コードページ）表示の問題**。UTF-8 対応表示（例: `chcp 65001`）で開けば自然に直る。コードの修正は不要。
 
 ## 8. `fromRegistry` が「非キャッシュ時はビルド/取り込みが走る」のが非自明
 

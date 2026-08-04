@@ -3,6 +3,7 @@ import {
 	Empty,
 	GenericResult_GenericStatus,
 	Image,
+	ImageMessage,
 	ModalClientDefinition,
 	type ModalGrpcClient,
 	Timestamp,
@@ -14,6 +15,16 @@ test("internal exposes generated proto classes with factory helpers", () => {
 		dockerfileCommands: ["FROM base"],
 	});
 	expect(GenericResult_GenericStatus.GENERIC_STATUS_FAILURE).toBe(2);
+});
+
+test("ImageMessage aliases the proto Image message", () => {
+	expect(ImageMessage).toBe(Image);
+	expect(typeof ImageMessage.create).toBe("function");
+	expect(
+		ImageMessage.create({ dockerfileCommands: ["FROM base"] }),
+	).toMatchObject({
+		dockerfileCommands: ["FROM base"],
+	});
 });
 
 test("internal re-exports well-known google protobuf types", async () => {

@@ -241,6 +241,10 @@ type Layer = {
 
 /**
  * @description {@link Sandbox} の起動に使用するコンテナイメージ
+ *
+ * この class はビルドコマンドを組み立てる public API である。
+ * proto 定義の同名メッセージ（`.create()` を持つ方）を使いたい場合は
+ * `import { ImageMessage } from "modal-ts/internal"` を参照すること（名前衝突回避の別名）。
  */
 export class Image {
 	#client: ModalClient;
