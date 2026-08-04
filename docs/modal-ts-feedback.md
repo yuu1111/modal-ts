@@ -93,7 +93,7 @@ env.imageBuilderVersion // => "2025.06"
 
 ## 4. 生成コードが読めず、裏 RPC の公式化がない
 
-> **対応済み** ✅ `imageJoinStreaming` の「ビルド実行 + ログ取得」は `Image.build(app, { onLog })` として API 化。raw の生成 proto（`ModalClientDefinition` 等）は `modal-ts/internal` サブパスで公開。最小 gRPC インターフェースのドキュメント化のみ未対応。
+> **対応済み** ✅ `imageJoinStreaming` の「ビルド実行 + ログ取得」は `Image.build(app, { onLog })` として API 化。**完了済みビルドの過去ログ取得**は `client.images.fetchLogs(imageId)`（`ImageLogsOptions` で `onLog` / `timeout` 指定可、`Image.fetchLogs` 静的互換もあり）として API 化し、`ImageBuildError` が `imageId` を保持して失敗後のログ再取得に対応。raw の生成 proto（`ModalClientDefinition` 等）は `modal-ts/internal` サブパスで公開。最小 gRPC インターフェースのドキュメント化のみ未対応。
 
 ### 事象
 

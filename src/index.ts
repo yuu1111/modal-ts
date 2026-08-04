@@ -70,6 +70,7 @@ export {
 	type ImageBuildOptions,
 	type ImageDeleteParams,
 	type ImageDockerfileCommandsParams,
+	type ImageLogsOptions,
 	ImageService,
 } from "./image";
 export type { Logger, LogLevel } from "./logger";

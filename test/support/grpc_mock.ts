@@ -20,10 +20,10 @@ export class MockGrpcClient {
 		});
 	}
 
-	private readonly dispatch = async (
+	private readonly dispatch = (
 		methodKey: string,
 		actualRequest: unknown,
-	): Promise<unknown> => {
+	): unknown => {
 		const queue = this.methodHandlerQueues.get(methodKey) ?? [];
 		if (queue.length === 0) {
 			throw new Error(
@@ -33,8 +33,16 @@ export class MockGrpcClient {
 		const handler = queue.shift();
 		if (!handler)
 			throw new Error(`No handler remaining for gRPC call: ${methodKey}`);
-		const response = await handler(actualRequest as Record<string, unknown>);
-		return structuredClone(response);
+		const response = handler(actualRequest as Record<string, unknown>);
+		if (isAsyncIterable(response)) {
+			return cloneAsyncIterable(response);
+		}
+		return Promise.resolve(response).then((resolved) => {
+			if (isAsyncIterable(resolved)) {
+				return cloneAsyncIterable(resolved);
+			}
+			return structuredClone(resolved);
+		});
 	};
 
 	handleUnary(
@@ -44,6 +52,18 @@ export class MockGrpcClient {
 		const methodKey = rpcToClientMethodName(shortName(rpcName));
 		const queue = this.methodHandlerQueues.get(methodKey) ?? [];
 		queue.push(handler);
+		this.methodHandlerQueues.set(methodKey, queue);
+	}
+
+	handleStreaming(
+		rpcName: string,
+		handler: (
+			req: Record<string, unknown>,
+		) => AsyncIterable<Record<string, unknown>>,
+	) {
+		const methodKey = rpcToClientMethodName(shortName(rpcName));
+		const queue = this.methodHandlerQueues.get(methodKey) ?? [];
+		queue.push((req) => handler(req));
 		this.methodHandlerQueues.set(methodKey, queue);
 	}
 
@@ -93,5 +113,17 @@ function formatValue(v: unknown): string {
 		return JSON.stringify(v, undefined, 2);
 	} catch {
 		return String(v);
+	}
+}
+
+function isAsyncIterable(v: unknown): v is AsyncIterable<unknown> {
+	return typeof v === "object" && v !== null && Symbol.asyncIterator in v;
+}
+
+async function* cloneAsyncIterable(
+	iterable: AsyncIterable<unknown>,
+): AsyncGenerator<unknown> {
+	for await (const item of iterable) {
+		yield structuredClone(item);
 	}
 }

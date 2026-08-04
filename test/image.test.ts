@@ -298,12 +298,61 @@ test("buildFailureMessage attaches latest log lines when exception is blank", ()
 	expect(msg).toContain("onLog");
 });
 
-test("ImageBuildError carries collected logs", () => {
-	const err = new ImageBuildError("boom", ["a", "b"]);
+test("ImageBuildError carries imageId and collected logs", () => {
+	const err = new ImageBuildError("boom", "im-test", ["a", "b"]);
 	expect(err).toBeInstanceOf(Error);
 	expect(err.name).toBe("ImageBuildError");
+	expect(err.imageId).toBe("im-test");
 	expect(err.logs).toEqual(["a", "b"]);
 	expect(err.message).toBe("boom");
+});
+
+test("ImageService.fetchLogs returns logs for a finished build", async () => {
+	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
+
+	mock.handleStreaming("/ImageJoinStreaming", async function* (req) {
+		expect(req).toMatchObject({
+			imageId: "im-test",
+			timeout: 55,
+			lastEntryId: "",
+			includeLogsForFinished: true,
+		});
+		yield { entryId: "1", taskLogs: [{ data: "step 1" }] };
+		yield {
+			entryId: "2",
+			taskLogs: [{ data: "step 2" }],
+			result: { status: 1 },
+		};
+	});
+
+	const logs = await mc.images.fetchLogs("im-test");
+	expect(logs).toEqual(["step 1", "step 2"]);
+	mock.assertExhausted();
+});
+
+test("ImageService.fetchLogs forwards logs via onLog and honors timeout", async () => {
+	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
+
+	mock.handleStreaming("/ImageJoinStreaming", async function* (req) {
+		expect(req).toMatchObject({
+			imageId: "im-test",
+			timeout: 30,
+			includeLogsForFinished: true,
+		});
+		yield {
+			taskLogs: [{ data: "line-a" }, { data: "" }, { data: "line-b" }],
+			result: { status: 1 },
+		};
+	});
+
+	const received: string[] = [];
+	const logs = await mc.images.fetchLogs("im-test", {
+		timeout: 30,
+		onLog: (l) => received.push(l),
+	});
+	expect(logs).toEqual(["line-a", "line-b"]);
+	expect(received).toEqual(["line-a", "line-b"]);
+	mock.assertExhausted();
 });
 
 test("runCommands wraps each command in a RUN layer", async () => {

@@ -27,20 +27,40 @@ export interface ImageBuildOptions {
 }
 
 /**
+ * @description {@link ImageService#fetchLogs client.images.fetchLogs()} の取得オプション
+ */
+export interface ImageLogsOptions {
+	/**
+	 * @description 取得したログ行を受け取るコールバック。1回の呼び出しごとに1行のビルドログが渡される
+	 */
+	onLog?: (log: string) => void;
+	/**
+	 * @description ストリーミング呼び出しのタイムアウト（秒） @default 55
+	 */
+	timeout?: number;
+}
+
+/**
  * @description Image ビルド失敗時に投げられるエラー。ビルド中に回収したログを {@link ImageBuildError#logs} に保持する
  */
 export class ImageBuildError extends Error {
+	/**
+	 * @description ビルド対象の Image ID。失敗後に {@link ImageService#fetchLogs client.images.fetchLogs()} でログを再取得する際に使える
+	 */
+	readonly imageId: string;
 	/**
 	 * @description ビルド中に回収した生ログ行（サーバーの `taskLogs` の `data`）
 	 */
 	readonly logs: readonly string[];
 	/**
 	 * @param message - エラーメッセージ
+	 * @param imageId - ビルド対象の Image ID
 	 * @param logs - ビルド中に回収したログ行
 	 */
-	constructor(message: string, logs: readonly string[] = []) {
+	constructor(message: string, imageId: string, logs: readonly string[] = []) {
 		super(message);
 		this.name = "ImageBuildError";
+		this.imageId = imageId;
 		this.logs = logs;
 	}
 }
@@ -200,6 +220,58 @@ export class ImageService {
 			throw err;
 		}
 	}
+
+	/**
+	 * @description 指定した Image ID の**完了済みビルド**のログを取得する。
+	 *
+	 * {@link Image#build Image.build(app, { onLog })} はビルド**実行中**のライブログのみを受け取れるが、
+	 * 既に失敗・完了したビルドの過去ログはこのメソッドで事後取得できる。
+	 * `Image.build()` が失敗した場合は {@link ImageBuildError} の `imageId` を使ってログを再取得すると良い:
+	 *
+	 * ```typescript
+	 * try {
+	 *   await image.build(app);
+	 * } catch (err) {
+	 *   if (err instanceof ImageBuildError) {
+	 *     const logs = await client.images.fetchLogs(err.imageId);
+	 *     console.error(logs.slice(-80).join("\n"));
+	 *   }
+	 * }
+	 * ```
+	 * @param imageId - Image ID（`ImageBuildError.imageId` や `Image#imageId` で取得可）
+	 * @param options - 取得オプション（省略可）
+	 * @returns ビルドログ行の配列（サーバーの `taskLogs` の `data`）
+	 */
+	async fetchLogs(
+		imageId: string,
+		options: ImageLogsOptions = {},
+	): Promise<string[]> {
+		const { onLog, timeout = 55 } = options;
+		const logs: string[] = [];
+		let lastEntryId = "";
+		while (true) {
+			let finished = false;
+			for await (const item of this.#client.cpClient.imageJoinStreaming({
+				imageId,
+				timeout,
+				lastEntryId,
+				includeLogsForFinished: true,
+			})) {
+				if (item.entryId) lastEntryId = item.entryId;
+				for (const log of item.taskLogs) {
+					if (!log.data) continue;
+					logs.push(log.data);
+					onLog?.(log.data);
+				}
+				if (item.result?.status) {
+					finished = true;
+					break;
+				}
+			}
+			if (finished) break;
+		}
+		return logs;
+	}
 }
 
 /**
@@ -308,6 +380,16 @@ export class Image {
 	 */
 	static fromGcpArtifactRegistry(tag: string, secret: Secret): Image {
 		return getDefaultClient().images.fromGcpArtifactRegistry(tag, secret);
+	}
+
+	/**
+	 * @deprecated Use {@link ImageService#fetchLogs client.images.fetchLogs()} instead.
+	 */
+	static async fetchLogs(
+		imageId: string,
+		options: ImageLogsOptions = {},
+	): Promise<string[]> {
+		return getDefaultClient().images.fetchLogs(imageId, options);
 	}
 
 	private static validateDockerfileCommands(commands: string[]): void {
@@ -496,6 +578,7 @@ export class Image {
 						buildLogs,
 						failureLogTailLines,
 					),
+					resp.imageId,
 					buildLogs,
 				);
 			} else if (
@@ -503,6 +586,7 @@ export class Image {
 			) {
 				throw new ImageBuildError(
 					`Image build for ${resp.imageId} terminated due to external shut-down. Please try again.`,
+					resp.imageId,
 					buildLogs,
 				);
 			} else if (
@@ -510,6 +594,7 @@ export class Image {
 			) {
 				throw new ImageBuildError(
 					`Image build for ${resp.imageId} timed out. Please try again with a larger timeout parameter.`,
+					resp.imageId,
 					buildLogs,
 				);
 			} else if (
@@ -517,6 +602,7 @@ export class Image {
 			) {
 				throw new ImageBuildError(
 					`Image build for ${resp.imageId} failed with unknown status: ${result.status}`,
+					resp.imageId,
 					buildLogs,
 				);
 			}
