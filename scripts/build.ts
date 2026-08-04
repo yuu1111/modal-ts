@@ -21,9 +21,13 @@ const shared = {
 	},
 };
 
+const internal = { ...shared, entryPoints: ["src/internal.ts"] };
+
 await Promise.all([
 	build({ ...shared, format: "esm", outfile: "dist/index.js" }),
 	build({ ...shared, format: "cjs", outfile: "dist/index.cjs" }),
+	build({ ...internal, format: "esm", outfile: "dist/internal.js" }),
+	build({ ...internal, format: "cjs", outfile: "dist/internal.cjs" }),
 ]);
 
 execSync("tsc -p tsconfig.build.json", { cwd: root, stdio: "inherit" });

@@ -41,6 +41,16 @@
         "types": "./dist/index.d.ts",
         "default": "./dist/index.cjs"
       }
+    },
+    "./internal": {
+      "import": {
+        "types": "./dist/internal.d.ts",
+        "default": "./dist/internal.js"
+      },
+      "require": {
+        "types": "./dist/internal.d.ts",
+        "default": "./dist/internal.cjs"
+      }
     }
   },
   "types": "dist/index.d.ts",
