@@ -13,6 +13,66 @@ import {
 import { mergeEnvIntoSecrets, Secret } from "./secret";
 
 /**
+ * @description {@link Image#build} のビルドオプション
+ */
+export interface ImageBuildOptions {
+	/**
+	 * @description ビルドストリーム中のログ行を受け取るコールバック。1回の呼び出しごとに1行のビルドログが渡される
+	 */
+	onLog?: (log: string) => void;
+	/**
+	 * @description ビルド失敗時にエラーメッセージへ含める末尾ログ行数（サーバーが空の例外を返した場合に役立つ） @default 80
+	 */
+	failureLogTailLines?: number;
+}
+
+/**
+ * @description Image ビルド失敗時に投げられるエラー。ビルド中に回収したログを {@link ImageBuildError#logs} に保持する
+ */
+export class ImageBuildError extends Error {
+	/**
+	 * @description ビルド中に回収した生ログ行（サーバーの `taskLogs` の `data`）
+	 */
+	readonly logs: readonly string[];
+	/**
+	 * @param message - エラーメッセージ
+	 * @param logs - ビルド中に回収したログ行
+	 */
+	constructor(message: string, logs: readonly string[] = []) {
+		super(message);
+		this.name = "ImageBuildError";
+		this.logs = logs;
+	}
+}
+
+/**
+ * @description ビルド失敗向けのエラーメッセージを組み立てる。サーバーの例外が空の場合は末尾ログを添える
+ * @param imageId - ビルド対象の Image ID
+ * @param exception - サーバーが返した例外メッセージ（空でも可）
+ * @param logs - ビルド中に回収したログ行
+ * @param tailLines - 空例外のときに添える末尾ログ行数
+ * @returns エラーメッセージ
+ */
+export function buildFailureMessage(
+	imageId: string,
+	exception: string,
+	logs: readonly string[] = [],
+	tailLines = 80,
+): string {
+	if (exception.trim()) {
+		return `Image build for ${imageId} failed with the exception:\n${exception}`;
+	}
+	const tail = logs.slice(-tailLines);
+	const logBlock = tail.length
+		? `\n\nLatest build logs:\n${tail.join("\n")}`
+		: "";
+	return (
+		`Image build for ${imageId} failed, but the server returned an empty exception.` +
+		` Build logs are available via the \`onLog\` callback or the \`ImageBuildError.logs\` property.${logBlock}`
+	);
+}
+
+/**
  * Service for managing {@link Image}s.
  *
  * Normally only ever accessed via the client as:
@@ -289,13 +349,16 @@ export class Image {
 	/**
 	 * @description Modal 上で Image を即座にビルドする
 	 * @param app - ビルドに使用する App
+	 * @param options - ビルドオプション（省略可）
 	 * @returns ビルドされた Image インスタンス
 	 */
-	async build(app: App): Promise<Image> {
+	async build(app: App, options: ImageBuildOptions = {}): Promise<Image> {
 		if (this.imageId !== "") {
 			// Image is already built with an Image ID
 			return this;
 		}
+
+		const { onLog, failureLogTailLines = 80 } = options;
 
 		this.#client.logger.debug("Building image", "app_id", app.appId);
 
@@ -342,6 +405,14 @@ export class Image {
 			});
 
 			let result: GenericResult;
+			const buildLogs: string[] = [];
+			const forwardLog = (item: { taskLogs: Array<{ data: string }> }) => {
+				for (const log of item.taskLogs) {
+					if (!log.data) continue;
+					buildLogs.push(log.data);
+					onLog?.(log.data);
+				}
+			};
 
 			if (resp.result?.status) {
 				// Image has already been built
@@ -355,13 +426,15 @@ export class Image {
 						imageId: resp.imageId,
 						timeout: 55,
 						lastEntryId,
+						includeLogsForFinished: true,
 					})) {
 						if (item.entryId) lastEntryId = item.entryId;
+						forwardLog(item);
 						if (item.result?.status) {
 							resultJoined = item.result;
 							break;
 						}
-						// Ignore all log lines and progress updates.
+						// Ignore all progress updates.
 					}
 				}
 				result = resultJoined;
@@ -370,26 +443,35 @@ export class Image {
 			if (
 				result.status === GenericResult_GenericStatus.GENERIC_STATUS_FAILURE
 			) {
-				throw new Error(
-					`Image build for ${resp.imageId} failed with the exception:\n${result.exception}`,
+				throw new ImageBuildError(
+					buildFailureMessage(
+						resp.imageId,
+						result.exception,
+						buildLogs,
+						failureLogTailLines,
+					),
+					buildLogs,
 				);
 			} else if (
 				result.status === GenericResult_GenericStatus.GENERIC_STATUS_TERMINATED
 			) {
-				throw new Error(
+				throw new ImageBuildError(
 					`Image build for ${resp.imageId} terminated due to external shut-down. Please try again.`,
+					buildLogs,
 				);
 			} else if (
 				result.status === GenericResult_GenericStatus.GENERIC_STATUS_TIMEOUT
 			) {
-				throw new Error(
+				throw new ImageBuildError(
 					`Image build for ${resp.imageId} timed out. Please try again with a larger timeout parameter.`,
+					buildLogs,
 				);
 			} else if (
 				result.status !== GenericResult_GenericStatus.GENERIC_STATUS_SUCCESS
 			) {
-				throw new Error(
+				throw new ImageBuildError(
 					`Image build for ${resp.imageId} failed with unknown status: ${result.status}`,
+					buildLogs,
 				);
 			}
 

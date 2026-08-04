@@ -66,6 +66,8 @@ export {
 } from "./function_call";
 export {
 	Image,
+	ImageBuildError,
+	type ImageBuildOptions,
 	type ImageDeleteParams,
 	type ImageDockerfileCommandsParams,
 	ImageService,

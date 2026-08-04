@@ -1,5 +1,6 @@
 import { expect, onTestFinished, test } from "vitest";
 import { App } from "../src/app";
+import { buildFailureMessage, ImageBuildError } from "../src/image";
 import { Secret } from "../src/secret";
 import { createMockModalClients } from "./support/grpc_mock";
 import { tc } from "./support/test-client";
@@ -277,4 +278,30 @@ test("DockerfileCommandsWithOptions", async () => {
 	expect(image.imageId).toBe("im-layer3");
 
 	mock.assertExhausted();
+});
+
+test("buildFailureMessage includes server exception when present", () => {
+	expect(buildFailureMessage("im-test", "pip: not found", ["line1"], 80)).toBe(
+		"Image build for im-test failed with the exception:\npip: not found",
+	);
+	expect(buildFailureMessage("im-test", "   ")).toContain("empty exception");
+});
+
+test("buildFailureMessage attaches latest log lines when exception is blank", () => {
+	const logs = Array.from({ length: 100 }, (_, i) => `RUN line ${i}`);
+	const msg = buildFailureMessage("im-test", "", logs, 3);
+	expect(msg).toContain("empty exception");
+	expect(msg).toContain("RUN line 97");
+	expect(msg).toContain("RUN line 98");
+	expect(msg).toContain("RUN line 99");
+	expect(msg).not.toContain("RUN line 0");
+	expect(msg).toContain("onLog");
+});
+
+test("ImageBuildError carries collected logs", () => {
+	const err = new ImageBuildError("boom", ["a", "b"]);
+	expect(err).toBeInstanceOf(Error);
+	expect(err.name).toBe("ImageBuildError");
+	expect(err.logs).toEqual(["a", "b"]);
+	expect(err.message).toBe("boom");
 });
