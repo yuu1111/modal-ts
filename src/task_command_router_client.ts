@@ -84,6 +84,7 @@ export async function callWithRetriesOnTransientErrors<T>(
 		Status.DEADLINE_EXCEEDED,
 		Status.UNAVAILABLE,
 		Status.CANCELLED,
+		Status.ABORTED,
 		Status.INTERNAL,
 		Status.UNKNOWN,
 	]);
@@ -482,6 +483,7 @@ export class TaskCommandRouterClientImpl {
 			Status.DEADLINE_EXCEEDED,
 			Status.UNAVAILABLE,
 			Status.CANCELLED,
+			Status.ABORTED,
 			Status.INTERNAL,
 			Status.UNKNOWN,
 		]);

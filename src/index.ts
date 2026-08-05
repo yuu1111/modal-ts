@@ -96,6 +96,7 @@ export type {
 	SandboxExecParams,
 	SandboxFromNameParams,
 	SandboxListParams,
+	SandboxTerminateAllParams,
 	SandboxTerminateParams,
 	StdioBehavior,
 	StreamMode,

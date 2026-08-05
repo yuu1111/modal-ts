@@ -1,5 +1,6 @@
 import { expect, onTestFinished, test } from "vitest";
 import { parseGpuConfig } from "../src/app";
+import { ModalClient, type ModalGrpcClient } from "../src/client";
 import {
 	type AppGetOrCreateResponse,
 	GenericResult_GenericStatus,
@@ -1125,4 +1126,60 @@ test("SandboxDetachForbidsAllOperations", async () => {
 	await expect(sb.poll()).rejects.toThrow(errorMsg);
 	await expect(sb.setTags({})).rejects.toThrow(errorMsg);
 	await expect(sb.getTags()).rejects.toThrow(errorMsg);
+});
+
+test("SandboxTerminateWaitTimesOutInsteadOfHanging", async () => {
+	const cpClient = {
+		sandboxTerminate: async () => ({}),
+		sandboxWait: async () => ({}),
+	};
+	const mc = new ModalClient({
+		cpClient: cpClient as unknown as ModalGrpcClient,
+		tokenId: "test-id",
+		tokenSecret: "test-secret",
+	});
+
+	const sb = await mc.sandboxes.fromId("sb-123");
+	await expect(sb.terminate({ wait: true, waitTimeoutMs: 50 })).rejects.toThrow(
+		/did not terminate within 50ms/,
+	);
+});
+
+test("SandboxTerminateWaitReturnsExitCode", async () => {
+	const cpClient = {
+		sandboxTerminate: async () => ({}),
+		sandboxWait: async () => ({
+			result: {
+				status: GenericResult_GenericStatus.GENERIC_STATUS_TERMINATED,
+				exitcode: 137,
+			},
+		}),
+	};
+	const mc = new ModalClient({
+		cpClient: cpClient as unknown as ModalGrpcClient,
+		tokenId: "test-id",
+		tokenSecret: "test-secret",
+	});
+
+	const sb = await mc.sandboxes.fromId("sb-123");
+	expect(await sb.terminate({ wait: true, waitTimeoutMs: 5000 })).toBe(137);
+});
+
+test("SandboxService terminateAll terminates every listed sandbox", async () => {
+	const { mockClient: mc, mockCpClient: mock } = createMockModalClients();
+
+	mock.handleUnary("/SandboxList", () => ({
+		sandboxes: [
+			{ id: "sb-1", createdAt: 1 },
+			{ id: "sb-2", createdAt: 0 },
+		],
+	}));
+	mock.handleUnary("/SandboxList", () => ({ sandboxes: [] }));
+	mock.handleUnary("/SandboxTerminate", () => ({}));
+	mock.handleUnary("/SandboxTerminate", () => ({}));
+
+	const ids = await mc.sandboxes.terminateAll();
+	expect(ids).toEqual(["sb-1", "sb-2"]);
+
+	mock.assertExhausted();
 });

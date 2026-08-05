@@ -68,6 +68,11 @@ const SB_LOGS_INITIAL_DELAY_MS = 10;
 const SB_LOGS_DELAY_FACTOR = 2;
 const SB_LOGS_MAX_RETRIES = 10;
 
+// Default timeout for `Sandbox.terminate({ wait: true })` before it aborts with
+// a SandboxTimeoutError, so a Sandbox that never reports termination cannot
+// block the caller forever.
+const TERMINATE_WAIT_TIMEOUT_MS = 60_000;
+
 /**
  * Stdin is always present, but this option allow you to drop stdout or stderr
  * if you don't need them. The default is "pipe", matching Node.js behavior.
@@ -666,6 +671,51 @@ export class SandboxService {
 			}
 		}
 	}
+
+	/**
+	 * @description 現在の環境またはApp IDの実行中Sandboxを一括終了する
+	 *
+	 * `list()`で取得したSandboxを非同期破棄(waitなし)で順に終了する。個別の終了
+	 * に失敗しても処理は続行し、失敗はデバッグログに記録される。SIGINT/SIGTERM等の
+	 * クライアント中断時にGPU等のリソースを予約したままSandboxが漏れても、これを
+	 * 呼べば安全に後始末できる。
+	 *
+	 * @param params - Sandbox一覧のフィルタリングパラメータと並列度
+	 * @returns 終了を試みたSandbox IDの配列
+	 */
+	async terminateAll(
+		params: SandboxTerminateAllParams = {},
+	): Promise<string[]> {
+		const { concurrency = 10, ...listParams } = params;
+
+		const sandboxes: Sandbox[] = [];
+		for await (const sb of this.list(listParams)) {
+			sandboxes.push(sb);
+		}
+
+		const queue = [...sandboxes];
+		const workerCount = Math.min(concurrency, Math.max(1, queue.length));
+		const workers = Array.from({ length: workerCount }, async () => {
+			while (queue.length > 0) {
+				const sb = queue.shift();
+				if (!sb) return;
+				try {
+					await sb.terminate();
+				} catch (err) {
+					this.#client.logger.debug(
+						"Failed to terminate Sandbox",
+						"sandbox_id",
+						sb.sandboxId,
+						"error",
+						err,
+					);
+				}
+			}
+		});
+		await Promise.all(workers);
+
+		return sandboxes.map((sb) => sb.sandboxId);
+	}
 }
 
 /**
@@ -678,6 +728,14 @@ export type SandboxListParams = {
 	tags?: Record<string, string>;
 	/** Override environment for the request; defaults to current profile. */
 	environment?: string;
+};
+
+/**
+ * @description client.sandboxes.terminateAll()のオプションパラメータ
+ */
+export type SandboxTerminateAllParams = SandboxListParams & {
+	/** Maximum number of Sandboxes to terminate concurrently. Defaults to 10. */
+	concurrency?: number;
 };
 
 /**
@@ -716,6 +774,12 @@ export type SandboxExecParams = {
 export type SandboxTerminateParams = {
 	/** If true, wait for the Sandbox to finish and return the exit code. */
 	wait?: boolean;
+	/**
+	 * Maximum time in milliseconds to wait for the Sandbox to finish when
+	 * `wait` is true. Defaults to 60000. Prevents `terminate({ wait: true })`
+	 * from blocking forever if the Sandbox never reports termination.
+	 */
+	waitTimeoutMs?: number;
 };
 
 /**
@@ -1254,9 +1318,13 @@ export class Sandbox {
 	 * @description Sandboxを終了する
 	 * @param params - オプションパラメータ(waitでexit codeを返す)
 	 * @returns wait: trueの場合はexit code
+	 * @throws SandboxTimeoutError wait: true時にwaitTimeoutMs以内に終了しない場合
 	 */
 	async terminate(): Promise<undefined>;
-	async terminate(params: { wait: true }): Promise<number>;
+	async terminate(params: {
+		wait: true;
+		waitTimeoutMs?: number;
+	}): Promise<number>;
 	async terminate(
 		params?: SandboxTerminateParams,
 	): Promise<number | undefined> {
@@ -1265,7 +1333,9 @@ export class Sandbox {
 
 		let exitCode: number | undefined;
 		if (params?.wait) {
-			exitCode = await this.wait();
+			exitCode = await this.#waitForTermination(
+				params.waitTimeoutMs ?? TERMINATE_WAIT_TIMEOUT_MS,
+			);
 		}
 
 		this.#taskId = undefined;
@@ -1281,6 +1351,35 @@ export class Sandbox {
 		this.#attached = false;
 		this.#commandRouterClient = undefined;
 		this.#commandRouterClientPromise = undefined;
+	}
+
+	/**
+	 * @description Sandboxが終了するまで待つが、timeoutMsを超えたらSandboxTimeoutErrorを投げる
+	 * @param timeoutMs - タイムアウト(ミリ秒)
+	 * @returns exit code
+	 * @throws SandboxTimeoutError timeoutMs以内に終了しない場合
+	 */
+	async #waitForTermination(timeoutMs: number): Promise<number> {
+		const deadline = Date.now() + timeoutMs;
+		while (true) {
+			const remainingMs = deadline - Date.now();
+			if (remainingMs <= 0) {
+				throw new SandboxTimeoutError(
+					`Sandbox ${this.sandboxId} did not terminate within ${timeoutMs}ms`,
+				);
+			}
+			const resp = await this.#client.cpClient.sandboxWait({
+				sandboxId: this.sandboxId,
+				timeout: Math.min(10, remainingMs / 1000),
+			});
+			if (resp.result) {
+				const returnCode = Sandbox.#getReturnCode(resp.result);
+				if (returnCode == null) {
+					throw new Error("Sandbox result missing return code");
+				}
+				return returnCode;
+			}
+		}
 	}
 
 	/**

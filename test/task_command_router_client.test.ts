@@ -64,6 +64,7 @@ test.each([
 	[Status.DEADLINE_EXCEEDED, "timeout"],
 	[Status.UNAVAILABLE, "unavailable"],
 	[Status.CANCELLED, "cancelled"],
+	[Status.ABORTED, "aborted"],
 	[Status.INTERNAL, "internal error"],
 	[Status.UNKNOWN, "unknown error"],
 ])(

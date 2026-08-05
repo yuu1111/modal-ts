@@ -1,6 +1,7 @@
 import { ModalClient } from "modal";
 import { ClientError, Status } from "nice-grpc";
 import { expect, test } from "vitest";
+import { isRetryableGrpc, timeoutMiddleware } from "../src/client";
 import { createMockModalClients } from "./support/grpc_mock";
 
 test("ModalClient with custom middleware", async () => {
@@ -75,4 +76,84 @@ test("resolveImageBuilderVersion prefers the configured profile value", async ()
 
 	expect(await mc.resolveImageBuilderVersion()).toBe("2025.06");
 	mock.assertExhausted();
+});
+
+test("timeoutMiddleware converts a client-side timeout abort into retryable DEADLINE_EXCEEDED", async () => {
+	const call = {
+		method: { path: "/test/Test" },
+		// biome-ignore lint/suspicious/noExplicitAny: test-only mock of a gRPC call
+		next: async function* (_req: any, options: { signal: AbortSignal }) {
+			const { signal } = options;
+			await new Promise<void>((resolve) =>
+				signal.addEventListener("abort", () => resolve()),
+			);
+			throw signal.reason ?? new Error("aborted");
+		},
+	};
+
+	// biome-ignore lint/suspicious/noExplicitAny: test-only middleware driver
+	const iterator = (timeoutMiddleware as any)(call, {
+		timeoutMs: 20,
+	})[Symbol.asyncIterator]();
+
+	const pending = iterator.next();
+	await expect(pending).rejects.toMatchObject({
+		code: Status.DEADLINE_EXCEEDED,
+		path: "/test/Test",
+	});
+});
+
+test("timeoutMiddleware propagates a caller-initiated abort as-is", async () => {
+	const controller = new AbortController();
+	const call = {
+		method: { path: "/test/Test" },
+		// biome-ignore lint/suspicious/noExplicitAny: test-only mock of a gRPC call
+		next: async function* (_req: any, options: { signal: AbortSignal }) {
+			const { signal } = options;
+			await new Promise<void>((resolve) =>
+				signal.addEventListener("abort", () => resolve()),
+			);
+			throw signal.reason ?? new Error("aborted");
+		},
+	};
+
+	// biome-ignore lint/suspicious/noExplicitAny: test-only middleware driver
+	const iterator = (timeoutMiddleware as any)(call, {
+		timeoutMs: 5000,
+		signal: controller.signal,
+	})[Symbol.asyncIterator]();
+
+	const pending = iterator.next();
+	controller.abort();
+	await expect(pending).rejects.toMatchObject({ name: "AbortError" });
+});
+
+test("timeoutMiddleware returns the response when the call completes in time", async () => {
+	const call = {
+		method: { path: "/test/Test" },
+		// biome-ignore lint/correctness/useYield: test-only generator that returns a value without yielding
+		next: async function* () {
+			return { ok: true };
+		},
+	};
+
+	// biome-ignore lint/suspicious/noExplicitAny: test-only middleware driver
+	const iterator = (timeoutMiddleware as any)(call, {
+		timeoutMs: 5000,
+	})[Symbol.asyncIterator]();
+
+	const result = await iterator.next();
+	expect(result.done).toBe(true);
+	expect(result.value).toEqual({ ok: true });
+});
+
+test("isRetryableGrpc treats ABORTED as retryable", () => {
+	expect(
+		isRetryableGrpc(new ClientError("/test", Status.ABORTED, "aborted")),
+	).toBe(true);
+	expect(
+		isRetryableGrpc(
+			new ClientError("/test", Status.INVALID_ARGUMENT, "invalid"),
+		),
+	).toBe(false);
 });

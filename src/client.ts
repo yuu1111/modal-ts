@@ -472,17 +472,24 @@ export const timeoutMiddleware: ClientMiddleware<TimeoutOptions> =
 				...restOptions,
 				signal: abortController.signal,
 			});
+		} catch (err) {
+			// A client-side timeout aborts the underlying call and rejects with a raw
+			// AbortError (not a ClientError). Surface it as a retryable
+			// DEADLINE_EXCEEDED instead so that transient disconnects during
+			// long-running calls (e.g. execWait long-polls) are retried rather than
+			// failing immediately. A caller-initiated abort (user signal) is
+			// propagated as-is.
+			if (timedOut && !origSignal?.aborted) {
+				throw new ClientError(
+					call.method.path,
+					Status.DEADLINE_EXCEEDED,
+					`Timed out after ${timeoutMs}ms`,
+				);
+			}
+			throw err;
 		} finally {
 			origSignal?.removeEventListener("abort", abortListener);
 			clearTimeout(timer);
-		}
-
-		if (timedOut) {
-			throw new ClientError(
-				call.method.path,
-				Status.DEADLINE_EXCEEDED,
-				`Timed out after ${timeoutMs}ms`,
-			);
 		}
 	};
 
@@ -493,6 +500,7 @@ const retryableGrpcStatusCodes = new Set([
 	Status.DEADLINE_EXCEEDED,
 	Status.UNAVAILABLE,
 	Status.CANCELLED,
+	Status.ABORTED,
 	Status.INTERNAL,
 	Status.UNKNOWN,
 ]);
